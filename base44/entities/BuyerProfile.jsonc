@@ -1,0 +1,48 @@
+{
+  "name": "BuyerProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to User id"
+    },
+    "job_title": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "digital_card": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string"
+        },
+        "linkedin": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

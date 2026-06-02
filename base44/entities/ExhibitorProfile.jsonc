@@ -1,0 +1,64 @@
+{
+  "name": "ExhibitorProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to User id"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "catalogue_url": {
+      "type": "string"
+    },
+    "team_members": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of user emails invited to team"
+    },
+    "digital_card": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string"
+        },
+        "linkedin": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "user_id",
+    "company_name",
+    "booth_number",
+    "event_name"
+  ]
+}

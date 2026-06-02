@@ -1,0 +1,56 @@
+{
+  "name": "RFI",
+  "type": "object",
+  "properties": {
+    "connection_id": {
+      "type": "string"
+    },
+    "buyer_user_id": {
+      "type": "string"
+    },
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "brochure",
+        "sample",
+        "price_list",
+        "call_me"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "reply": {
+      "type": "string"
+    },
+    "reply_attachment_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "replied"
+      ],
+      "default": "pending"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "buyer_company": {
+      "type": "string"
+    },
+    "exhibitor_company": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "connection_id",
+    "buyer_user_id",
+    "exhibitor_user_id",
+    "request_type"
+  ]
+}

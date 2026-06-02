@@ -1,0 +1,43 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "connection_request",
+        "connection_accepted",
+        "rfi_received",
+        "rfi_replied",
+        "meeting_proposed",
+        "meeting_accepted",
+        "meeting_declined",
+        "media_saved"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "related_id": {
+      "type": "string"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "from_user_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "type",
+    "title"
+  ]
+}

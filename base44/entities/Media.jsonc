@@ -1,0 +1,35 @@
+{
+  "name": "Media",
+  "type": "object",
+  "properties": {
+    "connection_id": {
+      "type": "string"
+    },
+    "uploaded_by": {
+      "type": "string",
+      "description": "user id of uploader"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "photo",
+        "voice",
+        "note"
+      ]
+    },
+    "url": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "string"
+    },
+    "product_title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "connection_id",
+    "uploaded_by",
+    "type"
+  ]
+}

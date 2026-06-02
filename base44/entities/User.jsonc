@@ -1,0 +1,23 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "exhibitor",
+        "buyer"
+      ],
+      "default": "buyer"
+    },
+    "onboarded": {
+      "type": "boolean",
+      "default": false
+    },
+    "profile_id": {
+      "type": "string",
+      "description": "Reference to ExhibitorProfile or BuyerProfile"
+    }
+  }
+}

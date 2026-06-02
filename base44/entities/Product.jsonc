@@ -1,0 +1,29 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "exhibitor_profile_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "exhibitor_user_id",
+    "title",
+    "image_url"
+  ]
+}

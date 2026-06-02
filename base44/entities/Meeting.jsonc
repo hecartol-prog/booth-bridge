@@ -1,0 +1,62 @@
+{
+  "name": "Meeting",
+  "type": "object",
+  "properties": {
+    "connection_id": {
+      "type": "string"
+    },
+    "proposed_by": {
+      "type": "string",
+      "description": "user id"
+    },
+    "proposed_to": {
+      "type": "string",
+      "description": "user id"
+    },
+    "proposed_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration": {
+      "type": "number",
+      "enum": [
+        15,
+        30,
+        60
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "accepted",
+        "declined",
+        "counter"
+      ],
+      "default": "proposed"
+    },
+    "counter_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "title": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "proposer_name": {
+      "type": "string"
+    },
+    "recipient_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "connection_id",
+    "proposed_by",
+    "proposed_to",
+    "proposed_time",
+    "duration"
+  ]
+}
