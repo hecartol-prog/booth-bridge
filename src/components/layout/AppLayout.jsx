@@ -64,7 +64,7 @@ export default function AppLayout() {
               alt="Booth Bridge"
               className="w-9 h-9 rounded-xl object-cover"
             />
-            <span className="text-lg font-display font-bold text-sidebar-foreground">Booth Bridge</span>
+            <span className="text-lg font-bold text-sidebar-foreground tracking-widest uppercase" style={{fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em"}}>Booth Bridge</span>
           </Link>
         </div>
         <nav className="flex-1 px-3 space-y-1">
@@ -123,7 +123,7 @@ export default function AppLayout() {
                   alt="Booth Bridge"
                   className="w-8 h-8 rounded-xl object-cover"
                 />
-                <span className="font-display font-bold">Booth Bridge</span>
+                <span className="font-bold tracking-widest uppercase text-sm" style={{fontFamily: "'Orbitron', sans-serif"}}>Booth Bridge</span>
               </div>
               <button onClick={() => setMobileOpen(false)}>
                 <X className="w-5 h-5" />
@@ -172,7 +172,7 @@ export default function AppLayout() {
               alt="Booth Bridge"
               className="w-7 h-7 rounded-lg object-cover"
             />
-            <span className="font-display font-bold text-sm">Booth Bridge</span>
+            <span className="font-bold tracking-widest uppercase text-xs" style={{fontFamily: "'Orbitron', sans-serif"}}>Booth Bridge</span>
           </div>
           <Link to="/notifications" className="relative">
             <Bell className="w-5 h-5" />
