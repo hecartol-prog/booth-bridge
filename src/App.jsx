@@ -28,6 +28,10 @@ import Notifications from "@/pages/Notifications";
 import Catalogue from "@/pages/Catalogue";
 import Profile from "@/pages/Profile";
 import AppLayout from "@/components/layout/AppLayout";
+import SavedBooths from "@/pages/SavedBooths";
+import MyLibrary from "@/pages/MyLibrary";
+import CatalogLibrary from "@/pages/CatalogLibrary";
+import DigitalBooth from "@/pages/DigitalBooth";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
@@ -81,6 +85,9 @@ const AuthenticatedApp = () => {
           <Route path="/business-card" element={<BusinessCard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/catalogue" element={<Catalogue />} />
+          <Route path="/saved-booths" element={<SavedBooths />} />
+          <Route path="/my-library" element={<MyLibrary />} />
+          <Route path="/catalog-library" element={<CatalogLibrary />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>

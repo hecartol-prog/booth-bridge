@@ -12,7 +12,13 @@
     "booth_number": {
       "type": "string"
     },
+    "hall": {
+      "type": "string"
+    },
     "event_name": {
+      "type": "string"
+    },
+    "event_id": {
       "type": "string"
     },
     "logo_url": {
@@ -20,6 +26,39 @@
     },
     "description": {
       "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "whatsapp": {
+      "type": "string"
+    },
+    "product_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Main product categories"
+    },
+    "factory_type": {
+      "type": "string",
+      "enum": [
+        "manufacturer",
+        "trading_company",
+        "both",
+        "agent"
+      ],
+      "default": "manufacturer"
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "e.g. ISO9001, FSC, CE"
     },
     "catalogue_url": {
       "type": "string"
