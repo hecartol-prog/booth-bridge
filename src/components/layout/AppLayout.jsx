@@ -54,9 +54,9 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-full bg-background flex overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-full">
         <div className="p-5">
           <Link to="/" className="flex items-center gap-2.5">
             <img
@@ -160,9 +160,9 @@ export default function AppLayout() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-h-screen">
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Mobile top bar */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
           <button onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>

@@ -109,7 +109,7 @@ export default function ExhibitorDashboard() {
                 <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="hsl(252, 60%, 50%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="hsl(221, 73%, 40%)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -129,7 +129,7 @@ export default function ExhibitorDashboard() {
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
                   <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={80} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="hsl(36, 95%, 55%)" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="count" fill="hsl(213, 65%, 65%)" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
