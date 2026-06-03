@@ -110,31 +110,36 @@ export default function Onboarding() {
 
     setScanStep("scanning");
 
-    // Upload then extract
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
-      file_url,
-      json_schema: CARD_SCHEMA,
-    });
+    try {
+      // Upload then extract
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: CARD_SCHEMA,
+      });
 
-    if (result.status === "success" && result.output) {
-      const data = Array.isArray(result.output) ? result.output[0] : result.output;
-      if (data.title) setJobTitle(data.title);
-      if (data.company) setBuyerCompany(data.company);
-      if (data.email) setEmail(data.email);
-      if (data.phone) setPhone(data.phone);
-      if (data.website) setWebsite(data.website);
-      if (data.linkedin) setLinkedin(data.linkedin);
-      // Try to match industry
-      if (data.industry) {
-        const match = INDUSTRIES.find(ind =>
-          ind.toLowerCase().includes(data.industry.toLowerCase()) ||
-          data.industry.toLowerCase().includes(ind.toLowerCase().split(" ")[0])
-        );
-        if (match) setIndustry(match);
+      if (result.status === "success" && result.output) {
+        const data = Array.isArray(result.output) ? result.output[0] : result.output;
+        if (data.title) setJobTitle(data.title);
+        if (data.company) setBuyerCompany(data.company);
+        if (data.email) setEmail(data.email);
+        if (data.phone) setPhone(data.phone);
+        if (data.website) setWebsite(data.website);
+        if (data.linkedin) setLinkedin(data.linkedin);
+        // Try to match industry
+        if (data.industry) {
+          const match = INDUSTRIES.find(ind =>
+            ind.toLowerCase().includes(data.industry.toLowerCase()) ||
+            data.industry.toLowerCase().includes(ind.toLowerCase().split(" ")[0])
+          );
+          if (match) setIndustry(match);
+        }
       }
+    } catch (err) {
+      // Scan failed — still allow user to continue manually
+    } finally {
+      setScanStep("done");
     }
-    setScanStep("done");
   };
 
   const skipScan = () => {
@@ -292,6 +297,11 @@ export default function Onboarding() {
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Back</Button>
                 {scanStep === "upload" && (
+                  <Button variant="ghost" onClick={skipScan} className="flex-1 text-muted-foreground">
+                    Skip
+                  </Button>
+                )}
+                {scanStep === "scanning" && (
                   <Button variant="ghost" onClick={skipScan} className="flex-1 text-muted-foreground">
                     Skip
                   </Button>
