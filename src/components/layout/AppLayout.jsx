@@ -5,6 +5,8 @@ import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Briefcase, Camera, CreditCard, LogOut, User
 } from "lucide-react";
+
+const LOGO_URL = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -55,11 +57,13 @@ export default function AppLayout() {
     <div className="min-h-screen bg-background flex">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className="p-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <QrCode className="w-5 h-5 text-primary-foreground" />
-            </div>
+        <div className="p-5">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img
+              src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+              alt="Booth Bridge"
+              className="w-9 h-9 rounded-xl object-cover"
+            />
             <span className="text-lg font-display font-bold text-sidebar-foreground">Booth Bridge</span>
           </Link>
         </div>
@@ -114,9 +118,11 @@ export default function AppLayout() {
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col animate-in slide-in-from-left">
             <div className="p-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <QrCode className="w-4 h-4 text-primary-foreground" />
-                </div>
+                <img
+                  src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+                  alt="Booth Bridge"
+                  className="w-8 h-8 rounded-xl object-cover"
+                />
                 <span className="font-display font-bold">Booth Bridge</span>
               </div>
               <button onClick={() => setMobileOpen(false)}>
@@ -161,9 +167,11 @@ export default function AppLayout() {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-              <QrCode className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img
+              src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+              alt="Booth Bridge"
+              className="w-7 h-7 rounded-lg object-cover"
+            />
             <span className="font-display font-bold text-sm">Booth Bridge</span>
           </div>
           <Link to="/notifications" className="relative">

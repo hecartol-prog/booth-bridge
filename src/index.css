@@ -6,27 +6,28 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 230 25% 10%;
+    /* Booth Bridge Blue palette — from logo */
+    --background: 214 40% 97%;
+    --foreground: 220 60% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 230 25% 10%;
+    --card-foreground: 220 60% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 230 25% 10%;
-    --primary: 252 60% 50%;
+    --popover-foreground: 220 60% 12%;
+    --primary: 221 73% 40%;        /* deep royal blue #1a3fb5 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 15% 93%;
-    --secondary-foreground: 230 25% 15%;
-    --muted: 220 15% 95%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 36 95% 55%;
-    --accent-foreground: 30 80% 15%;
-    --destructive: 0 75% 55%;
+    --secondary: 214 60% 93%;
+    --secondary-foreground: 221 73% 25%;
+    --muted: 214 40% 95%;
+    --muted-foreground: 214 20% 48%;
+    --accent: 213 65% 65%;         /* lighter cornflower blue #6b9be8 */
+    --accent-foreground: 221 73% 15%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 252 60% 50%;
-    --chart-1: 252 60% 50%;
-    --chart-2: 36 95% 55%;
+    --border: 214 40% 88%;
+    --input: 214 40% 88%;
+    --ring: 221 73% 40%;
+    --chart-1: 221 73% 40%;
+    --chart-2: 213 65% 65%;
     --chart-3: 170 55% 45%;
     --chart-4: 340 65% 55%;
     --chart-5: 200 70% 50%;
@@ -35,57 +36,72 @@
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 252 45% 12%;
-    --sidebar-foreground: 220 15% 93%;
-    --sidebar-primary: 252 60% 55%;
+    --sidebar-background: 221 73% 18%;   /* very dark royal blue */
+    --sidebar-foreground: 214 60% 93%;
+    --sidebar-primary: 213 65% 65%;      /* cornflower accent */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 252 30% 20%;
-    --sidebar-accent-foreground: 220 15% 93%;
-    --sidebar-border: 252 25% 18%;
-    --sidebar-ring: 252 60% 50%;
+    --sidebar-accent: 221 60% 26%;
+    --sidebar-accent-foreground: 214 60% 93%;
+    --sidebar-border: 221 55% 24%;
+    --sidebar-ring: 213 65% 65%;
   }
 
   .dark {
-    --background: 230 20% 8%;
-    --foreground: 220 15% 95%;
-    --card: 230 18% 12%;
-    --card-foreground: 220 15% 95%;
-    --popover: 230 18% 12%;
-    --popover-foreground: 220 15% 95%;
-    --primary: 252 60% 60%;
+    --background: 221 55% 8%;
+    --foreground: 214 60% 95%;
+    --card: 221 50% 12%;
+    --card-foreground: 214 60% 95%;
+    --popover: 221 50% 12%;
+    --popover-foreground: 214 60% 95%;
+    --primary: 213 65% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 230 15% 18%;
-    --secondary-foreground: 220 15% 90%;
-    --muted: 230 15% 15%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 36 95% 55%;
-    --accent-foreground: 30 80% 10%;
-    --destructive: 0 65% 45%;
+    --secondary: 221 40% 18%;
+    --secondary-foreground: 214 60% 90%;
+    --muted: 221 40% 15%;
+    --muted-foreground: 214 20% 58%;
+    --accent: 213 65% 65%;
+    --accent-foreground: 221 73% 10%;
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 230 15% 18%;
-    --input: 230 15% 18%;
-    --ring: 252 60% 60%;
-    --chart-1: 252 60% 60%;
-    --chart-2: 36 95% 55%;
+    --border: 221 40% 20%;
+    --input: 221 40% 20%;
+    --ring: 213 65% 58%;
+    --chart-1: 213 65% 58%;
+    --chart-2: 213 65% 72%;
     --chart-3: 170 55% 50%;
     --chart-4: 340 65% 60%;
     --chart-5: 200 70% 55%;
-    --sidebar-background: 252 45% 8%;
-    --sidebar-foreground: 220 15% 93%;
-    --sidebar-primary: 252 60% 60%;
+    --sidebar-background: 221 73% 10%;
+    --sidebar-foreground: 214 60% 93%;
+    --sidebar-primary: 213 65% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 252 30% 15%;
-    --sidebar-accent-foreground: 220 15% 93%;
-    --sidebar-border: 252 25% 14%;
-    --sidebar-ring: 252 60% 60%;
+    --sidebar-accent: 221 60% 18%;
+    --sidebar-accent-foreground: 214 60% 93%;
+    --sidebar-border: 221 55% 16%;
+    --sidebar-ring: 213 65% 65%;
   }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    @apply h-full;
+    -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body h-full;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+  #root {
+    @apply h-full;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }

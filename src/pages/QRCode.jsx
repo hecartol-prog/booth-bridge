@@ -2,7 +2,7 @@ import React from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, Download } from "lucide-react";
+import { Share2 } from "lucide-react";
 import QRGenerator from "@/components/qr/QRGenerator";
 
 export default function QRCodePage() {

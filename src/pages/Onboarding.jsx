@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { QrCode, Briefcase, ShoppingBag, ArrowRight, Upload, X, ScanLine, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import { Briefcase, ShoppingBag, ArrowRight, Upload, X, ScanLine, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const INDUSTRIES = [
@@ -185,9 +185,11 @@ export default function Onboarding() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <QrCode className="w-7 h-7 text-primary-foreground" />
-          </div>
+          <img
+            src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+            alt="Booth Bridge"
+            className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4"
+          />
           <h1 className="text-2xl font-display font-bold">Welcome to Booth Bridge</h1>
           <p className="text-muted-foreground mt-1 text-sm">Let's set up your profile</p>
         </div>
