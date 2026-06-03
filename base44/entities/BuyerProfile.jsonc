@@ -12,6 +12,10 @@
     "company": {
       "type": "string"
     },
+    "industry": {
+      "type": "string",
+      "description": "Buyer's industry sector"
+    },
     "interests": {
       "type": "array",
       "items": {
