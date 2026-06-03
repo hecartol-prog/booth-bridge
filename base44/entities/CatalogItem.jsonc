@@ -1,0 +1,90 @@
+{
+  "name": "CatalogItem",
+  "type": "object",
+  "properties": {
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "exhibitor_profile_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "company_profile",
+        "product_catalog",
+        "new_collection",
+        "factory_presentation",
+        "certificates",
+        "price_list",
+        "video",
+        "other"
+      ],
+      "default": "product_catalog"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "download_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "exhibitor_user_id",
+    "title",
+    "type",
+    "file_url"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

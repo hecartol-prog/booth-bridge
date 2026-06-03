@@ -1,0 +1,54 @@
+{
+  "name": "SavedBooth",
+  "type": "object",
+  "properties": {
+    "buyer_id": {
+      "type": "string"
+    },
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "exhibitor_profile_id": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "exhibitor_company": {
+      "type": "string"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "visit_status": {
+      "type": "string",
+      "enum": [
+        "interested",
+        "follow_up",
+        "request_quotation",
+        "sample_requested",
+        "supplier_approved"
+      ],
+      "default": "interested"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    }
+  },
+  "required": [
+    "buyer_id",
+    "exhibitor_user_id"
+  ]
+}
