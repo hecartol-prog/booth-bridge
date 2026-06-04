@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+
+const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -62,13 +64,13 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="h-full bg-background flex overflow-hidden">
+    <div className="h-screen bg-background flex overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-full">
         <div className="p-5">
           <Link to="/" className="flex items-center gap-2.5">
             <img
-              src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+              src={LOGO}
               alt="Booth Bridge"
               className="w-9 h-9 rounded-xl object-cover"
             />
@@ -127,7 +129,7 @@ export default function AppLayout() {
             <div className="p-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <img
-                  src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+                  src={LOGO}
                   alt="Booth Bridge"
                   className="w-8 h-8 rounded-xl object-cover"
                 />
@@ -195,7 +197,7 @@ export default function AppLayout() {
           </button>
           <div className="flex items-center gap-2">
             <img
-              src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+              src={LOGO}
               alt="Booth Bridge"
               className="w-7 h-7 rounded-lg object-cover"
             />

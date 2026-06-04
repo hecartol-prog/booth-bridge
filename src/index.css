@@ -88,11 +88,10 @@
     -webkit-tap-highlight-color: transparent;
     box-sizing: border-box;
   }
-  html, body, #root {
+  html {
     height: 100%;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
     -webkit-text-size-adjust: 100%;
   }
   body {
@@ -100,10 +99,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior: none;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
   }
   #root {
     display: flex;
     flex-direction: column;
+    min-height: 100%;
+    width: 100%;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);

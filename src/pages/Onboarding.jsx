@@ -186,12 +186,12 @@ export default function Onboarding() {
   const currentStep = step === 1 ? 1 : role === "buyer" ? step : 2;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start sm:justify-center py-8 px-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <img
-            src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/1e8923133_LS20260603100316.png"
+            src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png"
             alt="Booth Bridge"
             className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4"
           />
