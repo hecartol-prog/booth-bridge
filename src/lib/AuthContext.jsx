@@ -64,16 +64,18 @@ export const AuthProvider = ({ children }) => {
               message: 'User not registered for this app'
             });
           } else {
+            // Treat any other 403 reason as auth_required so user gets redirected to login
             setAuthError({
-              type: reason,
+              type: 'auth_required',
               message: appError.message
             });
           }
         } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
+          // Non-403 errors: don't block the app, just try to proceed unauthenticated
+          setIsLoadingPublicSettings(false);
+          setIsLoadingAuth(false);
+          setAuthChecked(true);
+          return;
         }
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
