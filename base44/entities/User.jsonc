@@ -18,6 +18,14 @@
     "profile_id": {
       "type": "string",
       "description": "Reference to ExhibitorProfile or BuyerProfile"
+    },
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "exhibitor",
+        "buyer"
+      ],
+      "description": "Self-reported role set during onboarding"
     }
   }
 }
