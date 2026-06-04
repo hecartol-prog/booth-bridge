@@ -92,6 +92,7 @@ export default function Onboarding() {
   // Card scan state
   const [scanStep, setScanStep] = useState("upload"); // "upload" | "scanning" | "done"
   const [cardPreview, setCardPreview] = useState(null);
+  const [finishError, setFinishError] = useState(null);
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
@@ -151,37 +152,43 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     setSaving(true);
-    const me = await base44.auth.me();
+    setFinishError(null);
+    try {
+      const me = await base44.auth.me();
 
-    if (role === "exhibitor") {
-      const profile = await base44.entities.ExhibitorProfile.create({
-        user_id: me.id,
-        company_name: companyName,
-        booth_number: boothNumber,
-        event_name: eventName,
-        logo_url: logo || "",
-        digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
-      });
-      await base44.auth.updateMe({ role: "exhibitor", onboarded: true, profile_id: profile.id });
-    } else {
-      const profile = await base44.entities.BuyerProfile.create({
-        user_id: me.id,
-        job_title: jobTitle,
-        company: buyerCompany,
-        industry,
-        interests: industry ? [industry] : [],
-        digital_card: {
-          name: me.full_name,
-          email: email || me.email,
-          title: jobTitle,
-          phone,
-          website,
-          linkedin,
-        },
-      });
-      await base44.auth.updateMe({ role: "buyer", onboarded: true, profile_id: profile.id });
+      if (role === "exhibitor") {
+        const profile = await base44.entities.ExhibitorProfile.create({
+          user_id: me.id,
+          company_name: companyName,
+          booth_number: boothNumber,
+          event_name: eventName,
+          logo_url: logo || "",
+          digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
+        });
+        await base44.auth.updateMe({ role: "exhibitor", onboarded: true, profile_id: profile.id });
+      } else {
+        const profile = await base44.entities.BuyerProfile.create({
+          user_id: me.id,
+          job_title: jobTitle,
+          company: buyerCompany,
+          industry: industry || "",
+          interests: industry ? [industry] : [],
+          digital_card: {
+            name: me.full_name,
+            email: email || me.email,
+            title: jobTitle,
+            phone,
+            website,
+            linkedin: linkedin || "",
+          },
+        });
+        await base44.auth.updateMe({ role: "buyer", onboarded: true, profile_id: profile.id });
+      }
+      window.location.href = "/";
+    } catch (err) {
+      setFinishError(err?.message || "Something went wrong. Please try again.");
+      setSaving(false);
     }
-    window.location.href = "/";
   };
 
   // Total steps: 1 (role) + 2 (buyer: scan + form) or 2 (exhibitor: booth form)
@@ -372,6 +379,9 @@ export default function Onboarding() {
                 </div>
               </div>
 
+              {finishError && (
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{finishError}</div>
+              )}
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">{t("onboarding.back")}</Button>
                 <Button onClick={handleFinish} disabled={saving} className="flex-1">
@@ -418,6 +428,9 @@ export default function Onboarding() {
                   </label>
                 )}
               </div>
+              {finishError && (
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{finishError}</div>
+              )}
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">{t("onboarding.back")}</Button>
                 <Button onClick={handleFinish} disabled={!companyName || !boothNumber || !eventName || saving} className="flex-1">
