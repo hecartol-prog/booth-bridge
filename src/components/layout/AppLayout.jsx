@@ -60,7 +60,7 @@ export default function AppLayout() {
 
   const logoText = (size = "base") => (
     <span
-      className={`font-bold text-sidebar-foreground tracking-widest uppercase ${size === "sm" ? "text-xs" : size === "xs" ? "text-[10px]" : "text-sm"}`}
+      className={`font-bold text-white tracking-widest uppercase ${size === "sm" ? "text-xs" : size === "xs" ? "text-[10px]" : "text-sm"}`}
       style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}
     >
       Booth Bridge
@@ -159,7 +159,9 @@ export default function AppLayout() {
           </button>
           <div className="flex items-center gap-2">
             <img src={LOGO} alt="Booth Bridge" className="w-7 h-7 rounded-lg object-cover" />
-            {logoText("xs")}
+            <span className="font-bold text-foreground tracking-widest uppercase text-[10px]" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}>
+              Booth Bridge
+            </span>
           </div>
           <Link to="/notifications" className="relative" aria-label={t("nav.notifications")}>
             <Bell className="w-5 h-5" />
