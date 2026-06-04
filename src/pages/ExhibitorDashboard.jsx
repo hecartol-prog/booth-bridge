@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Inbox, Calendar, TrendingUp, Camera, FileText, Zap, Sparkles } from "lucide-react";
+import { Users, Inbox, Calendar, TrendingUp, Camera, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
@@ -28,7 +28,13 @@ export default function ExhibitorDashboard() {
 
   const { data: meetings = [] } = useQuery({
     queryKey: ["ex-meetings", user?.id],
-    queryFn: () => base44.entities.Meeting.list("-created_date", 50),
+    queryFn: async () => {
+      const [asProposer, asRecipient] = await Promise.all([
+        base44.entities.Meeting.filter({ proposed_by: user.id }),
+        base44.entities.Meeting.filter({ proposed_to: user.id }),
+      ]);
+      return [...asProposer, ...asRecipient];
+    },
     enabled: !!user?.id,
   });
 
@@ -84,24 +90,6 @@ export default function ExhibitorDashboard() {
             {profile.company_name} · {t("dashboard.booth")} {profile.booth_number} · {profile.event_name}
           </p>
         )}
-      </div>
-
-      {/* AI Feature Teasers */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <Link to="/matchmaking">
-          <Card className="p-3 bg-gradient-to-br from-primary/5 to-accent/10 border-primary/20 hover:shadow-md transition cursor-pointer">
-            <Zap className="w-5 h-5 text-primary mb-1.5" />
-            <p className="font-bold text-xs">{t("dashboard.smartMatchmaking")}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.findBuyerMatches")}</p>
-          </Card>
-        </Link>
-        <Link to="/ai-assistant">
-          <Card className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 hover:shadow-md transition cursor-pointer">
-            <Sparkles className="w-5 h-5 text-purple-600 mb-1.5" />
-            <p className="font-bold text-xs">{t("dashboard.aiAssistant")}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.summarizeLeads")}</p>
-          </Card>
-        </Link>
       </div>
 
       {/* Stats */}

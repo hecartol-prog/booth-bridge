@@ -102,8 +102,22 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     },
   });
 
+  const { data: existingConnection } = useQuery({
+    queryKey: ["booth-connection", user?.id, exhibitorUserId],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const conns = await base44.entities.Connection.filter({
+        exhibitor_user_id: exhibitorUserId,
+        buyer_user_id: user.id,
+      });
+      return conns[0] || null;
+    },
+    enabled: !!user?.id && !!exhibitorUserId && isBuyer,
+  });
+
   const rfiMutation = useMutation({
     mutationFn: () => base44.entities.RFI.create({
+      connection_id: existingConnection?.id || "",
       buyer_user_id: user.id,
       exhibitor_user_id: exhibitorUserId,
       request_type: rfiType,

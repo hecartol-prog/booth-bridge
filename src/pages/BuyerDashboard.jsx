@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Bookmark, Camera, Package, BookmarkCheck,
-  ArrowRight, Building2, FileText, TrendingUp, Sparkles, Zap
+  Bookmark, Camera, Package,
+  ArrowRight, Building2, FileText, TrendingUp
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -68,24 +68,6 @@ export default function BuyerDashboard() {
           {profile?.company && ` ${t("common.at")} ${profile.company}`}
           {!profile?.job_title && !profile?.company && t("dashboard.yourTradeShowBrain")}
         </p>
-      </div>
-
-      {/* AI Feature Cards */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <Link to="/matchmaking">
-          <Card className="p-3 bg-gradient-to-br from-primary/5 to-accent/10 border-primary/20 hover:shadow-md transition cursor-pointer h-full">
-            <Zap className="w-5 h-5 text-primary mb-1.5" />
-            <p className="font-bold text-xs">{t("dashboard.smartMatches")}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.aiPoweredMeet")}</p>
-          </Card>
-        </Link>
-        <Link to="/opportunities">
-          <Card className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-md transition cursor-pointer h-full">
-            <TrendingUp className="w-5 h-5 text-green-600 mb-1.5" />
-            <p className="font-bold text-xs">{t("dashboard.opportunitiesBoard")}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.b2bSourcingBoard")}</p>
-          </Card>
-        </Link>
       </div>
 
       {/* Primary CTAs */}

@@ -24,8 +24,16 @@ export default function Meetings() {
   const { data: meetings = [], isLoading } = useQuery({
     queryKey: ["meetings", user?.id],
     queryFn: async () => {
-      const all = await base44.entities.Meeting.list("-created_date", 100);
-      return all.filter(m => m.proposed_by === user.id || m.proposed_to === user.id);
+      const [asProposer, asRecipient] = await Promise.all([
+        base44.entities.Meeting.filter({ proposed_by: user.id }, "-created_date"),
+        base44.entities.Meeting.filter({ proposed_to: user.id }, "-created_date"),
+      ]);
+      const seen = new Set();
+      return [...asProposer, ...asRecipient].filter(m => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      }).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!user?.id,
   });
