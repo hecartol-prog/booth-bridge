@@ -3,40 +3,50 @@ import React, { useState } from "react";
 const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { useI18n } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Package, Camera, CreditCard, LogOut, User,
-  Bookmark, BookmarkCheck, Library
+  Bookmark, BookmarkCheck, Library, TrendingUp, Sparkles, Zap
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 
-const exhibitorNav = [
-  { path: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { path: "/qr", icon: QrCode, label: "My QR" },
-  { path: "/connections", icon: Users, label: "Leads" },
-  { path: "/rfi-inbox", icon: Inbox, label: "RFI Inbox" },
-  { path: "/catalog-library", icon: Library, label: "Catalogs" },
-  { path: "/products", icon: Package, label: "Products" },
-  { path: "/meetings", icon: Calendar, label: "Meetings" },
-  { path: "/business-card", icon: CreditCard, label: "My Card" },
-];
-
-const buyerNav = [
-  { path: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { path: "/scan", icon: Camera, label: "Scan Booth" },
-  { path: "/saved-booths", icon: Bookmark, label: "Saved Booths" },
-  { path: "/my-library", icon: BookmarkCheck, label: "My Library" },
-  { path: "/my-rfis", icon: Inbox, label: "Requests" },
-  { path: "/meetings", icon: Calendar, label: "Meetings" },
-  { path: "/qr", icon: QrCode, label: "My QR" },
-];
-
 export default function AppLayout() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const exhibitorNav = [
+    { path: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
+    { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
+    { path: "/connections", icon: Users, labelKey: "nav.leads" },
+    { path: "/matchmaking", icon: Zap, labelKey: "nav.matchmaking" },
+    { path: "/rfi-inbox", icon: Inbox, labelKey: "nav.rfiInbox" },
+    { path: "/catalog-library", icon: Library, labelKey: "nav.catalogs" },
+    { path: "/products", icon: Package, labelKey: "nav.products" },
+    { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
+    { path: "/opportunities", icon: TrendingUp, labelKey: "nav.opportunities" },
+    { path: "/ai-assistant", icon: Sparkles, labelKey: "nav.aiAssistant" },
+    { path: "/business-card", icon: CreditCard, labelKey: "nav.myCard" },
+  ];
+
+  const buyerNav = [
+    { path: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
+    { path: "/scan", icon: Camera, labelKey: "nav.scanBooth" },
+    { path: "/matchmaking", icon: Zap, labelKey: "nav.matchmaking" },
+    { path: "/saved-booths", icon: Bookmark, labelKey: "nav.savedBooths" },
+    { path: "/my-library", icon: BookmarkCheck, labelKey: "nav.myLibrary" },
+    { path: "/my-rfis", icon: Inbox, labelKey: "nav.requests" },
+    { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
+    { path: "/opportunities", icon: TrendingUp, labelKey: "nav.opportunities" },
+    { path: "/ai-assistant", icon: Sparkles, labelKey: "nav.aiAssistant" },
+    { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
+  ];
+
   const navItems = user?.role === "exhibitor" ? exhibitorNav : buyerNav;
 
   const { data: unreadCount = 0 } = useQuery({
@@ -63,62 +73,68 @@ export default function AppLayout() {
     </span>
   );
 
+  const NavLinks = ({ onNavigate }) => (
+    <>
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+        {navItems.map(item => (
+          <Link
+            key={item.path}
+            to={item.path}
+            onClick={onNavigate}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              location.pathname === item.path
+                ? "bg-sidebar-accent text-sidebar-primary"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            }`}
+          >
+            <item.icon className="w-4 h-4 shrink-0" />
+            {t(item.labelKey)}
+          </Link>
+        ))}
+      </nav>
+      <div className="p-3 border-t border-sidebar-border">
+        <Link
+          to="/notifications"
+          onClick={onNavigate}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 relative"
+        >
+          <Bell className="w-4 h-4" />
+          {t("nav.notifications")}
+          {unreadCount > 0 && (
+            <Badge className="ml-auto bg-accent text-accent-foreground text-xs px-1.5 py-0.5">{unreadCount}</Badge>
+          )}
+        </Link>
+        <Link
+          to="/profile"
+          onClick={onNavigate}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+        >
+          <User className="w-4 h-4" />
+          {t("nav.profile")}
+        </Link>
+        <LanguageSwitcher />
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+        >
+          <LogOut className="w-4 h-4" />
+          {t("nav.logout")}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div className="h-screen bg-background flex overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-full">
         <div className="p-5">
           <Link to="/" className="flex items-center gap-2.5">
-            <img
-              src={LOGO}
-              alt="Booth Bridge"
-              className="w-9 h-9 rounded-xl object-cover"
-            />
+            <img src={LOGO} alt="Booth Bridge" className="w-9 h-9 rounded-xl object-cover" />
             {logoText("base")}
           </Link>
         </div>
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {navItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                location.pathname === item.path
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-              }`}
-            >
-              <item.icon className="w-4 h-4 shrink-0" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-3 border-t border-sidebar-border">
-          <Link
-            to="/notifications"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 relative"
-          >
-            <Bell className="w-4 h-4" />
-            Notifications
-            {unreadCount > 0 && (
-              <Badge className="ml-auto bg-accent text-accent-foreground text-xs px-1.5 py-0.5">{unreadCount}</Badge>
-            )}
-          </Link>
-          <Link
-            to="/profile"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-          >
-            <User className="w-4 h-4" />
-            Profile
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-          >
-            <LogOut className="w-4 h-4" />
-            Log out
-          </button>
-        </div>
+        <NavLinks onNavigate={undefined} />
       </aside>
 
       {/* Mobile overlay drawer */}
@@ -128,62 +144,14 @@ export default function AppLayout() {
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col animate-in slide-in-from-left">
             <div className="p-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img
-                  src={LOGO}
-                  alt="Booth Bridge"
-                  className="w-8 h-8 rounded-xl object-cover"
-                />
+                <img src={LOGO} alt="Booth Bridge" className="w-8 h-8 rounded-xl object-cover" />
                 {logoText("sm")}
               </div>
               <button onClick={() => setMobileOpen(false)}>
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-              {navItems.map(item => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === item.path
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 shrink-0" />
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="p-3 border-t border-sidebar-border">
-              <Link
-                to="/notifications"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-              >
-                <Bell className="w-4 h-4" />
-                Notifications
-                {unreadCount > 0 && (
-                  <Badge className="ml-auto bg-accent text-accent-foreground text-xs px-1.5 py-0.5">{unreadCount}</Badge>
-                )}
-              </Link>
-              <Link
-                to="/profile"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-              >
-                <User className="w-4 h-4" />
-                Profile
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-              >
-                <LogOut className="w-4 h-4" />
-                Log out
-              </button>
-            </div>
+            <NavLinks onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
@@ -192,18 +160,14 @@ export default function AppLayout() {
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Mobile top bar */}
         <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
-          <button onClick={() => setMobileOpen(true)}>
+          <button onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <img
-              src={LOGO}
-              alt="Booth Bridge"
-              className="w-7 h-7 rounded-lg object-cover"
-            />
+            <img src={LOGO} alt="Booth Bridge" className="w-7 h-7 rounded-lg object-cover" />
             {logoText("xs")}
           </div>
-          <Link to="/notifications" className="relative">
+          <Link to="/notifications" className="relative" aria-label={t("nav.notifications")}>
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">

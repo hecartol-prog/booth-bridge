@@ -1,0 +1,69 @@
+{
+  "name": "OpportunityPost",
+  "type": "object",
+  "properties": {
+    "posted_by_user_id": {
+      "type": "string"
+    },
+    "posted_by_name": {
+      "type": "string"
+    },
+    "posted_by_company": {
+      "type": "string"
+    },
+    "posted_by_role": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "opportunity_type": {
+      "type": "string",
+      "enum": [
+        "looking_for_supplier",
+        "looking_for_buyer",
+        "looking_for_distributor",
+        "looking_for_manufacturer",
+        "looking_for_partner",
+        "looking_for_investor",
+        "other"
+      ],
+      "default": "looking_for_supplier"
+    },
+    "product_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_countries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "default": "active"
+    },
+    "responses_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "posted_by_user_id",
+    "title",
+    "opportunity_type"
+  ]
+}

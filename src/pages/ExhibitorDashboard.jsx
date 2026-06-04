@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Inbox, Calendar, TrendingUp, Camera, FileText, Zap, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function ExhibitorDashboard() {
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const { data: connections = [] } = useQuery({
     queryKey: ["ex-connections", user?.id],
@@ -67,19 +69,19 @@ export default function ExhibitorDashboard() {
   });
 
   const stats = [
-    { title: "Total Leads", value: accepted.length, icon: Users, color: "text-primary" },
-    { title: "Pending", value: pending.length, icon: TrendingUp, color: "text-amber-500" },
-    { title: "Open RFIs", value: pendingRfis.length, icon: Inbox, color: "text-red-500" },
-    { title: "Meetings", value: meetings.length, icon: Calendar, color: "text-green-500" },
+    { title: t("dashboard.totalLeads"), value: accepted.length, icon: Users, color: "text-primary" },
+    { title: t("dashboard.pending"), value: pending.length, icon: TrendingUp, color: "text-amber-500" },
+    { title: t("dashboard.openRFIs"), value: pendingRfis.length, icon: Inbox, color: "text-red-500" },
+    { title: t("dashboard.meetings"), value: meetings.length, icon: Calendar, color: "text-green-500" },
   ];
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-display font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-display font-bold">{t("dashboard.dashboard")}</h1>
         {profile && (
           <p className="text-sm text-muted-foreground mt-1">
-            {profile.company_name} · Booth {profile.booth_number} · {profile.event_name}
+            {profile.company_name} · {t("dashboard.booth")} {profile.booth_number} · {profile.event_name}
           </p>
         )}
       </div>
@@ -89,15 +91,15 @@ export default function ExhibitorDashboard() {
         <Link to="/matchmaking">
           <Card className="p-3 bg-gradient-to-br from-primary/5 to-accent/10 border-primary/20 hover:shadow-md transition cursor-pointer">
             <Zap className="w-5 h-5 text-primary mb-1.5" />
-            <p className="font-bold text-xs">Smart Matchmaking</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Find your best buyer matches</p>
+            <p className="font-bold text-xs">{t("dashboard.smartMatchmaking")}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.findBuyerMatches")}</p>
           </Card>
         </Link>
         <Link to="/ai-assistant">
           <Card className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 hover:shadow-md transition cursor-pointer">
             <Sparkles className="w-5 h-5 text-purple-600 mb-1.5" />
-            <p className="font-bold text-xs">AI Assistant</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Summarize & follow up leads</p>
+            <p className="font-bold text-xs">{t("dashboard.aiAssistant")}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.summarizeLeads")}</p>
           </Card>
         </Link>
       </div>
@@ -119,7 +121,7 @@ export default function ExhibitorDashboard() {
         {/* Connections per hour */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-heading">Connections Today</CardTitle>
+            <CardTitle className="text-sm font-heading">{t("dashboard.connectionsToday")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={180}>
@@ -136,11 +138,11 @@ export default function ExhibitorDashboard() {
         {/* RFI Breakdown */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-heading">RFI Breakdown</CardTitle>
+            <CardTitle className="text-sm font-heading">{t("dashboard.rfiBreakdown")}</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">No RFIs yet</div>
+              <div className="text-center py-8 text-muted-foreground text-sm">{t("dashboard.noRFIs")}</div>
             ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={chartData} layout="vertical">
@@ -159,13 +161,13 @@ export default function ExhibitorDashboard() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-heading">Recent Leads</CardTitle>
-            <Link to="/connections" className="text-xs text-primary hover:underline">View all</Link>
+            <CardTitle className="text-sm font-heading">{t("dashboard.recentLeads")}</CardTitle>
+            <Link to="/connections" className="text-xs text-primary hover:underline">{t("dashboard.viewAll")}</Link>
           </div>
         </CardHeader>
         <CardContent>
           {accepted.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No leads yet. Share your QR code!</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">{t("dashboard.noLeads")}</p>
           ) : (
             <div className="space-y-2">
               {accepted.slice(0, 5).map(conn => (

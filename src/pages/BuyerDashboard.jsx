@@ -6,15 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Bookmark, Camera, Package, Search, BookmarkCheck,
-  ArrowRight, Building2, FileText, TrendingUp
+  Bookmark, Camera, Package, BookmarkCheck,
+  ArrowRight, Building2, FileText, TrendingUp, Sparkles, Zap
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
 import DigitalBooth from "./DigitalBooth";
 
 export default function BuyerDashboard() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [viewBooth, setViewBooth] = useState(null);
 
   const { data: savedBooths = [] } = useQuery({
@@ -49,23 +51,41 @@ export default function BuyerDashboard() {
   }
 
   const stats = [
-    { label: "Saved Booths", value: savedBooths.length, icon: Building2, color: "text-primary", path: "/saved-booths" },
-    { label: "Saved Products", value: savedProducts.length, icon: Package, color: "text-purple-600", path: "/my-library" },
-    { label: "Requests Sent", value: rfis.length, icon: FileText, color: "text-amber-600", path: "/my-rfis" },
-    { label: "Follow Ups", value: savedBooths.filter(b => b.visit_status === "follow_up").length, icon: TrendingUp, color: "text-green-600", path: "/saved-booths" },
+    { label: t("dashboard.savedBooths"), value: savedBooths.length, icon: Building2, color: "text-primary", path: "/saved-booths" },
+    { label: t("dashboard.savedProducts"), value: savedProducts.length, icon: Package, color: "text-purple-600", path: "/my-library" },
+    { label: t("dashboard.requestsSent"), value: rfis.length, icon: FileText, color: "text-amber-600", path: "/my-rfis" },
+    { label: t("dashboard.followUps"), value: savedBooths.filter(b => b.visit_status === "follow_up").length, icon: TrendingUp, color: "text-green-600", path: "/saved-booths" },
   ];
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-display font-bold">
-          Hey, {user?.full_name?.split(" ")[0]} 👋
+          {t("dashboard.hey")}, {user?.full_name?.split(" ")[0]} 👋
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           {profile?.job_title && `${profile.job_title}`}
-          {profile?.company && ` at ${profile.company}`}
-          {!profile?.job_title && !profile?.company && "Your trade show brain"}
+          {profile?.company && ` ${t("common.at")} ${profile.company}`}
+          {!profile?.job_title && !profile?.company && t("dashboard.yourTradeShowBrain")}
         </p>
+      </div>
+
+      {/* AI Feature Cards */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <Link to="/matchmaking">
+          <Card className="p-3 bg-gradient-to-br from-primary/5 to-accent/10 border-primary/20 hover:shadow-md transition cursor-pointer h-full">
+            <Zap className="w-5 h-5 text-primary mb-1.5" />
+            <p className="font-bold text-xs">{t("dashboard.smartMatches")}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.aiPoweredMeet")}</p>
+          </Card>
+        </Link>
+        <Link to="/opportunities">
+          <Card className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-md transition cursor-pointer h-full">
+            <TrendingUp className="w-5 h-5 text-green-600 mb-1.5" />
+            <p className="font-bold text-xs">{t("dashboard.opportunitiesBoard")}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{t("dashboard.b2bSourcingBoard")}</p>
+          </Card>
+        </Link>
       </div>
 
       {/* Primary CTAs */}
@@ -73,15 +93,15 @@ export default function BuyerDashboard() {
         <Link to="/scan">
           <Card className="p-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer h-full">
             <Camera className="w-6 h-6 mb-2" />
-            <p className="font-bold text-sm">Scan Booth QR</p>
-            <p className="text-xs opacity-80 mt-0.5">Instant access to any supplier</p>
+            <p className="font-bold text-sm">{t("dashboard.scanBoothQR")}</p>
+            <p className="text-xs opacity-80 mt-0.5">{t("dashboard.instantAccess")}</p>
           </Card>
         </Link>
         <Link to="/saved-booths">
           <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer h-full">
             <Bookmark className="w-6 h-6 text-primary mb-2" />
-            <p className="font-bold text-sm">Saved Booths</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{savedBooths.length} suppliers</p>
+            <p className="font-bold text-sm">{t("dashboard.savedBooths")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{savedBooths.length} {t("dashboard.suppliers")}</p>
           </Card>
         </Link>
       </div>
@@ -104,9 +124,9 @@ export default function BuyerDashboard() {
         <Card className="mb-4">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-heading">Recent Booths</CardTitle>
+              <CardTitle className="text-sm font-heading">{t("dashboard.recentBooths")}</CardTitle>
               <Link to="/saved-booths" className="text-xs text-primary hover:underline flex items-center gap-1">
-                View all <ArrowRight className="w-3 h-3" />
+                {t("dashboard.viewAll")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           </CardHeader>
@@ -123,7 +143,7 @@ export default function BuyerDashboard() {
                     <div>
                       <p className="text-sm font-medium">{booth.exhibitor_company || "Exhibitor"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {booth.booth_number && `Booth ${booth.booth_number}`}
+                        {booth.booth_number && `${t("dashboard.booth")} ${booth.booth_number}`}
                         {booth.event_name && ` · ${booth.event_name}`}
                       </p>
                     </div>
@@ -141,9 +161,9 @@ export default function BuyerDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-heading">Recent Products</CardTitle>
+              <CardTitle className="text-sm font-heading">{t("dashboard.recentProducts")}</CardTitle>
               <Link to="/my-library" className="text-xs text-primary hover:underline flex items-center gap-1">
-                View all <ArrowRight className="w-3 h-3" />
+                {t("dashboard.viewAll")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           </CardHeader>
@@ -170,13 +190,13 @@ export default function BuyerDashboard() {
       {savedBooths.length === 0 && savedProducts.length === 0 && (
         <Card className="p-8 text-center">
           <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-          <p className="font-semibold text-sm">Start exploring!</p>
+          <p className="font-semibold text-sm">{t("dashboard.startExploring")}</p>
           <p className="text-xs text-muted-foreground mt-1 mb-4">
-            Scan exhibitor QR codes to access their digital booth, catalogs, and products instantly.
+            {t("dashboard.scanToAccess")}
           </p>
           <Link to="/scan">
             <Button size="sm">
-              <Camera className="w-4 h-4 mr-2" /> Scan First Booth
+              <Camera className="w-4 h-4 mr-2" /> {t("dashboard.scanFirstBooth")}
             </Button>
           </Link>
         </Card>

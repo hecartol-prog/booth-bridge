@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { useI18n } from "@/lib/i18n";
 
 export default function Login() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,35 +41,27 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
-      title="Welcome back"
-      subtitle="Log in to your account"
+      title={t("auth.welcomeBack")}
+      subtitle={t("auth.loginSubtitle")}
       footer={
         <>
-          Don't have an account?{" "}
+          {t("auth.noAccount")}{" "}
           <Link to="/register" className="text-primary font-medium hover:underline">
-            Create one
+            {t("auth.createOne")}
           </Link>
         </>
       }
     >
       <div className="flex flex-col gap-3 mb-6">
-        <Button
-          variant="outline"
-          className="w-full h-12 text-sm font-medium"
-          onClick={handleGoogle}
-        >
+        <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleGoogle}>
           <GoogleIcon className="w-5 h-5 mr-2" />
-          Continue with Google
+          {t("auth.continueWithGoogle")}
         </Button>
-        <Button
-          variant="outline"
-          className="w-full h-12 text-sm font-medium"
-          onClick={handleLinkedIn}
-        >
+        <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleLinkedIn}>
           <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="#0A66C2">
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
           </svg>
-          Continue with LinkedIn
+          {t("auth.continueWithLinkedIn")}
         </Button>
       </div>
 
@@ -76,7 +70,7 @@ export default function Login() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
+          <span className="bg-card px-3 text-muted-foreground">{t("common.or")}</span>
         </div>
       </div>
 
@@ -88,7 +82,7 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("auth.email")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -106,9 +100,9 @@ export default function Login() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("auth.password")}</Label>
             <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
+              {t("auth.forgotPassword")}
             </Link>
           </div>
           <div className="relative">
@@ -129,11 +123,9 @@ export default function Login() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Logging in...
+              {t("auth.loggingIn")}
             </>
-          ) : (
-            "Log in"
-          )}
+          ) : t("auth.login")}
         </Button>
       </form>
     </AuthLayout>

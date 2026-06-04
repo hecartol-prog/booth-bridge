@@ -4,6 +4,7 @@ import { queryClientInstance } from "@/lib/query-client";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import PageNotFound from "./lib/PageNotFound";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import { I18nProvider } from "@/lib/i18n";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -109,14 +110,16 @@ function OnboardedGuard({ children }) {
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </I18nProvider>
   );
 }
 
