@@ -71,7 +71,11 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          // Non-403 errors: don't block the app, just try to proceed unauthenticated
+          // Non-403 errors (network issues, etc): treat as auth_required so login page shows
+          setAuthError({
+            type: 'auth_required',
+            message: appError.message || 'Failed to load app'
+          });
           setIsLoadingPublicSettings(false);
           setIsLoadingAuth(false);
           setAuthChecked(true);

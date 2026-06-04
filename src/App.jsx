@@ -48,10 +48,28 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
+    } else if (authError.type === "auth_required") {
+      // Render login route — don't call navigateToLogin() during render (causes loops)
+      return (
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      );
     } else {
-      // For auth_required or any other error, redirect to login
-      navigateToLogin();
-      return null;
+      // Unknown errors — just show the normal routes so login page is accessible
+      return (
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      );
     }
   }
 
