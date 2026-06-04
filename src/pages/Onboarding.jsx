@@ -157,31 +157,63 @@ export default function Onboarding() {
       const me = await base44.auth.me();
 
       if (role === "exhibitor") {
-        const profile = await base44.entities.ExhibitorProfile.create({
-          user_id: me.id,
-          company_name: companyName,
-          booth_number: boothNumber,
-          event_name: eventName,
-          logo_url: logo || "",
-          digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
-        });
+        const existing = await base44.entities.ExhibitorProfile.filter({ user_id: me.id });
+        let profile;
+        if (existing.length > 0) {
+          profile = await base44.entities.ExhibitorProfile.update(existing[0].id, {
+            company_name: companyName,
+            booth_number: boothNumber,
+            event_name: eventName,
+            logo_url: logo || existing[0].logo_url || "",
+          });
+          profile = { ...existing[0], ...profile };
+        } else {
+          profile = await base44.entities.ExhibitorProfile.create({
+            user_id: me.id,
+            company_name: companyName,
+            booth_number: boothNumber,
+            event_name: eventName,
+            logo_url: logo || "",
+            digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
+          });
+        }
         await base44.auth.updateMe({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
       } else {
-        const profile = await base44.entities.BuyerProfile.create({
-          user_id: me.id,
-          job_title: jobTitle,
-          company: buyerCompany,
-          industry: industry || "",
-          interests: industry ? [industry] : [],
-          digital_card: {
-            name: me.full_name,
-            email: email || me.email,
-            title: jobTitle,
-            phone,
-            website,
-            linkedin: linkedin || "",
-          },
-        });
+        const existing = await base44.entities.BuyerProfile.filter({ user_id: me.id });
+        let profile;
+        if (existing.length > 0) {
+          profile = await base44.entities.BuyerProfile.update(existing[0].id, {
+            job_title: jobTitle,
+            company: buyerCompany,
+            industry: industry || "",
+            interests: industry ? [industry] : [],
+            digital_card: {
+              name: me.full_name,
+              email: email || me.email,
+              title: jobTitle,
+              phone,
+              website,
+              linkedin: linkedin || "",
+            },
+          });
+          profile = { ...existing[0], ...profile };
+        } else {
+          profile = await base44.entities.BuyerProfile.create({
+            user_id: me.id,
+            job_title: jobTitle,
+            company: buyerCompany,
+            industry: industry || "",
+            interests: industry ? [industry] : [],
+            digital_card: {
+              name: me.full_name,
+              email: email || me.email,
+              title: jobTitle,
+              phone,
+              website,
+              linkedin: linkedin || "",
+            },
+          });
+        }
         await base44.auth.updateMe({ user_role: "buyer", onboarded: true, profile_id: profile.id });
       }
       window.location.href = "/";
