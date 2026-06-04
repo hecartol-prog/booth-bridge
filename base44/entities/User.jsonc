@@ -2,14 +2,13 @@
   "name": "User",
   "type": "object",
   "properties": {
-    "role": {
+    "user_role": {
       "type": "string",
       "enum": [
-        "admin",
         "exhibitor",
         "buyer"
       ],
-      "default": "buyer"
+      "description": "App-level role: exhibitor or buyer"
     },
     "onboarded": {
       "type": "boolean",
@@ -17,7 +16,7 @@
     },
     "profile_id": {
       "type": "string",
-      "description": "Reference to ExhibitorProfile or BuyerProfile"
+      "description": "ID of the linked ExhibitorProfile or BuyerProfile"
     }
   }
 }

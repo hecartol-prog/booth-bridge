@@ -9,10 +9,10 @@ import { User, Mail, Building2, MapPin, Briefcase, LogOut } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
-  const isExhibitor = user?.role === "exhibitor";
+  const isExhibitor = user?.user_role === "exhibitor";
 
   const { data: profile } = useQuery({
-    queryKey: ["profile-data", user?.id, user?.role],
+    queryKey: ["profile-data", user?.id, user?.user_role],
     queryFn: async () => {
       if (isExhibitor) {
         const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: user.id });
@@ -40,7 +40,7 @@ export default function Profile() {
           </div>
           <div>
             <h2 className="text-lg font-display font-bold">{user?.full_name}</h2>
-            <Badge variant="outline" className="capitalize">{user?.role}</Badge>
+            <Badge variant="outline" className="capitalize">{user?.user_role}</Badge>
           </div>
         </div>
 

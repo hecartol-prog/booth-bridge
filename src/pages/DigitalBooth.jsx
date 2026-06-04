@@ -50,7 +50,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const [rfiType, setRfiType] = useState("brochure");
   const [rfiMessage, setRfiMessage] = useState("");
 
-  const isBuyer = user?.role !== "exhibitor";
+  const isBuyer = user?.user_role !== "exhibitor";
 
   const { data: profile } = useQuery({
     queryKey: ["digital-booth-profile", exhibitorUserId],

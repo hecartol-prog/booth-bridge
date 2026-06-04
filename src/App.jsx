@@ -120,7 +120,7 @@ const AuthenticatedApp = () => {
 function OnboardedGuard({ children }) {
   const { user } = useAuth();
   
-  if (user && !user.onboarded) {
+  if (user && (!user.onboarded || !user.user_role)) {
     return <Navigate to="/onboarding" replace />;
   }
   

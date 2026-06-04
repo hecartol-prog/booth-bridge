@@ -22,7 +22,7 @@ export default function Connections() {
   const [noteDialog, setNoteDialog] = useState(null);
   const [noteText, setNoteText] = useState("");
 
-  const isExhibitor = user?.role === "exhibitor";
+  const isExhibitor = user?.user_role === "exhibitor";
 
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ["connections", user?.id],

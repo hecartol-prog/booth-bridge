@@ -16,7 +16,7 @@ export default function BusinessCard() {
     name: "", title: "", email: "", phone: "", website: "", linkedin: ""
   });
 
-  const isExhibitor = user?.role === "exhibitor";
+  const isExhibitor = user?.user_role === "exhibitor";
 
   const { data: profile } = useQuery({
     queryKey: ["card-profile", user?.id, user?.role],

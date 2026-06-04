@@ -165,7 +165,7 @@ export default function Onboarding() {
           logo_url: logo || "",
           digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
         });
-        await base44.auth.updateMe({ role: "exhibitor", onboarded: true, profile_id: profile.id });
+        await base44.auth.updateMe({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
       } else {
         const profile = await base44.entities.BuyerProfile.create({
           user_id: me.id,
@@ -182,7 +182,7 @@ export default function Onboarding() {
             linkedin: linkedin || "",
           },
         });
-        await base44.auth.updateMe({ role: "buyer", onboarded: true, profile_id: profile.id });
+        await base44.auth.updateMe({ user_role: "buyer", onboarded: true, profile_id: profile.id });
       }
       window.location.href = "/";
     } catch (err) {

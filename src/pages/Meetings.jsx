@@ -41,7 +41,7 @@ export default function Meetings() {
   const { data: connections = [] } = useQuery({
     queryKey: ["meeting-conns", user?.id],
     queryFn: async () => {
-      const filter = user?.role === "exhibitor"
+      const filter = user?.user_role === "exhibitor"
         ? { exhibitor_user_id: user.id, status: "accepted" }
         : { buyer_user_id: user.id, status: "accepted" };
       return base44.entities.Connection.filter(filter);
@@ -53,8 +53,8 @@ export default function Meetings() {
     mutationFn: async () => {
       const conn = connections.find(c => c.id === selectedConnection);
       if (!conn) return;
-      const targetId = user.role === "exhibitor" ? conn.buyer_user_id : conn.exhibitor_user_id;
-      const targetName = user.role === "exhibitor" ? conn.buyer_name : conn.exhibitor_name;
+      const targetId = user.user_role === "exhibitor" ? conn.buyer_user_id : conn.exhibitor_user_id;
+      const targetName = user.user_role === "exhibitor" ? conn.buyer_name : conn.exhibitor_name;
       
       const meeting = await base44.entities.Meeting.create({
         connection_id: selectedConnection,
@@ -240,7 +240,7 @@ END:VCALENDAR`;
                 <SelectContent>
                   {connections.map(conn => (
                     <SelectItem key={conn.id} value={conn.id}>
-                      {user.role === "exhibitor" ? conn.buyer_name : `${conn.exhibitor_company} · Booth ${conn.booth_number}`}
+                      {user.user_role === "exhibitor" ? conn.buyer_name : `${conn.exhibitor_company} · Booth ${conn.booth_number}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
