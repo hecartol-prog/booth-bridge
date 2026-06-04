@@ -8,7 +8,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Package, Camera, CreditCard, LogOut, User,
-  Bookmark, BookmarkCheck, Library, TrendingUp, Sparkles, Zap
+  Bookmark, BookmarkCheck, Library
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -24,26 +24,20 @@ export default function AppLayout() {
     { path: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
     { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
     { path: "/connections", icon: Users, labelKey: "nav.leads" },
-    { path: "/matchmaking", icon: Zap, labelKey: "nav.matchmaking" },
     { path: "/rfi-inbox", icon: Inbox, labelKey: "nav.rfiInbox" },
     { path: "/catalog-library", icon: Library, labelKey: "nav.catalogs" },
     { path: "/products", icon: Package, labelKey: "nav.products" },
     { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
-    { path: "/opportunities", icon: TrendingUp, labelKey: "nav.opportunities" },
-    { path: "/ai-assistant", icon: Sparkles, labelKey: "nav.aiAssistant" },
     { path: "/business-card", icon: CreditCard, labelKey: "nav.myCard" },
   ];
 
   const buyerNav = [
     { path: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
     { path: "/scan", icon: Camera, labelKey: "nav.scanBooth" },
-    { path: "/matchmaking", icon: Zap, labelKey: "nav.matchmaking" },
     { path: "/saved-booths", icon: Bookmark, labelKey: "nav.savedBooths" },
     { path: "/my-library", icon: BookmarkCheck, labelKey: "nav.myLibrary" },
     { path: "/my-rfis", icon: Inbox, labelKey: "nav.requests" },
     { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
-    { path: "/opportunities", icon: TrendingUp, labelKey: "nav.opportunities" },
-    { path: "/ai-assistant", icon: Sparkles, labelKey: "nav.aiAssistant" },
     { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
   ];
 

@@ -67,7 +67,7 @@ export default function Notifications() {
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                     !notif.read ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                   }`}>
-                    <Icon className="w-4.5 h-4.5" />
+                    <Icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1">
                     <p className={`text-sm ${!notif.read ? "font-semibold" : "font-medium"}`}>{notif.title}</p>

@@ -60,7 +60,7 @@ const AuthenticatedApp = () => {
         </Routes>
       );
     } else {
-      // Unknown errors — just show the normal routes so login page is accessible
+      // Unknown/network errors — show login so the app is still accessible
       return (
         <Routes>
           <Route path="/login" element={<Login />} />

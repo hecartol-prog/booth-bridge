@@ -33,7 +33,7 @@ export default function Meetings() {
   const { data: connections = [] } = useQuery({
     queryKey: ["meeting-conns", user?.id],
     queryFn: async () => {
-      const filter = user.role === "exhibitor"
+      const filter = user?.role === "exhibitor"
         ? { exhibitor_user_id: user.id, status: "accepted" }
         : { buyer_user_id: user.id, status: "accepted" };
       return base44.entities.Connection.filter(filter);

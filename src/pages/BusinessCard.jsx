@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Edit2, Save, Globe, Mail, Phone, Linkedin, Building2 } from "lucide-react";
+import { CreditCard, Edit2, Save, Globe, Mail, Phone, Link2, Building2 } from "lucide-react";
 
 export default function BusinessCard() {
   const { user } = useAuth();
@@ -96,7 +96,7 @@ export default function BusinessCard() {
           )}
           {card.linkedin && (
             <div className="flex items-center gap-2 text-sm">
-              <Linkedin className="w-4 h-4 text-muted-foreground" /> {card.linkedin}
+              <Link2 className="w-4 h-4 text-muted-foreground" /> {card.linkedin}
             </div>
           )}
         </div>

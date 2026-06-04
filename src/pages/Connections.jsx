@@ -52,10 +52,14 @@ export default function Connections() {
 
   const { data: allMeetings = [] } = useQuery({
     queryKey: ["connection-meetings", user?.id],
-    queryFn: () => base44.entities.Meeting.filter(
-      isExhibitor ? { proposed_to: user.id } : { proposed_by: user.id }
-    ),
-    enabled: !!user?.id && isExhibitor,
+    queryFn: async () => {
+      const [asProposedTo, asProposedBy] = await Promise.all([
+        base44.entities.Meeting.filter({ proposed_to: user.id }),
+        base44.entities.Meeting.filter({ proposed_by: user.id }),
+      ]);
+      return [...asProposedTo, ...asProposedBy];
+    },
+    enabled: !!user?.id,
   });
 
   const updateMutation = useMutation({
