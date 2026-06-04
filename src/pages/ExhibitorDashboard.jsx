@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Inbox, Calendar, TrendingUp, Camera, FileText } from "lucide-react";
+import { Users, Inbox, Calendar, TrendingUp, Camera, FileText, Zap, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -82,6 +82,24 @@ export default function ExhibitorDashboard() {
             {profile.company_name} · Booth {profile.booth_number} · {profile.event_name}
           </p>
         )}
+      </div>
+
+      {/* AI Feature Teasers */}
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <Link to="/matchmaking">
+          <Card className="p-3 bg-gradient-to-br from-primary/5 to-accent/10 border-primary/20 hover:shadow-md transition cursor-pointer">
+            <Zap className="w-5 h-5 text-primary mb-1.5" />
+            <p className="font-bold text-xs">Smart Matchmaking</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Find your best buyer matches</p>
+          </Card>
+        </Link>
+        <Link to="/ai-assistant">
+          <Card className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 hover:shadow-md transition cursor-pointer">
+            <Sparkles className="w-5 h-5 text-purple-600 mb-1.5" />
+            <p className="font-bold text-xs">AI Assistant</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Summarize & follow up leads</p>
+          </Card>
+        </Link>
       </div>
 
       {/* Stats */}
