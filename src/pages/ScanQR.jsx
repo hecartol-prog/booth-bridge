@@ -33,7 +33,7 @@ export default function ScanQR() {
       setBoothUserId(targetId);
 
       // Also silently create a connection record for exhibitor's lead tracking
-      if (user?.role === "buyer" || user?.user_type === "buyer") {
+      if (user?.role === "buyer") {
         const existing = await base44.entities.Connection.filter({
           exhibitor_user_id: targetId,
           buyer_user_id: user.id,

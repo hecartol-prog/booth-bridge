@@ -47,8 +47,7 @@ export default function AppLayout() {
     { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
   ];
 
-  const isExhibitor = user?.role === "exhibitor" || user?.user_type === "exhibitor";
-  const navItems = isExhibitor ? exhibitorNav : buyerNav;
+  const navItems = user?.role === "exhibitor" ? exhibitorNav : buyerNav;
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["unread-notifications", user?.id],

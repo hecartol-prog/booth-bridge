@@ -8,8 +8,7 @@ import QRGenerator from "@/components/qr/QRGenerator";
 export default function QRCodePage() {
   const { user } = useAuth();
   
-  const effectiveRole = user?.role === "exhibitor" || user?.user_type === "exhibitor" ? "exhibitor" : "buyer";
-  const qrValue = `boothbridge:connect:${user?.id}:${effectiveRole}`;
+  const qrValue = `boothbridge:connect:${user?.id}:${user?.role}`;
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -31,11 +30,11 @@ export default function QRCodePage() {
         
         <div className="mt-6">
           <p className="font-heading font-semibold text-lg">{user?.full_name}</p>
-          <p className="text-sm text-muted-foreground capitalize">{effectiveRole}</p>
+          <p className="text-sm text-muted-foreground capitalize">{user?.role}</p>
         </div>
         
         <p className="text-xs text-muted-foreground mt-4 px-4">
-          Show this QR code to {effectiveRole === "exhibitor" ? "buyers" : "exhibitors"} to connect. Both parties must approve the connection.
+          Show this QR code to {user?.role === "exhibitor" ? "buyers" : "exhibitors"} to connect. Both parties must approve the connection.
         </p>
 
         <div className="flex gap-3 mt-6 justify-center">

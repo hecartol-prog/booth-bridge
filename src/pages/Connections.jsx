@@ -22,7 +22,7 @@ export default function Connections() {
   const [noteDialog, setNoteDialog] = useState(null);
   const [noteText, setNoteText] = useState("");
 
-  const isExhibitor = user?.role === "exhibitor" || user?.user_type === "exhibitor";
+  const isExhibitor = user?.role === "exhibitor";
 
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ["connections", user?.id],
@@ -159,7 +159,7 @@ export default function Connections() {
                         </p>
                       </div>
                     </div>
-                    {conn.initiated_by !== (isExhibitor ? "exhibitor" : "buyer") && (
+                    {conn.initiated_by !== user.role && (
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => handleAccept(conn)}>
                           <Check className="w-4 h-4 mr-1" /> Accept
@@ -169,7 +169,7 @@ export default function Connections() {
                         </Button>
                       </div>
                     )}
-                    {conn.initiated_by === (isExhibitor ? "exhibitor" : "buyer") && (
+                    {conn.initiated_by === user.role && (
                       <Badge variant="outline" className="text-xs">
                         <Clock className="w-3 h-3 mr-1" /> Waiting
                       </Badge>
