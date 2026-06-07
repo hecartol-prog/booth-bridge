@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard } from "lucide-react";
+import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard, Flame, Thermometer, Snowflake } from "lucide-react";
+import { calculateLeadScore, getLeadTemperature } from "@/utils/leadScoring";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
@@ -41,6 +42,12 @@ export default function ExhibitorDashboard() {
   const { data: catalogues = [] } = useQuery({
     queryKey: ["ex-catalogues", user?.id],
     queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user.id }),
+    enabled: !!user?.id,
+  });
+
+  const { data: leadInteractions = [] } = useQuery({
+    queryKey: ["ex-interactions", user?.id],
+    queryFn: () => base44.entities.LeadInteraction.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
@@ -167,6 +174,48 @@ export default function ExhibitorDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Lead Scoring */}
+      {leadInteractions.length > 0 && (() => {
+        const byBuyer = leadInteractions.reduce((acc, i) => {
+          if (!acc[i.buyer_user_id]) acc[i.buyer_user_id] = [];
+          acc[i.buyer_user_id].push(i);
+          return acc;
+        }, {});
+        const scoredLeads = Object.entries(byBuyer).map(([buyerId, ints]) => {
+          const score = calculateLeadScore(ints);
+          const temp = getLeadTemperature(score);
+          const conn = accepted.find(c => c.buyer_user_id === buyerId);
+          return { buyerId, score, temp, name: conn?.buyer_name || "Unknown", company: conn?.buyer_company || "" };
+        }).sort((a, b) => b.score - a.score);
+
+        return (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-heading flex items-center gap-2">
+                <Flame className="w-4 h-4 text-red-500" /> Lead Scores
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {scoredLeads.slice(0, 8).map(lead => (
+                  <div key={lead.buyerId} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{lead.name}</p>
+                      {lead.company && <p className="text-xs text-muted-foreground">{lead.company}</p>}
+                    </div>
+                    <div className={`ml-4 flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${lead.temp.bg} ${lead.temp.color} ${lead.temp.border} shrink-0`}>
+                      <span>{lead.temp.emoji}</span>
+                      <span>{lead.score} pts</span>
+                      <span className="opacity-70">· {lead.temp.label}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Catalogue views breakdown */}
       {catalogues.length > 0 && (

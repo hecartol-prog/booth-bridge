@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import AiBoothAssistant from "@/components/AiBoothAssistant";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -348,6 +349,9 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Booth Assistant */}
+      <AiBoothAssistant profile={profile} products={products} catalogs={catalogs} />
 
       {/* RFI Dialog */}
       <Dialog open={rfiDialog} onOpenChange={setRfiDialog}>

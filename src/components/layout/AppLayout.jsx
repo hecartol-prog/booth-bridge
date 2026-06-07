@@ -8,7 +8,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Package, Camera, CreditCard, LogOut, User,
-  Bookmark, BookmarkCheck, Library
+  Bookmark, BookmarkCheck, Library, CalendarDays, Search, BarChart3
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -29,6 +29,8 @@ export default function AppLayout() {
     { path: "/products", icon: Package, labelKey: "nav.products" },
     { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
     { path: "/business-card", icon: CreditCard, labelKey: "nav.myCard" },
+    { path: "/events", icon: CalendarDays, labelKey: "nav.events" },
+    { path: "/organizer-analytics", icon: BarChart3, labelKey: "nav.analytics" },
   ];
 
   const buyerNav = [
@@ -39,6 +41,8 @@ export default function AppLayout() {
     { path: "/my-rfis", icon: Inbox, labelKey: "nav.requests" },
     { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
     { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
+    { path: "/events", icon: CalendarDays, labelKey: "nav.events" },
+    { path: "/discover", icon: Search, labelKey: "nav.discover" },
   ];
 
   const navItems = user?.user_role === "exhibitor" ? exhibitorNav : buyerNav;

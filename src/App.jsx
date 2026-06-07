@@ -33,6 +33,9 @@ import SavedBooths from "@/pages/SavedBooths";
 import MyLibrary from "@/pages/MyLibrary";
 import CatalogLibrary from "@/pages/CatalogLibrary";
 import DigitalBooth from "@/pages/DigitalBooth";
+import EventDirectory from "@/pages/EventDirectory";
+import ExhibitorDiscover from "@/pages/ExhibitorDiscover";
+import OrganizerAnalytics from "@/pages/OrganizerAnalytics";
 
 // Admin pages
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -119,6 +122,9 @@ const AuthenticatedApp = () => {
           <Route path="/my-library" element={<MyLibrary />} />
           <Route path="/catalog-library" element={<CatalogLibrary />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/events" element={<EventDirectory />} />
+          <Route path="/discover" element={<ExhibitorDiscover />} />
+          <Route path="/organizer-analytics" element={<OrganizerAnalytics />} />
         </Route>
       </Route>
 

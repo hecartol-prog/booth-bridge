@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Link2, AlertCircle, Building2 } from "lucide-react";
+import { Camera, Link2, AlertCircle, Building2, Loader2 } from "lucide-react";
+
 import { useToast } from "@/components/ui/use-toast";
 import DigitalBooth from "./DigitalBooth";
 
@@ -14,7 +15,66 @@ export default function ScanQR() {
   const { toast } = useToast();
   const [manualId, setManualId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [boothUserId, setBoothUserId] = useState(null); // after scan → show booth directly
+  const [boothUserId, setBoothUserId] = useState(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const detectorRef = useRef(null);
+  const animFrameRef = useRef(null);
+
+  const stopCamera = useCallback(() => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+    setScanning(false);
+  }, []);
+
+  useEffect(() => () => stopCamera(), [stopCamera]);
+
+  const startCamera = async () => {
+    setCameraError("");
+    setScanning(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraActive(true);
+
+      // Use BarcodeDetector if available
+      if ("BarcodeDetector" in window) {
+        detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+        const detect = async () => {
+          if (!videoRef.current || videoRef.current.readyState < 2) {
+            animFrameRef.current = requestAnimationFrame(detect);
+            return;
+          }
+          const barcodes = await detectorRef.current.detect(videoRef.current).catch(() => []);
+          if (barcodes.length > 0) {
+            stopCamera();
+            handleScan(barcodes[0].rawValue);
+            return;
+          }
+          animFrameRef.current = requestAnimationFrame(detect);
+        };
+        animFrameRef.current = requestAnimationFrame(detect);
+      } else {
+        // BarcodeDetector not supported
+        setCameraError("Live QR detection not supported on this browser. Use code entry below.");
+        setScanning(false);
+      }
+    } catch (err) {
+      setCameraError("Camera access denied. Please allow camera permissions and try again.");
+      setScanning(false);
+    }
+  };
 
   const handleScan = async (code) => {
     setErrorMsg("");
@@ -81,15 +141,40 @@ export default function ScanQR() {
         Scan an exhibitor's QR code to instantly access their digital booth, catalogs, and products.
       </p>
 
-      <Card className="p-6 text-center mb-6 bg-primary/5 border-primary/20">
-        <div className="w-full max-w-xs mx-auto aspect-square bg-white rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-primary/30 mb-4">
-          <Camera className="w-16 h-16 text-primary/40 mb-2" />
-          <p className="text-sm text-muted-foreground">Camera scanning coming soon</p>
-          <p className="text-xs text-muted-foreground mt-1">Use code entry below</p>
+      <Card className="p-4 text-center mb-6 bg-primary/5 border-primary/20">
+        <div className="w-full max-w-xs mx-auto aspect-square bg-black rounded-xl overflow-hidden relative mb-4">
+          {cameraActive ? (
+            <>
+              <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+              {/* Viewfinder overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-48 h-48 border-2 border-white/70 rounded-xl relative">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg" />
+                </div>
+              </div>
+              <button onClick={stopCamera} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg">Stop</button>
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-white">
+              <Camera className="w-12 h-12 opacity-50 mb-2" />
+              <p className="text-sm opacity-70">Camera preview</p>
+            </div>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Point your camera at the exhibitor's QR code on their booth or badge
-        </p>
+        {cameraError && (
+          <p className="text-xs text-destructive mb-2">{cameraError}</p>
+        )}
+        {!cameraActive ? (
+          <Button onClick={startCamera} disabled={scanning} className="w-full max-w-xs">
+            {scanning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+            {scanning ? "Starting camera..." : "Start Camera Scanner"}
+          </Button>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-2">Point camera at a BoothBridge QR code</p>
+        )}
       </Card>
 
       <Card className="p-6">

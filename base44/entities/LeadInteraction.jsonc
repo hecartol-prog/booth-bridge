@@ -1,0 +1,39 @@
+{
+  "name": "LeadInteraction",
+  "type": "object",
+  "properties": {
+    "buyer_user_id": {
+      "type": "string"
+    },
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "interaction_type": {
+      "type": "string",
+      "enum": [
+        "scan_qr",
+        "view_booth",
+        "view_product",
+        "download_catalog",
+        "send_rfi",
+        "schedule_meeting",
+        "attend_meeting"
+      ]
+    },
+    "points": {
+      "type": "number",
+      "default": 0
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "buyer_user_id",
+    "exhibitor_user_id",
+    "interaction_type"
+  ]
+}
