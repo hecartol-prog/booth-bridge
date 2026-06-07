@@ -34,6 +34,16 @@ import MyLibrary from "@/pages/MyLibrary";
 import CatalogLibrary from "@/pages/CatalogLibrary";
 import DigitalBooth from "@/pages/DigitalBooth";
 
+// Admin pages
+import AdminLayout from "@/components/layout/AdminLayout";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminExhibitors from "@/pages/admin/AdminExhibitors";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import AdminCatalogues from "@/pages/admin/AdminCatalogues";
+import AdminEvents from "@/pages/admin/AdminEvents";
+import AdminConnections from "@/pages/admin/AdminConnections";
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
 
@@ -110,6 +120,17 @@ const AuthenticatedApp = () => {
           <Route path="/catalog-library" element={<CatalogLibrary />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
+      </Route>
+
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="exhibitors" element={<AdminExhibitors />} />
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="catalogues" element={<AdminCatalogues />} />
+        <Route path="events" element={<AdminEvents />} />
+        <Route path="connections" element={<AdminConnections />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

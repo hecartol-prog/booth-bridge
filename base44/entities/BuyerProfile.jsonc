@@ -12,6 +12,13 @@
     "company": {
       "type": "string"
     },
+    "company_address": {
+      "type": "string",
+      "description": "Full company address"
+    },
+    "country": {
+      "type": "string"
+    },
     "industry": {
       "type": "string",
       "description": "Buyer's industry sector"
@@ -20,7 +27,8 @@
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Products or categories the buyer is interested in"
     },
     "digital_card": {
       "type": "object",
@@ -37,6 +45,9 @@
         "phone": {
           "type": "string"
         },
+        "mobile": {
+          "type": "string"
+        },
         "website": {
           "type": "string"
         },
@@ -48,55 +59,5 @@
   },
   "required": [
     "user_id"
-  ],
-  "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
-  }
+  ]
 }
