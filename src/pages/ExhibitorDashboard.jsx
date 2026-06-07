@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Inbox, Calendar, TrendingUp, Camera, FileText } from "lucide-react";
+import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
@@ -34,6 +34,24 @@ export default function ExhibitorDashboard() {
         base44.entities.Meeting.filter({ proposed_to: user.id }),
       ]);
       return [...asProposer, ...asRecipient];
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: catalogues = [] } = useQuery({
+    queryKey: ["ex-catalogues", user?.id],
+    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user.id }),
+    enabled: !!user?.id,
+  });
+
+  const { data: buyerProfiles = [] } = useQuery({
+    queryKey: ["ex-buyer-profiles", user?.id],
+    queryFn: async () => {
+      const conns = await base44.entities.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" });
+      const buyerIds = conns.map(c => c.buyer_user_id).filter(Boolean);
+      if (!buyerIds.length) return [];
+      const profiles = await base44.entities.BuyerProfile.list();
+      return profiles.filter(p => buyerIds.includes(p.user_id));
     },
     enabled: !!user?.id,
   });
@@ -74,11 +92,16 @@ export default function ExhibitorDashboard() {
     return { hour: `${hour}:00`, count };
   });
 
+  const totalCatalogueViews = catalogues.reduce((sum, c) => sum + (c.download_count || 0), 0);
+  const businessCardsCollected = buyerProfiles.filter(p => p.digital_card?.name || p.digital_card?.email).length;
+
   const stats = [
     { title: t("dashboard.totalLeads"), value: accepted.length, icon: Users, color: "text-primary" },
     { title: t("dashboard.pending"), value: pending.length, icon: TrendingUp, color: "text-amber-500" },
     { title: t("dashboard.openRFIs"), value: pendingRfis.length, icon: Inbox, color: "text-red-500" },
     { title: t("dashboard.meetings"), value: meetings.length, icon: Calendar, color: "text-green-500" },
+    { title: "Catalogue Views", value: totalCatalogueViews, icon: FileText, color: "text-violet-500" },
+    { title: "Business Cards Collected", value: businessCardsCollected, icon: CreditCard, color: "text-teal-500" },
   ];
 
   return (
@@ -93,7 +116,7 @@ export default function ExhibitorDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         {stats.map(stat => (
           <Card key={stat.title} className="p-4">
             <div className="flex items-center justify-between mb-2">
@@ -144,6 +167,39 @@ export default function ExhibitorDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Catalogue views breakdown */}
+      {catalogues.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-heading flex items-center gap-2">
+              <FileText className="w-4 h-4 text-violet-500" /> Catalogue Views
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {catalogues.map(c => (
+                <div key={c.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {c.thumbnail_url
+                      ? <img src={c.thumbnail_url} className="w-7 h-7 rounded object-cover border shrink-0" alt="" />
+                      : <div className="w-7 h-7 rounded bg-violet-50 flex items-center justify-center shrink-0"><FileText className="w-3.5 h-3.5 text-violet-400" /></div>
+                    }
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{c.title}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{c.type?.replace(/_/g, " ")}</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <p className="text-sm font-bold text-violet-600">{c.download_count || 0}</p>
+                    <p className="text-xs text-muted-foreground">views</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent leads */}
       <Card>
