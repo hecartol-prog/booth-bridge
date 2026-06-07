@@ -60,10 +60,18 @@ const CARD_SCHEMA = {
     title: { type: "string" },
     company: { type: "string" },
     email: { type: "string" },
-    phone: { type: "string" },
+    phone: { type: "string", description: "Office or main phone number" },
+    mobile: { type: "string", description: "Mobile or cell phone number" },
     website: { type: "string" },
     linkedin: { type: "string" },
     industry: { type: "string" },
+    company_address: { type: "string", description: "Full company address" },
+    country: { type: "string", description: "Country of the company" },
+    products_of_interest: {
+      type: "array",
+      items: { type: "string" },
+      description: "Products, services, or categories the person handles or is interested in",
+    },
   },
 };
 
@@ -85,9 +93,13 @@ export default function Onboarding() {
   const [buyerCompany, setBuyerCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [phone, setPhone] = useState("");
+  const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [country, setCountry] = useState("");
+  const [productsOfInterest, setProductsOfInterest] = useState("");
 
   // Card scan state
   const [scanStep, setScanStep] = useState("upload"); // "upload" | "scanning" | "done"
@@ -128,8 +140,12 @@ export default function Onboarding() {
         if (data.company) setBuyerCompany(data.company);
         if (data.email) setEmail(data.email);
         if (data.phone) setPhone(data.phone);
+        if (data.mobile) setMobile(data.mobile);
         if (data.website) setWebsite(data.website);
         if (data.linkedin) setLinkedin(data.linkedin);
+        if (data.company_address) setCompanyAddress(data.company_address);
+        if (data.country) setCountry(data.country);
+        if (data.products_of_interest?.length) setProductsOfInterest(data.products_of_interest.join(", "));
         // Try to match industry
         if (data.industry) {
           const match = INDUSTRIES.find(ind =>
@@ -179,40 +195,30 @@ export default function Onboarding() {
         }
         await base44.auth.updateMe({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
       } else {
+        const buyerData = {
+          job_title: jobTitle,
+          company: buyerCompany,
+          industry: industry || "",
+          interests: productsOfInterest ? productsOfInterest.split(",").map(s => s.trim()).filter(Boolean) : (industry ? [industry] : []),
+          company_address: companyAddress || "",
+          country: country || "",
+          digital_card: {
+            name: me.full_name,
+            email: email || me.email,
+            title: jobTitle,
+            phone,
+            mobile,
+            website,
+            linkedin: linkedin || "",
+          },
+        };
         const existing = await base44.entities.BuyerProfile.filter({ user_id: me.id });
         let profile;
         if (existing.length > 0) {
-          profile = await base44.entities.BuyerProfile.update(existing[0].id, {
-            job_title: jobTitle,
-            company: buyerCompany,
-            industry: industry || "",
-            interests: industry ? [industry] : [],
-            digital_card: {
-              name: me.full_name,
-              email: email || me.email,
-              title: jobTitle,
-              phone,
-              website,
-              linkedin: linkedin || "",
-            },
-          });
+          profile = await base44.entities.BuyerProfile.update(existing[0].id, buyerData);
           profile = { ...existing[0], ...profile };
         } else {
-          profile = await base44.entities.BuyerProfile.create({
-            user_id: me.id,
-            job_title: jobTitle,
-            company: buyerCompany,
-            industry: industry || "",
-            interests: industry ? [industry] : [],
-            digital_card: {
-              name: me.full_name,
-              email: email || me.email,
-              title: jobTitle,
-              phone,
-              website,
-              linkedin: linkedin || "",
-            },
-          });
+          profile = await base44.entities.BuyerProfile.create({ user_id: me.id, ...buyerData });
         }
         await base44.auth.updateMe({ user_role: "buyer", onboarded: true, profile_id: profile.id });
       }
@@ -394,12 +400,28 @@ export default function Onboarding() {
                   </Select>
                 </div>
                 <div>
-                  <Label>{t("onboarding.phone")}</Label>
+                  <Label>Office Phone</Label>
                   <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 555 0000" />
                 </div>
                 <div>
+                  <Label>Mobile</Label>
+                  <Input value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+1 555 0001" />
+                </div>
+                <div className="col-span-2">
                   <Label>{t("auth.email")}</Label>
                   <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" type="email" />
+                </div>
+                <div className="col-span-2">
+                  <Label>Company Address</Label>
+                  <Input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="123 Main St, New York, NY" />
+                </div>
+                <div className="col-span-2">
+                  <Label>Country</Label>
+                  <Input value={country} onChange={e => setCountry(e.target.value)} placeholder="United States" />
+                </div>
+                <div className="col-span-2">
+                  <Label>Products / Interests</Label>
+                  <Input value={productsOfInterest} onChange={e => setProductsOfInterest(e.target.value)} placeholder="e.g. Solar panels, EV batteries, LED lighting" />
                 </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.website")}</Label>
