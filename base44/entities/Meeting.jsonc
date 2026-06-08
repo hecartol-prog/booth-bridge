@@ -58,5 +58,62 @@
     "proposed_to",
     "proposed_time",
     "duration"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.proposed_by": "{{user.id}}"
+        },
+        {
+          "data.proposed_to": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.proposed_by": "{{user.id}}"
+        },
+        {
+          "data.proposed_to": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.proposed_by": "{{user.id}}"
+        },
+        {
+          "data.proposed_to": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.proposed_by": "{{user.id}}"
+        },
+        {
+          "data.proposed_to": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
