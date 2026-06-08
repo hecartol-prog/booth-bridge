@@ -17,7 +17,10 @@
     "requests": "请求",
     "notifications": "通知",
     "profile": "个人资料",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "events": "展会",
+    "discover": "发现",
+    "analytics": "数据分析"
   },
   "auth": {
     "welcomeBack": "欢迎回来",

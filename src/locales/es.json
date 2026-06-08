@@ -17,7 +17,10 @@
     "requests": "Solicitudes",
     "notifications": "Notificaciones",
     "profile": "Perfil",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "events": "Eventos",
+    "discover": "Descubrir",
+    "analytics": "Análisis"
   },
   "auth": {
     "welcomeBack": "Bienvenido de nuevo",

@@ -17,7 +17,10 @@
     "requests": "Richieste",
     "notifications": "Notifiche",
     "profile": "Profilo",
-    "logout": "Disconnetti"
+    "logout": "Disconnetti",
+    "events": "Eventi",
+    "discover": "Scopri",
+    "analytics": "Analisi"
   },
   "auth": {
     "welcomeBack": "Bentornato",
