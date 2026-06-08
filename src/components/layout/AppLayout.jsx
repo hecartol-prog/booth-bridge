@@ -137,7 +137,7 @@ export default function AppLayout() {
 
       {/* Mobile overlay drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-[60] md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col animate-in slide-in-from-left">
             <div className="p-5 flex items-center justify-between">
@@ -157,7 +157,7 @@ export default function AppLayout() {
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Mobile top bar */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card shrink-0 relative z-20">
           <button onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </button>
