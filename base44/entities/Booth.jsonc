@@ -123,5 +123,33 @@
   "required": [
     "event_id",
     "booth_number"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": null
+  }
 }

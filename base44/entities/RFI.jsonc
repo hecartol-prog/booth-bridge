@@ -82,9 +82,6 @@
     "update": {
       "$or": [
         {
-          "data.buyer_user_id": "{{user.id}}"
-        },
-        {
           "data.exhibitor_user_id": "{{user.id}}"
         },
         {
