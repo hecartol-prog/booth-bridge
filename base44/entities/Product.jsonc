@@ -25,5 +25,44 @@
     "exhibitor_user_id",
     "title",
     "image_url"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
