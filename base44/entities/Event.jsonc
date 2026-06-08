@@ -42,6 +42,113 @@
         "past"
       ],
       "default": "upcoming"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "industry_category": {
+      "type": "string"
+    },
+    "vertical": {
+      "type": "string"
+    },
+    "country_focus": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "buyer_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_attendance": {
+      "type": "number"
+    },
+    "expected_exhibitors": {
+      "type": "number"
+    },
+    "floorplan_url": {
+      "type": "string"
+    },
+    "organizer_contact": {
+      "type": "string"
+    },
+    "organizer_email": {
+      "type": "string"
+    },
+    "organizer_phone": {
+      "type": "string"
+    },
+    "registration_url": {
+      "type": "string"
+    },
+    "event_website": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string",
+      "description": "e.g. Asia/Shanghai, America/New_York"
+    },
+    "sponsor_packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "benefits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "event_status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "open_registration",
+        "registration_closed",
+        "live",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planning"
+    },
+    "post_event_report_url": {
+      "type": "string"
+    },
+    "kpi_lead_count": {
+      "type": "number",
+      "default": 0
+    },
+    "kpi_meeting_count": {
+      "type": "number",
+      "default": 0
+    },
+    "kpi_revenue_generated": {
+      "type": "number",
+      "default": 0
+    },
+    "actual_attendance": {
+      "type": "number",
+      "default": 0
+    },
+    "actual_exhibitors": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

@@ -1,0 +1,127 @@
+{
+  "name": "Booth",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Reference to Event id"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string",
+      "description": "Reference to Company id"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "exhibitor_user_id": {
+      "type": "string",
+      "description": "Primary exhibitor user id"
+    },
+    "exhibitor_profile_id": {
+      "type": "string",
+      "description": "Reference to ExhibitorProfile id"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "hall": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string"
+    },
+    "floor": {
+      "type": "string"
+    },
+    "booth_type": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "corner",
+        "island",
+        "peninsula",
+        "inline",
+        "outdoor"
+      ],
+      "default": "standard"
+    },
+    "booth_size": {
+      "type": "string",
+      "description": "e.g. 9sqm, 18sqm, 36sqm"
+    },
+    "coordinates_x": {
+      "type": "number",
+      "description": "X position on floorplan"
+    },
+    "coordinates_y": {
+      "type": "number",
+      "description": "Y position on floorplan"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "occupied",
+        "reserved",
+        "closed"
+      ],
+      "default": "available"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false
+    },
+    "sponsor_level": {
+      "type": "string",
+      "enum": [
+        "none",
+        "bronze",
+        "silver",
+        "gold",
+        "platinum",
+        "title"
+      ],
+      "default": "none"
+    },
+    "primary_representative_id": {
+      "type": "string",
+      "description": "User id of primary rep"
+    },
+    "secondary_representative_id": {
+      "type": "string",
+      "description": "User id of secondary rep"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "live_status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "busy",
+        "offline",
+        "in_meeting"
+      ],
+      "default": "offline"
+    },
+    "total_visits": {
+      "type": "number",
+      "default": 0
+    },
+    "total_leads": {
+      "type": "number",
+      "default": 0
+    },
+    "total_meetings": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "event_id",
+    "booth_number"
+  ]
+}

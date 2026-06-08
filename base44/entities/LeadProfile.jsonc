@@ -1,0 +1,132 @@
+{
+  "name": "LeadProfile",
+  "type": "object",
+  "properties": {
+    "lead_name": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "source_event_id": {
+      "type": "string"
+    },
+    "source_event_name": {
+      "type": "string"
+    },
+    "source_booth_id": {
+      "type": "string"
+    },
+    "source_booth_number": {
+      "type": "string"
+    },
+    "scan_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "representative_user_id": {
+      "type": "string",
+      "description": "Exhibitor who captured this lead"
+    },
+    "interest_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lead_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 calculated score"
+    },
+    "lead_temperature": {
+      "type": "string",
+      "enum": [
+        "cold",
+        "warm",
+        "hot",
+        "qualified",
+        "opportunity",
+        "customer"
+      ],
+      "default": "cold"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "contacted",
+        "qualified",
+        "proposal",
+        "negotiation",
+        "won",
+        "lost"
+      ],
+      "default": "new"
+    },
+    "follow_up_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "completed",
+        "no_action"
+      ],
+      "default": "pending"
+    },
+    "follow_up_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_activity": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "buyer_user_id": {
+      "type": "string",
+      "description": "If lead is a platform user"
+    },
+    "engagement_score": {
+      "type": "number",
+      "default": 0
+    },
+    "meeting_count": {
+      "type": "number",
+      "default": 0
+    },
+    "rfi_count": {
+      "type": "number",
+      "default": 0
+    },
+    "booth_visits": {
+      "type": "number",
+      "default": 0
+    },
+    "product_views": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "lead_name",
+    "representative_user_id"
+  ]
+}

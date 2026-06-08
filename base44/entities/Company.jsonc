@@ -1,0 +1,134 @@
+{
+  "name": "Company",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Public trading name"
+    },
+    "legal_name": {
+      "type": "string",
+      "description": "Legal registered name"
+    },
+    "website": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "sub_industry": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "year_founded": {
+      "type": "number"
+    },
+    "employee_count_range": {
+      "type": "string",
+      "enum": [
+        "1-10",
+        "11-50",
+        "51-200",
+        "201-500",
+        "501-1000",
+        "1001-5000",
+        "5000+"
+      ]
+    },
+    "annual_revenue_range": {
+      "type": "string",
+      "enum": [
+        "<$1M",
+        "$1M-$5M",
+        "$5M-$20M",
+        "$20M-$100M",
+        "$100M-$500M",
+        "$500M+"
+      ]
+    },
+    "manufacturing_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "e.g. Injection Molding, Assembly, Packaging"
+    },
+    "target_markets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "export_markets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "import_markets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "linkedin_url": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "pending",
+        "verified",
+        "premium_verified"
+      ],
+      "default": "unverified"
+    },
+    "trust_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 calculated trust score"
+    },
+    "profile_completeness": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 percentage"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "subscription_plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "professional",
+        "enterprise"
+      ],
+      "default": "free"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "company_name"
+  ]
+}

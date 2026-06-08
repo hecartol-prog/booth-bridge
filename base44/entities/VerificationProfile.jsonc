@@ -1,0 +1,119 @@
+{
+  "name": "VerificationProfile",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "pending_review",
+        "verified",
+        "premium_verified",
+        "rejected"
+      ],
+      "default": "unverified"
+    },
+    "business_license_url": {
+      "type": "string"
+    },
+    "business_license_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "tax_registration_url": {
+      "type": "string"
+    },
+    "tax_registration_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "factory_audit_url": {
+      "type": "string"
+    },
+    "factory_audit_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "expiry": {
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "trade_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "company_name": {
+            "type": "string"
+          },
+          "contact_email": {
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "verification_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "trust_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100"
+    },
+    "profile_completion_score": {
+      "type": "number",
+      "default": 0
+    },
+    "response_speed_score": {
+      "type": "number",
+      "default": 0
+    },
+    "meeting_attendance_score": {
+      "type": "number",
+      "default": 0
+    },
+    "rfi_response_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "reviewed_by_user_id": {
+      "type": "string"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "company_id"
+  ]
+}

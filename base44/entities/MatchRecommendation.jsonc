@@ -1,0 +1,70 @@
+{
+  "name": "MatchRecommendation",
+  "type": "object",
+  "properties": {
+    "buyer_user_id": {
+      "type": "string"
+    },
+    "buyer_company_id": {
+      "type": "string"
+    },
+    "recommended_exhibitor_user_id": {
+      "type": "string"
+    },
+    "recommended_company_id": {
+      "type": "string"
+    },
+    "recommended_company_name": {
+      "type": "string"
+    },
+    "recommended_product_id": {
+      "type": "string"
+    },
+    "recommended_event_id": {
+      "type": "string"
+    },
+    "recommended_booth_id": {
+      "type": "string"
+    },
+    "recommendation_type": {
+      "type": "string",
+      "enum": [
+        "supplier",
+        "product",
+        "event",
+        "booth",
+        "meeting"
+      ],
+      "default": "supplier"
+    },
+    "recommendation_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100"
+    },
+    "recommendation_reason": {
+      "type": "string"
+    },
+    "match_factors": {
+      "type": "object",
+      "description": "Breakdown of score factors"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "viewed",
+        "acted_on",
+        "dismissed"
+      ],
+      "default": "pending"
+    },
+    "event_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "buyer_user_id",
+    "recommendation_type"
+  ]
+}
