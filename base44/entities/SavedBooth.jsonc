@@ -50,5 +50,19 @@
   "required": [
     "buyer_id",
     "exhibitor_user_id"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "read": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "update": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.buyer_id": "{{user.id}}"
+    }
+  }
 }
