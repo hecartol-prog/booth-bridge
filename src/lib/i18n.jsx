@@ -89,8 +89,15 @@ export function I18nProvider({ children }) {
   );
 }
 
+const FALLBACK_I18N = {
+  language: "en",
+  setLanguage: () => {},
+  t: (key) => lookup(TRANSLATIONS.en, key, key),
+  isRTL: false,
+  SUPPORTED_LANGUAGES,
+};
+
 export function useI18n() {
   const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error("useI18n must be used within I18nProvider");
-  return ctx;
+  return ctx || FALLBACK_I18N;
 }
