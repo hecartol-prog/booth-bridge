@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import OfflineBanner from "@/components/OfflineBanner";
+import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,21 +22,38 @@ export default function EventDirectory() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, []);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events"],
-    queryFn: () => base44.entities.Event.list("-start_date", 200),
+    queryFn: async () => {
+      const result = await base44.entities.Event.list("-start_date", 200);
+      cacheWrite("events", result);
+      return result;
+    },
+    placeholderData: () => cacheRead("events") || [],
   });
 
   const { data: exhibitorCounts = {} } = useQuery({
     queryKey: ["event-exhibitor-counts"],
     queryFn: async () => {
       const exhibitors = await base44.entities.ExhibitorProfile.list();
-      return exhibitors.reduce((acc, ex) => {
+      const counts = exhibitors.reduce((acc, ex) => {
         if (ex.event_name) acc[ex.event_name] = (acc[ex.event_name] || 0) + 1;
         return acc;
       }, {});
+      cacheWrite("exhibitor-counts", counts);
+      return counts;
     },
+    placeholderData: () => cacheRead("exhibitor-counts") || {},
   });
 
   const countries = [...new Set(events.map(e => e.country).filter(Boolean))].sort();
@@ -58,6 +77,7 @@ export default function EventDirectory() {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      <OfflineBanner isOnline={isOnline} />
       <div className="mb-6">
         <h1 className="text-2xl font-display font-bold">Event Directory</h1>
         <p className="text-sm text-muted-foreground mt-1">Discover trade shows and exhibitions worldwide</p>

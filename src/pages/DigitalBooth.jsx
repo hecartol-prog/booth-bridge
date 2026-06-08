@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import AiBoothAssistant from "@/components/AiBoothAssistant";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -12,10 +12,14 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import {
   Building2, Globe, Mail, Phone, MessageCircle, Download, Bookmark,
   BookmarkCheck, Package, FileText, ExternalLink, MapPin, ArrowLeft,
-  Share2, ChevronRight, Image
+  Share2, ChevronRight, Image, Loader2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
+import OfflineBanner from "@/components/OfflineBanner";
+import { enqueueVisitorAction, VISITOR_ACTIONS, getPendingVisitorCount } from "@/utils/visitorInteractionQueue";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 
 const catalogTypeLabels = {
   company_profile: "Company Profile",
@@ -39,7 +43,6 @@ const catalogTypeIcons = {
   other: FileText,
 };
 
-// This component receives exhibitorUserId as prop (passed from ScanQR or Discover)
 export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -50,28 +53,74 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const [rfiDialog, setRfiDialog] = useState(false);
   const [rfiType, setRfiType] = useState("brochure");
   const [rfiMessage, setRfiMessage] = useState("");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const isBuyer = user?.user_role !== "exhibitor";
+  const BOOTH_CACHE_KEY = `booth:${exhibitorUserId}`;
+
+  // Track online/offline
+  useEffect(() => {
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, []);
+
+  const refreshPending = useCallback(async () => {
+    setPendingCount(await getPendingVisitorCount());
+  }, []);
+
+  useEffect(() => { refreshPending(); }, [refreshPending]);
+
+  useOfflineSync({
+    onSyncComplete: (n) => {
+      toast({ title: `${n} offline action${n > 1 ? "s" : ""} synced` });
+      refreshPending();
+    },
+  });
+
+  // ── Data fetching with cache fallback ───────────────────────────────────
 
   const { data: profile } = useQuery({
     queryKey: ["digital-booth-profile", exhibitorUserId],
     queryFn: async () => {
       const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: exhibitorUserId });
-      return profiles[0] || null;
+      const result = profiles[0] || null;
+      if (result) {
+        // Update cache alongside the live data
+        const cached = cacheRead(BOOTH_CACHE_KEY) || {};
+        cacheWrite(BOOTH_CACHE_KEY, { ...cached, profile: result });
+      }
+      return result;
     },
     enabled: !!exhibitorUserId,
+    placeholderData: () => cacheRead(BOOTH_CACHE_KEY)?.profile || undefined,
   });
 
   const { data: products = [] } = useQuery({
     queryKey: ["digital-booth-products", exhibitorUserId],
-    queryFn: () => base44.entities.Product.filter({ exhibitor_user_id: exhibitorUserId }),
+    queryFn: async () => {
+      const result = await base44.entities.Product.filter({ exhibitor_user_id: exhibitorUserId });
+      const cached = cacheRead(BOOTH_CACHE_KEY) || {};
+      cacheWrite(BOOTH_CACHE_KEY, { ...cached, products: result });
+      return result;
+    },
     enabled: !!exhibitorUserId,
+    placeholderData: () => cacheRead(BOOTH_CACHE_KEY)?.products || [],
   });
 
   const { data: catalogs = [] } = useQuery({
     queryKey: ["digital-booth-catalogs", exhibitorUserId],
-    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: exhibitorUserId }),
+    queryFn: async () => {
+      const result = await base44.entities.CatalogItem.filter({ exhibitor_user_id: exhibitorUserId });
+      const cached = cacheRead(BOOTH_CACHE_KEY) || {};
+      cacheWrite(BOOTH_CACHE_KEY, { ...cached, catalogs: result });
+      return result;
+    },
     enabled: !!exhibitorUserId,
+    placeholderData: () => cacheRead(BOOTH_CACHE_KEY)?.catalogs || [],
   });
 
   const { data: savedBooth } = useQuery({
@@ -83,6 +132,21 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     },
     enabled: !!user?.id && !!exhibitorUserId && isBuyer,
   });
+
+  const { data: existingConnection } = useQuery({
+    queryKey: ["booth-connection", user?.id, exhibitorUserId],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const conns = await base44.entities.Connection.filter({
+        exhibitor_user_id: exhibitorUserId,
+        buyer_user_id: user.id,
+      });
+      return conns[0] || null;
+    },
+    enabled: !!user?.id && !!exhibitorUserId && isBuyer,
+  });
+
+  // ── Save Booth ──────────────────────────────────────────────────────────
 
   const saveBoothMutation = useMutation({
     mutationFn: () => base44.entities.SavedBooth.create({
@@ -103,18 +167,28 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     },
   });
 
-  const { data: existingConnection } = useQuery({
-    queryKey: ["booth-connection", user?.id, exhibitorUserId],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const conns = await base44.entities.Connection.filter({
-        exhibitor_user_id: exhibitorUserId,
-        buyer_user_id: user.id,
+  const handleSaveBooth = async () => {
+    if (!isOnline) {
+      await enqueueVisitorAction({
+        actionType: VISITOR_ACTIONS.SAVE_BOOTH,
+        userId: user.id,
+        exhibitorUserId,
+        exhibitorProfileId: profile?.id,
+        exhibitorCompany: profile?.company_name,
+        boothNumber: profile?.booth_number,
+        eventName: profile?.event_name,
+        notes: saveNotes,
+        visitStatus: saveStatus,
       });
-      return conns[0] || null;
-    },
-    enabled: !!user?.id && !!exhibitorUserId && isBuyer,
-  });
+      setSaveDialog(false);
+      await refreshPending();
+      toast({ title: "Saved Offline", description: "Booth saved locally — will sync when you're back online." });
+      return;
+    }
+    saveBoothMutation.mutate();
+  };
+
+  // ── RFI ─────────────────────────────────────────────────────────────────
 
   const rfiMutation = useMutation({
     mutationFn: () => base44.entities.RFI.create({
@@ -141,10 +215,45 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     },
   });
 
-  const handleDownload = async (catalog) => {
-    await base44.entities.CatalogItem.update(catalog.id, { download_count: (catalog.download_count || 0) + 1 });
-    window.open(catalog.file_url, "_blank");
+  const handleSubmitRfi = async () => {
+    if (!isOnline) {
+      await enqueueVisitorAction({
+        actionType: VISITOR_ACTIONS.SUBMIT_RFI,
+        userId: user.id,
+        exhibitorUserId,
+        connectionId: existingConnection?.id || "",
+        rfiType,
+        message: rfiMessage,
+        buyerName: user.full_name,
+        exhibitorCompany: profile?.company_name,
+      });
+      setRfiDialog(false);
+      setRfiMessage("");
+      await refreshPending();
+      toast({ title: "RFI Queued Offline", description: "Your request will be sent when you're back online." });
+      return;
+    }
+    rfiMutation.mutate();
   };
+
+  // ── Catalog download ─────────────────────────────────────────────────────
+
+  const handleDownload = async (catalog) => {
+    window.open(catalog.file_url, "_blank");
+    if (!isOnline) {
+      await enqueueVisitorAction({
+        actionType: VISITOR_ACTIONS.DOWNLOAD_CATALOG,
+        userId: user?.id,
+        catalogId: catalog.id,
+        currentCount: catalog.download_count || 0,
+      });
+      await refreshPending();
+      return;
+    }
+    await base44.entities.CatalogItem.update(catalog.id, { download_count: (catalog.download_count || 0) + 1 });
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   if (!profile) {
     return (
@@ -157,7 +266,6 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
   return (
     <div className="max-w-2xl mx-auto pb-20">
-      {/* Back button */}
       {onBack && (
         <div className="p-4">
           <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -165,6 +273,11 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           </button>
         </div>
       )}
+
+      {/* Offline / syncing banner */}
+      <div className="px-4 pt-2">
+        <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
+      </div>
 
       {/* Booth Header */}
       <div className="bg-primary px-6 pt-6 pb-8">
@@ -218,32 +331,26 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       <div className="px-4 mt-4 space-y-4">
         {/* Contact Info */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Contact</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Contact</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {profile.digital_card?.email && (
               <a href={`mailto:${profile.digital_card.email}`} className="flex items-center gap-2 text-sm hover:text-primary">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                {profile.digital_card.email}
+                <Mail className="w-4 h-4 text-muted-foreground" /> {profile.digital_card.email}
               </a>
             )}
             {profile.digital_card?.phone && (
               <a href={`tel:${profile.digital_card.phone}`} className="flex items-center gap-2 text-sm hover:text-primary">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                {profile.digital_card.phone}
+                <Phone className="w-4 h-4 text-muted-foreground" /> {profile.digital_card.phone}
               </a>
             )}
             {profile.digital_card?.website && (
               <a href={profile.digital_card.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                {profile.digital_card.website}
+                <Globe className="w-4 h-4 text-muted-foreground" /> {profile.digital_card.website}
               </a>
             )}
             {profile.digital_card?.linkedin && (
               <a href={profile.digital_card.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary">
-                <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                LinkedIn Profile
+                <ExternalLink className="w-4 h-4 text-muted-foreground" /> LinkedIn Profile
               </a>
             )}
           </CardContent>
@@ -299,8 +406,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
                     exhibitorUserId={exhibitorUserId}
                     profile={profile}
                     isBuyer={isBuyer}
+                    isOnline={isOnline}
                     queryClient={queryClient}
                     toast={toast}
+                    onOfflineSave={refreshPending}
                   />
                 ))}
               </div>
@@ -315,13 +424,16 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           <DialogHeader>
             <DialogTitle>Save {profile.company_name}</DialogTitle>
           </DialogHeader>
+          {!isOnline && (
+            <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+              You're offline — this will be saved locally and synced later.
+            </p>
+          )}
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium mb-1 block">Status</label>
               <Select value={saveStatus} onValueChange={setSaveStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="interested">Interested</SelectItem>
                   <SelectItem value="follow_up">Follow Up</SelectItem>
@@ -333,18 +445,14 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Notes</label>
-              <Textarea
-                value={saveNotes}
-                onChange={e => setSaveNotes(e.target.value)}
-                placeholder="Add notes about this supplier..."
-                rows={3}
-              />
+              <Textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder="Add notes about this supplier..." rows={3} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSaveDialog(false)}>Cancel</Button>
-            <Button onClick={() => saveBoothMutation.mutate()} disabled={saveBoothMutation.isPending}>
-              <Bookmark className="w-4 h-4 mr-2" /> Save Booth
+            <Button onClick={handleSaveBooth} disabled={saveBoothMutation.isPending}>
+              {saveBoothMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Bookmark className="w-4 h-4 mr-2" />}
+              {isOnline ? "Save Booth" : "Save Offline"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -359,6 +467,11 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           <DialogHeader>
             <DialogTitle>Send Request to {profile.company_name}</DialogTitle>
           </DialogHeader>
+          {!isOnline && (
+            <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+              You're offline — this request will be queued and sent when you're back online.
+            </p>
+          )}
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium mb-1 block">Request Type</label>
@@ -374,18 +487,14 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Message (optional)</label>
-              <Textarea
-                value={rfiMessage}
-                onChange={e => setRfiMessage(e.target.value)}
-                placeholder="Add details about your request..."
-                rows={3}
-              />
+              <Textarea value={rfiMessage} onChange={e => setRfiMessage(e.target.value)} placeholder="Add details about your request..." rows={3} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRfiDialog(false)}>Cancel</Button>
-            <Button onClick={() => rfiMutation.mutate()} disabled={rfiMutation.isPending}>
-              Send Request
+            <Button onClick={handleSubmitRfi} disabled={rfiMutation.isPending}>
+              {rfiMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {isOnline ? "Send Request" : "Queue Request"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -394,8 +503,9 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   );
 }
 
-// Sub-component for saving individual products
-function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, queryClient, toast }) {
+// ── SaveProductCard ──────────────────────────────────────────────────────────
+
+function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, isOnline, queryClient, toast, onOfflineSave }) {
   const { data: isSaved } = useQuery({
     queryKey: ["saved-product-check", user?.id, product.id],
     queryFn: async () => {
@@ -423,6 +533,26 @@ function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, que
     },
   });
 
+  const handleSave = async () => {
+    if (isSaved) return;
+    if (!isOnline) {
+      await enqueueVisitorAction({
+        actionType: VISITOR_ACTIONS.SAVE_PRODUCT,
+        userId: user.id,
+        productId: product.id,
+        exhibitorUserId,
+        exhibitorCompany: profile?.company_name,
+        eventName: profile?.event_name,
+        productTitle: product.title,
+        productImageUrl: product.image_url,
+      });
+      if (onOfflineSave) onOfflineSave();
+      toast({ title: "Saved Offline", description: `${product.title} queued — will sync when online.` });
+      return;
+    }
+    saveMutation.mutate();
+  };
+
   return (
     <div className="rounded-lg overflow-hidden border bg-card group relative">
       {product.image_url ? (
@@ -437,7 +567,7 @@ function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, que
       </div>
       {isBuyer && (
         <button
-          onClick={() => !isSaved && saveMutation.mutate()}
+          onClick={handleSave}
           className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center"
         >
           {isSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}

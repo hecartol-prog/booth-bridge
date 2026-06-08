@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import {
   Search, Building2, MapPin, Globe, Package, ChevronRight, X, Filter
 } from "lucide-react";
 import DigitalBooth from "./DigitalBooth";
+import OfflineBanner from "@/components/OfflineBanner";
+import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 
 export default function ExhibitorDiscover() {
   const [search, setSearch] = useState("");
@@ -22,10 +24,24 @@ export default function ExhibitorDiscover() {
   });
   const [viewBoothId, setViewBoothId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, []);
 
   const { data: exhibitors = [], isLoading } = useQuery({
     queryKey: ["discover-exhibitors"],
-    queryFn: () => base44.entities.ExhibitorProfile.list("-created_date", 500),
+    queryFn: async () => {
+      const result = await base44.entities.ExhibitorProfile.list("-created_date", 500);
+      cacheWrite("exhibitors", result);
+      return result;
+    },
+    placeholderData: () => cacheRead("exhibitors") || [],
   });
 
   const countries = [...new Set(exhibitors.map(e => e.country).filter(Boolean))].sort();
@@ -52,6 +68,7 @@ export default function ExhibitorDiscover() {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
+      <OfflineBanner isOnline={isOnline} />
       <div className="mb-6">
         <h1 className="text-2xl font-display font-bold">Discover Exhibitors</h1>
         <p className="text-sm text-muted-foreground mt-1">Browse and filter {exhibitors.length} exhibitors across all events</p>
