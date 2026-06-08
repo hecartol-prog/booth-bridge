@@ -5,10 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Link2, AlertCircle, Building2, Loader2 } from "lucide-react";
-
+import { Camera, Link2, AlertCircle, Building2, Loader2, WifiOff, CloudUpload, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import DigitalBooth from "./DigitalBooth";
+import { enqueueScan, getPendingCount } from "@/utils/offlineScanQueue";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 export default function ScanQR() {
   const { user } = useAuth();
@@ -19,10 +20,53 @@ export default function ScanQR() {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const detectorRef = useRef(null);
   const animFrameRef = useRef(null);
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast({ title: "Back Online", description: "Connection restored. Syncing offline scans..." });
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast({ title: "Offline Mode Active", description: "Scans will be saved locally and synced when reconnected.", variant: "destructive" });
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [toast]);
+
+  // Refresh pending count on mount and after each scan
+  const refreshPendingCount = useCallback(async () => {
+    const count = await getPendingCount();
+    setPendingCount(count);
+  }, []);
+
+  useEffect(() => { refreshPendingCount(); }, [refreshPendingCount]);
+
+  // Background sync — runs when back online
+  useOfflineSync({
+    onSyncComplete: (count) => {
+      toast({ title: `${count} offline scan${count > 1 ? "s" : ""} synced`, description: "All queued booth visits have been uploaded." });
+      refreshPendingCount();
+    },
+    onSyncError: (count) => {
+      toast({ title: "Sync partially failed", description: `${count} scan(s) could not be synced. Will retry.`, variant: "destructive" });
+    },
+  });
+
+  // ── Camera ─────────────────────────────────────────────────────────────
 
   const stopCamera = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -48,7 +92,6 @@ export default function ScanQR() {
       }
       setCameraActive(true);
 
-      // Use BarcodeDetector if available
       if ("BarcodeDetector" in window) {
         detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
         const detect = async () => {
@@ -66,7 +109,6 @@ export default function ScanQR() {
         };
         animFrameRef.current = requestAnimationFrame(detect);
       } else {
-        // BarcodeDetector not supported
         setCameraError("Live QR detection not supported on this browser. Use code entry below.");
         setScanning(false);
       }
@@ -76,59 +118,108 @@ export default function ScanQR() {
     }
   };
 
+  // ── Scan handler ───────────────────────────────────────────────────────
+
   const handleScan = async (code) => {
     setErrorMsg("");
     const parts = code.split(":");
     // Format: boothbridge:connect:userId:role
-    if (parts.length === 4 && parts[0] === "boothbridge") {
-      const targetId = parts[2];
-      const targetRole = parts[3];
+    if (parts.length !== 4 || parts[0] !== "boothbridge") {
+      setErrorMsg("Invalid code format. Please scan or enter an exhibitor QR code.");
+      return;
+    }
 
-      if (targetRole !== "exhibitor") {
-        setErrorMsg("This QR code doesn't belong to an exhibitor booth.");
-        return;
-      }
+    const targetId = parts[2];
+    const targetRole = parts[3];
 
-      // Immediately load digital booth — no approval needed
-      setBoothUserId(targetId);
+    if (targetRole !== "exhibitor") {
+      setErrorMsg("This QR code doesn't belong to an exhibitor booth.");
+      return;
+    }
 
-      // Also silently create a connection record for exhibitor's lead tracking
-      if (user?.user_role === "buyer") {
-        const existing = await base44.entities.Connection.filter({
+    // Always show the booth immediately — don't block on network
+    setBoothUserId(targetId);
+
+    // Only attempt connection tracking for buyers
+    if (user?.user_role !== "buyer") return;
+
+    setProcessing(true);
+
+    if (!navigator.onLine) {
+      // ── OFFLINE PATH ────────────────────────────────────────────────
+      await enqueueScan({
+        targetId,
+        targetRole,
+        scannedByUserId: user.id,
+        scannedByName: user.full_name,
+        timestamp: new Date().toISOString(),
+      });
+      await refreshPendingCount();
+      toast({
+        title: "Scan Saved Offline",
+        description: "Booth visit saved locally. Will sync when you're back online.",
+      });
+      setProcessing(false);
+      return;
+    }
+
+    // ── ONLINE PATH ──────────────────────────────────────────────────
+    try {
+      const existing = await base44.entities.Connection.filter({
+        exhibitor_user_id: targetId,
+        buyer_user_id: user.id,
+      });
+
+      if (existing.length === 0) {
+        const exProfiles = await base44.entities.ExhibitorProfile.filter({ user_id: targetId });
+        const exProfile = exProfiles[0];
+
+        await base44.entities.Connection.create({
           exhibitor_user_id: targetId,
           buyer_user_id: user.id,
+          status: "accepted",
+          initiated_by: "buyer",
+          exhibitor_name: exProfile?.digital_card?.name || exProfile?.company_name || "",
+          exhibitor_company: exProfile?.company_name || "",
+          booth_number: exProfile?.booth_number || "",
+          event_name: exProfile?.event_name || "",
+          buyer_name: user.full_name,
         });
-        if (existing.length === 0) {
-          const exProfiles = await base44.entities.ExhibitorProfile.filter({ user_id: targetId });
-          const exProfile = exProfiles[0];
-          await base44.entities.Connection.create({
-            exhibitor_user_id: targetId,
-            buyer_user_id: user.id,
-            status: "accepted", // auto-accepted — no blocking
-            initiated_by: "buyer",
-            exhibitor_name: exProfile?.digital_card?.name || exProfile?.company_name || "",
-            exhibitor_company: exProfile?.company_name || "",
-            booth_number: exProfile?.booth_number || "",
-            event_name: exProfile?.event_name || "",
-            buyer_name: user.full_name,
-          });
-          await base44.entities.Notification.create({
-            user_id: targetId,
-            type: "connection_accepted",
-            title: "Booth Visit",
-            message: `${user.full_name} visited your digital booth.`,
-            from_user_name: user.full_name,
-          });
-        }
+
+        await base44.entities.Notification.create({
+          user_id: targetId,
+          type: "connection_accepted",
+          title: "Booth Visit",
+          message: `${user.full_name} visited your digital booth.`,
+          from_user_name: user.full_name,
+        });
       }
-    } else {
-      setErrorMsg("Invalid code format. Please scan or enter an exhibitor QR code.");
+    } catch (networkErr) {
+      // Network failed mid-attempt — queue for later sync
+      console.warn("Connection record failed, queuing for offline sync:", networkErr);
+      await enqueueScan({
+        targetId,
+        targetRole,
+        scannedByUserId: user.id,
+        scannedByName: user.full_name,
+        timestamp: new Date().toISOString(),
+      });
+      await refreshPendingCount();
+      toast({
+        title: "Saved for Later Sync",
+        description: "Booth visit queued — will sync when connection stabilises.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
     }
   };
 
   const handleManualSubmit = () => {
-    handleScan(manualId.trim());
+    if (manualId.trim()) handleScan(manualId.trim());
   };
+
+  // ── Render ─────────────────────────────────────────────────────────────
 
   if (boothUserId) {
     return <DigitalBooth exhibitorUserId={boothUserId} onBack={() => setBoothUserId(null)} />;
@@ -136,17 +227,33 @@ export default function ScanQR() {
 
   return (
     <div className="p-4 md:p-8 max-w-lg mx-auto">
+
+      {/* Offline / pending banner */}
+      {!isOnline && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+          <WifiOff className="w-4 h-4 shrink-0" />
+          Offline Mode — scans are saved locally and will sync automatically.
+        </div>
+      )}
+
+      {isOnline && pendingCount > 0 && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium">
+          <CloudUpload className="w-4 h-4 shrink-0 animate-pulse" />
+          Syncing {pendingCount} offline scan{pendingCount > 1 ? "s" : ""}…
+        </div>
+      )}
+
       <h1 className="text-2xl font-display font-bold mb-2">Visit a Booth</h1>
       <p className="text-sm text-muted-foreground mb-6">
         Scan an exhibitor's QR code to instantly access their digital booth, catalogs, and products.
       </p>
 
+      {/* Camera scanner */}
       <Card className="p-4 text-center mb-6 bg-primary/5 border-primary/20">
         <div className="w-full max-w-xs mx-auto aspect-square bg-black rounded-xl overflow-hidden relative mb-4">
           {cameraActive ? (
             <>
               <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-              {/* Viewfinder overlay */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-48 border-2 border-white/70 rounded-xl relative">
                   <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
@@ -164,19 +271,24 @@ export default function ScanQR() {
             </div>
           )}
         </div>
-        {cameraError && (
-          <p className="text-xs text-destructive mb-2">{cameraError}</p>
-        )}
+
+        {cameraError && <p className="text-xs text-destructive mb-2">{cameraError}</p>}
+
         {!cameraActive ? (
           <Button onClick={startCamera} disabled={scanning} className="w-full max-w-xs">
             {scanning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
             {scanning ? "Starting camera..." : "Start Camera Scanner"}
           </Button>
         ) : (
-          <p className="text-xs text-muted-foreground mt-2">Point camera at a BoothBridge QR code</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {processing ? (
+              <span className="flex items-center justify-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Processing scan…</span>
+            ) : "Point camera at a BoothBridge QR code"}
+          </p>
         )}
       </Card>
 
+      {/* Manual entry */}
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Link2 className="w-5 h-5 text-primary" />
@@ -196,9 +308,12 @@ export default function ScanQR() {
           <Button
             className="w-full"
             onClick={handleManualSubmit}
-            disabled={!manualId}
+            disabled={!manualId || processing}
           >
-            <Building2 className="w-4 h-4 mr-2" /> Open Digital Booth
+            {processing
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
+              : <><Building2 className="w-4 h-4 mr-2" /> Open Digital Booth</>
+            }
           </Button>
 
           {errorMsg && (

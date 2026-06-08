@@ -25,7 +25,21 @@ export default function Login() {
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      // Map common error codes to user-friendly messages
+      const msg = err?.message || "";
+      if (!navigator.onLine) {
+        setError("No internet connection. Please check your network and try again.");
+      } else if (msg.toLowerCase().includes("invalid") || msg.toLowerCase().includes("credentials") || msg.toLowerCase().includes("password")) {
+        setError("Invalid email or password. Please try again.");
+      } else if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no user")) {
+        setError("No account found with this email. Please register first.");
+      } else if (msg.toLowerCase().includes("timeout") || msg.toLowerCase().includes("network")) {
+        setError("Network timeout. Please check your connection and try again.");
+      } else if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("rate limit")) {
+        setError("Too many login attempts. Please wait a moment and try again.");
+      } else {
+        setError(msg || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
