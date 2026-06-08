@@ -65,5 +65,49 @@
     "posted_by_user_id",
     "title",
     "opportunity_type"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.posted_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "exhibitor"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "buyer"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.posted_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.posted_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
