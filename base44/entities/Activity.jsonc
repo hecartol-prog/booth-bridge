@@ -1,0 +1,138 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "viewed_booth",
+        "viewed_product",
+        "viewed_company",
+        "saved_supplier",
+        "saved_product",
+        "scanned_qr",
+        "opened_profile",
+        "downloaded_catalog",
+        "submitted_rfi",
+        "requested_meeting",
+        "accepted_meeting",
+        "rejected_meeting",
+        "completed_meeting",
+        "sent_message",
+        "received_message",
+        "visited_event",
+        "created_connection",
+        "connected_supplier",
+        "connected_buyer",
+        "clicked_contact",
+        "clicked_website",
+        "shared_profile",
+        "exported_lead",
+        "created_opportunity",
+        "converted_lead"
+      ]
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "booth_id": {
+      "type": "string"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string"
+    },
+    "product_title": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string"
+    },
+    "meeting_id": {
+      "type": "string"
+    },
+    "rfi_id": {
+      "type": "string"
+    },
+    "target_company_id": {
+      "type": "string"
+    },
+    "target_company_name": {
+      "type": "string"
+    },
+    "target_user_id": {
+      "type": "string"
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "source_device": {
+      "type": "string"
+    },
+    "source_integration": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "points": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "recorded",
+        "synced",
+        "failed"
+      ],
+      "default": "recorded"
+    }
+  },
+  "required": [
+    "activity_type",
+    "user_id"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "data.target_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

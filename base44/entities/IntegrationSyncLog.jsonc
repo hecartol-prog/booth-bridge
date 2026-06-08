@@ -1,0 +1,98 @@
+{
+  "name": "IntegrationSyncLog",
+  "type": "object",
+  "properties": {
+    "connection_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "sync_type": {
+      "type": "string",
+      "enum": [
+        "lead_push",
+        "meeting_push",
+        "meeting_pull",
+        "contact_push",
+        "opportunity_pull",
+        "calendar_sync",
+        "activity_push",
+        "webhook_receive"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failed",
+        "partial",
+        "pending"
+      ],
+      "default": "pending"
+    },
+    "records_attempted": {
+      "type": "number",
+      "default": 0
+    },
+    "records_succeeded": {
+      "type": "number",
+      "default": 0
+    },
+    "records_failed": {
+      "type": "number",
+      "default": 0
+    },
+    "error_details": {
+      "type": "string"
+    },
+    "payload_summary": {
+      "type": "object"
+    },
+    "duration_ms": {
+      "type": "number"
+    },
+    "source_record_id": {
+      "type": "string"
+    },
+    "target_record_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider",
+    "sync_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

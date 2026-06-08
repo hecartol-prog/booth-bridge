@@ -1,0 +1,167 @@
+{
+  "name": "MeetingRequest",
+  "type": "object",
+  "properties": {
+    "requested_by_user_id": {
+      "type": "string"
+    },
+    "requested_by_name": {
+      "type": "string"
+    },
+    "requested_by_company": {
+      "type": "string"
+    },
+    "target_exhibitor_user_id": {
+      "type": "string"
+    },
+    "target_exhibitor_company": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "booth_id": {
+      "type": "string"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "meeting_purpose": {
+      "type": "string"
+    },
+    "products_of_interest": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "preferred_dates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preferred_time": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "declined",
+        "scheduled",
+        "completed",
+        "no_show"
+      ],
+      "default": "pending"
+    },
+    "meeting_id": {
+      "type": "string",
+      "description": "Linked Meeting entity id once scheduled"
+    },
+    "calendly_url": {
+      "type": "string"
+    },
+    "calendly_event_id": {
+      "type": "string"
+    },
+    "calendly_scheduled_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "meeting_score": {
+      "type": "number",
+      "default": 0
+    },
+    "outcome_notes": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "none",
+        "follow_up",
+        "rfi_sent",
+        "deal_initiated",
+        "deal_closed",
+        "no_interest"
+      ]
+    }
+  },
+  "required": [
+    "requested_by_user_id",
+    "target_exhibitor_user_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.requested_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.requested_by_user_id": "{{user.id}}"
+        },
+        {
+          "data.target_exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.requested_by_user_id": "{{user.id}}"
+        },
+        {
+          "data.target_exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.requested_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

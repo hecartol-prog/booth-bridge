@@ -20,7 +20,8 @@
     "logout": "Log out",
     "events": "Events",
     "discover": "Discover",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "integrations": "Integrations"
   },
   "auth": {
     "welcomeBack": "Welcome back",

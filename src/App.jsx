@@ -36,6 +36,7 @@ import DigitalBooth from "@/pages/DigitalBooth";
 import EventDirectory from "@/pages/EventDirectory";
 import ExhibitorDiscover from "@/pages/ExhibitorDiscover";
 import OrganizerAnalytics from "@/pages/OrganizerAnalytics";
+import IntegrationHub from "@/pages/IntegrationHub";
 
 // Admin pages
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -125,6 +126,7 @@ const AuthenticatedApp = () => {
           <Route path="/events" element={<EventDirectory />} />
           <Route path="/discover" element={<ExhibitorDiscover />} />
           <Route path="/organizer-analytics" element={<OrganizerAnalytics />} />
+          <Route path="/integrations" element={<IntegrationHub />} />
         </Route>
       </Route>
 

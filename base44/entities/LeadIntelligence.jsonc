@@ -1,0 +1,184 @@
+{
+  "name": "LeadIntelligence",
+  "type": "object",
+  "properties": {
+    "lead_profile_id": {
+      "type": "string"
+    },
+    "buyer_user_id": {
+      "type": "string"
+    },
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "lead_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 calculated score"
+    },
+    "lead_temperature": {
+      "type": "string",
+      "enum": [
+        "cold",
+        "warm",
+        "hot",
+        "qualified",
+        "opportunity",
+        "customer"
+      ],
+      "default": "cold"
+    },
+    "interest_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "product_interest": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "meeting_probability": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100"
+    },
+    "conversion_probability": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100"
+    },
+    "rfi_probability": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100"
+    },
+    "last_activity": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "activity_count": {
+      "type": "number",
+      "default": 0
+    },
+    "profile_completeness": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100"
+    },
+    "engagement_score": {
+      "type": "number",
+      "default": 0
+    },
+    "recommendation_score": {
+      "type": "number",
+      "default": 0
+    },
+    "qr_scans": {
+      "type": "number",
+      "default": 0
+    },
+    "profile_views": {
+      "type": "number",
+      "default": 0
+    },
+    "product_views": {
+      "type": "number",
+      "default": 0
+    },
+    "catalog_downloads": {
+      "type": "number",
+      "default": 0
+    },
+    "meeting_requests": {
+      "type": "number",
+      "default": 0
+    },
+    "meetings_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "rfis_submitted": {
+      "type": "number",
+      "default": 0
+    },
+    "crm_synced_salesforce": {
+      "type": "boolean",
+      "default": false
+    },
+    "crm_synced_hubspot": {
+      "type": "boolean",
+      "default": false
+    },
+    "salesforce_lead_id": {
+      "type": "string"
+    },
+    "hubspot_contact_id": {
+      "type": "string"
+    },
+    "last_crm_sync": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "recommended_action": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "exhibitor_user_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "data.buyer_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
