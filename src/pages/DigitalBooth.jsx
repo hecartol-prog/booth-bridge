@@ -20,6 +20,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import { enqueueVisitorAction, VISITOR_ACTIONS, getPendingVisitorCount } from "@/utils/visitorInteractionQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { cacheWrite, cacheRead } from "@/utils/visitorCache";
+import { db, addSupplierToProject } from "@/utils/dbClient";
 
 const catalogTypeLabels = {
   company_profile: "Company Profile",
@@ -50,6 +51,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const [saveDialog, setSaveDialog] = useState(false);
   const [saveNotes, setSaveNotes] = useState("");
   const [saveStatus, setSaveStatus] = useState("interested");
+  const [assignProjectId, setAssignProjectId] = useState("");
   const [rfiDialog, setRfiDialog] = useState(false);
   const [rfiType, setRfiType] = useState("brochure");
   const [rfiMessage, setRfiMessage] = useState("");
@@ -58,6 +60,12 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
   const isBuyer = user?.user_role !== "exhibitor";
   const BOOTH_CACHE_KEY = `booth:${exhibitorUserId}`;
+
+  const { data: activeProjects = [] } = useQuery({
+    queryKey: ["sourcing-projects", user?.id],
+    queryFn: () => db.SourcingProject.filter({ buyer_id: user.id, status: "active" }),
+    enabled: !!user?.id && isBuyer,
+  });
 
   // Track online/offline
   useEffect(() => {
@@ -159,10 +167,24 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       notes: saveNotes,
       visit_status: saveStatus,
     }),
-    onSuccess: () => {
+    onSuccess: async (savedBoothRecord) => {
       queryClient.invalidateQueries({ queryKey: ["saved-booth-check"] });
       queryClient.invalidateQueries({ queryKey: ["saved-booths"] });
+      // Optionally assign to a sourcing project
+      if (assignProjectId && user?.id) {
+        await addSupplierToProject({
+          project_id: assignProjectId,
+          buyer_id: user.id,
+          exhibitor_user_id: exhibitorUserId,
+          exhibitor_profile_id: profile?.id,
+          company_name: profile?.company_name,
+          booth_number: profile?.booth_number,
+          event_name: profile?.event_name,
+        });
+        queryClient.invalidateQueries({ queryKey: ["compare-mappings"] });
+      }
       setSaveDialog(false);
+      setAssignProjectId("");
       toast({ title: "Booth saved!", description: `${profile?.company_name} added to your saved booths.` });
     },
   });
@@ -447,6 +469,20 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
               <label className="text-sm font-medium mb-1 block">Notes</label>
               <Textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder="Add notes about this supplier..." rows={3} />
             </div>
+            {activeProjects.length > 0 && (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Add to Project (optional)</label>
+                <Select value={assignProjectId} onValueChange={setAssignProjectId}>
+                  <SelectTrigger><SelectValue placeholder="Select a project..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
+                    {activeProjects.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.project_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSaveDialog(false)}>Cancel</Button>

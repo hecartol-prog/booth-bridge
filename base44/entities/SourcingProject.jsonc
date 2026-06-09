@@ -1,0 +1,67 @@
+{
+  "name": "SourcingProject",
+  "type": "object",
+  "properties": {
+    "buyer_id": {
+      "type": "string",
+      "description": "UUID of the buyer user"
+    },
+    "project_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "target_moq": {
+      "type": "number"
+    },
+    "required_certifications": {
+      "type": "string",
+      "description": "Comma-separated list e.g. ISO9001,CE,FSC"
+    },
+    "target_countries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "budget_range": {
+      "type": "string"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "metadata": {
+      "type": "string",
+      "description": "JSON configuration string \u2014 JSONB portable"
+    }
+  },
+  "required": [
+    "buyer_id",
+    "project_name"
+  ],
+  "rls": {
+    "create": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "read": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "update": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.buyer_id": "{{user.id}}"
+    }
+  }
+}

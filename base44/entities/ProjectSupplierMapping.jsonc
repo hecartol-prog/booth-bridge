@@ -1,0 +1,81 @@
+{
+  "name": "ProjectSupplierMapping",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "UUID ref to SourcingProject"
+    },
+    "buyer_id": {
+      "type": "string",
+      "description": "Denormalized for RLS \u2014 matches SourcingProject.buyer_id"
+    },
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "exhibitor_profile_id": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "evaluation_notes": {
+      "type": "string"
+    },
+    "moq": {
+      "type": "number"
+    },
+    "lead_time_days": {
+      "type": "number"
+    },
+    "certifications": {
+      "type": "string"
+    },
+    "tooling_capability": {
+      "type": "string"
+    },
+    "export_markets": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "description": "1-5 buyer rating"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "shortlisted",
+        "contacted",
+        "sample_requested",
+        "approved",
+        "rejected"
+      ],
+      "default": "shortlisted"
+    }
+  },
+  "required": [
+    "project_id",
+    "buyer_id",
+    "exhibitor_user_id"
+  ],
+  "rls": {
+    "create": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "read": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "update": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.buyer_id": "{{user.id}}"
+    }
+  }
+}

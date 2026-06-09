@@ -1,23 +1,28 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Bookmark, Camera, Package,
-  ArrowRight, Building2, FileText, TrendingUp
+  Bookmark, Camera, Package, ArrowRight, Building2, FileText,
+  TrendingUp, FolderPlus, SlidersHorizontal
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { format } from "date-fns";
 import DigitalBooth from "./DigitalBooth";
+import CreateProjectSheet from "@/components/buyer/CreateProjectSheet";
+import ActionQueue from "@/components/buyer/ActionQueue";
+import { computeFollowUpActions, computeStaleRFIs } from "@/utils/followUpChecker";
+import { db } from "@/utils/dbClient";
 
 export default function BuyerDashboard() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const [viewBooth, setViewBooth] = useState(null);
+  const [showProjectSheet, setShowProjectSheet] = useState(false);
 
   const { data: savedBooths = [] } = useQuery({
     queryKey: ["buyer-saved-booths", user?.id],
@@ -46,20 +51,44 @@ export default function BuyerDashboard() {
     enabled: !!user?.id,
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ["sourcing-projects", user?.id],
+    queryFn: () => db.SourcingProject.filter({ buyer_id: user.id }, "-created_date"),
+    enabled: !!user?.id,
+  });
+
+  const { data: upcomingMeetings = [] } = useQuery({
+    queryKey: ["buyer-upcoming-meetings", user?.id],
+    queryFn: () => base44.entities.Meeting.filter({ proposed_to: user.id, status: "scheduled" }, "proposed_time", 5),
+    enabled: !!user?.id,
+  });
+
   if (viewBooth) {
     return <DigitalBooth exhibitorUserId={viewBooth} onBack={() => setViewBooth(null)} />;
   }
+
+  // Computed action items
+  const followUpActions = computeFollowUpActions(savedBooths);
+  const staleRFIs = computeStaleRFIs(rfis);
+
+  const handleMarkResponded = async (boothId) => {
+    await base44.entities.SavedBooth.update(boothId, { visit_status: "follow_up" });
+    queryClient.invalidateQueries({ queryKey: ["buyer-saved-booths", user?.id] });
+  };
 
   const stats = [
     { label: t("dashboard.savedBooths"), value: savedBooths.length, icon: Building2, color: "text-primary", path: "/saved-booths" },
     { label: t("dashboard.savedProducts"), value: savedProducts.length, icon: Package, color: "text-purple-600", path: "/my-library" },
     { label: t("dashboard.requestsSent"), value: rfis.length, icon: FileText, color: "text-amber-600", path: "/my-rfis" },
-    { label: t("dashboard.followUps"), value: savedBooths.filter(b => b.visit_status === "follow_up").length, icon: TrendingUp, color: "text-green-600", path: "/saved-booths" },
+    { label: "Projects", value: projects.length, icon: FolderPlus, color: "text-green-600", path: "/workspace/compare" },
   ];
+
+  const activeProjects = projects.filter(p => p.status === "active");
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
-      <div className="mb-6">
+      {/* Header */}
+      <div className="mb-5">
         <h1 className="text-2xl font-display font-bold">
           {t("dashboard.hey")}, {user?.full_name?.split(" ")[0]} 👋
         </h1>
@@ -71,7 +100,7 @@ export default function BuyerDashboard() {
       </div>
 
       {/* Primary CTAs */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-5">
         <Link to="/scan">
           <Card className="p-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer h-full">
             <Camera className="w-6 h-6 mb-2" />
@@ -79,17 +108,18 @@ export default function BuyerDashboard() {
             <p className="text-xs opacity-80 mt-0.5">{t("dashboard.instantAccess")}</p>
           </Card>
         </Link>
-        <Link to="/saved-booths">
-          <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer h-full">
-            <Bookmark className="w-6 h-6 text-primary mb-2" />
-            <p className="font-bold text-sm">{t("dashboard.savedBooths")}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{savedBooths.length} {t("dashboard.suppliers")}</p>
-          </Card>
-        </Link>
+        <Card
+          className="p-4 hover:shadow-md transition-shadow cursor-pointer h-full"
+          onClick={() => setShowProjectSheet(true)}
+        >
+          <FolderPlus className="w-6 h-6 text-primary mb-2" />
+          <p className="font-bold text-sm">New Project</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Organize your sourcing</p>
+        </Card>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 mb-6">
+      <div className="grid grid-cols-4 gap-2 mb-5">
         {stats.map(stat => (
           <Link key={stat.label} to={stat.path}>
             <Card className="p-3 text-center hover:shadow-md transition-shadow cursor-pointer">
@@ -100,6 +130,41 @@ export default function BuyerDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* Action Queue — time-sensitive items */}
+      <ActionQueue
+        followUpActions={followUpActions}
+        staleRFIs={staleRFIs}
+        upcomingMeetings={upcomingMeetings}
+        onMarkResponded={handleMarkResponded}
+      />
+
+      {/* Active sourcing projects */}
+      {activeProjects.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-heading">Active Projects</CardTitle>
+              <Link to="/workspace/compare" className="text-xs text-primary hover:underline flex items-center gap-1">
+                Compare <SlidersHorizontal className="w-3 h-3" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeProjects.slice(0, 3).map(p => (
+                <div key={p.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">{p.project_name}</p>
+                    {p.target_moq && <p className="text-xs text-muted-foreground">MOQ: {p.target_moq}</p>}
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">{p.status}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent saved booths */}
       {savedBooths.length > 0 && (
@@ -169,13 +234,11 @@ export default function BuyerDashboard() {
       )}
 
       {/* Empty state */}
-      {savedBooths.length === 0 && savedProducts.length === 0 && (
+      {savedBooths.length === 0 && savedProducts.length === 0 && followUpActions.length === 0 && (
         <Card className="p-8 text-center">
           <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
           <p className="font-semibold text-sm">{t("dashboard.startExploring")}</p>
-          <p className="text-xs text-muted-foreground mt-1 mb-4">
-            {t("dashboard.scanToAccess")}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1 mb-4">{t("dashboard.scanToAccess")}</p>
           <Link to="/scan">
             <Button size="sm">
               <Camera className="w-4 h-4 mr-2" /> {t("dashboard.scanFirstBooth")}
@@ -183,6 +246,13 @@ export default function BuyerDashboard() {
           </Link>
         </Card>
       )}
+
+      <CreateProjectSheet
+        open={showProjectSheet}
+        onOpenChange={setShowProjectSheet}
+        buyerId={user?.id}
+        onCreated={() => queryClient.invalidateQueries({ queryKey: ["sourcing-projects", user?.id] })}
+      />
     </div>
   );
 }

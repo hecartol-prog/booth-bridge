@@ -97,7 +97,19 @@ export const db = {
   IntegrationSyncLog: makeEntity("IntegrationSyncLog"),
   MatchRecommendation: makeEntity("MatchRecommendation"),
   OpportunityPost:    makeEntity("OpportunityPost"),
+  SourcingProject:    makeEntity("SourcingProject"),
+  ProjectSupplierMapping: makeEntity("ProjectSupplierMapping"),
 };
+
+// ── Sourcing project helpers ───────────────────────────────────────────────
+export const createSourcingProject = (payload) =>
+  db.SourcingProject.create(payload);
+
+export const addSupplierToProject = (payload) =>
+  db.ProjectSupplierMapping.create(payload);
+
+export const saveEvaluation = (mappingId, fields) =>
+  db.ProjectSupplierMapping.update(mappingId, fields);
 
 // ── Typed mutation helpers ─────────────────────────────────────────────────
 // These are the canonical write paths for all transactional events.

@@ -36,6 +36,7 @@ import DigitalBooth from "@/pages/DigitalBooth";
 import EventDirectory from "@/pages/EventDirectory";
 import ExhibitorDiscover from "@/pages/ExhibitorDiscover";
 import OrganizerAnalytics from "@/pages/OrganizerAnalytics";
+import SupplierCompare from "@/pages/SupplierCompare";
 import IntegrationHub from "@/pages/IntegrationHub";
 
 // Admin pages
@@ -127,6 +128,7 @@ const AuthenticatedApp = () => {
           <Route path="/discover" element={<ExhibitorDiscover />} />
           <Route path="/organizer-analytics" element={<OrganizerAnalytics />} />
           <Route path="/integrations" element={<IntegrationHub />} />
+          <Route path="/workspace/compare" element={<SupplierCompare />} />
         </Route>
       </Route>
 
