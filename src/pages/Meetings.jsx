@@ -11,26 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar, Clock, Plus, Check, X, Download } from "lucide-react";
 import { format } from "date-fns";
-
-// Display all meeting times in the venue's local timezone.
-// Falls back to the user's browser timezone when no event timezone is set.
-const VENUE_TZ = "Asia/Shanghai"; // Default trade show timezone — update per event
-
-function formatMeetingTime(isoStr, tz = VENUE_TZ) {
-  try {
-    const d = new Date(isoStr);
-    return new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).format(d);
-  } catch {
-    return format(new Date(isoStr), "MMM d, h:mm a");
-  }
-}
+import { formatMeetingSlot, setVenueTimezone, getVenueTimezone } from "@/utils/venueTimezone";
 
 export default function Meetings() {
   const { user } = useAuth();
@@ -40,8 +21,6 @@ export default function Meetings() {
   const [proposedTime, setProposedTime] = useState("");
   const [duration, setDuration] = useState("30");
   const [title, setTitle] = useState("");
-  const [venueTimezone, setVenueTimezone] = useState(VENUE_TZ);
-
   // Real-time subscription — update meeting status changes instantly
   useEffect(() => {
     if (!user?.id) return;
@@ -214,7 +193,7 @@ END:VCALENDAR`;
                           <div className="flex items-center gap-2 mt-1">
                             <Clock className="w-3 h-3 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">
-                              {formatMeetingTime(meeting.proposed_time, venueTimezone)} · {meeting.duration} min
+                              {formatMeetingSlot(meeting.proposed_time)} · {meeting.duration} min
                             </span>
                           </div>
                           <Badge className={`mt-2 text-xs ${statusColors[meeting.status]}`}>
@@ -257,7 +236,7 @@ END:VCALENDAR`;
                       <div>
                         <p className="text-sm font-medium">{meeting.title || "Meeting"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatMeetingTime(meeting.proposed_time, venueTimezone)} · {meeting.duration} min
+                          {formatMeetingSlot(meeting.proposed_time)} · {meeting.duration} min
                         </p>
                       </div>
                     </div>

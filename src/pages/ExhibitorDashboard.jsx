@@ -11,35 +11,7 @@ import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-
-function exportLeadsCSV(connections, rfis, meetings) {
-  const rows = connections.map(conn => {
-    const connRfis = rfis.filter(r => r.connection_id === conn.id);
-    const connMeetings = meetings.filter(m => m.connection_id === conn.id);
-    return [
-      conn.buyer_name || "",
-      conn.buyer_company || "",
-      conn.buyer_email || "",
-      conn.booth_number || "",
-      conn.event_name || "",
-      format(new Date(conn.created_date), "yyyy-MM-dd HH:mm"),
-      conn.status || "",
-      connRfis.length,
-      connMeetings.length,
-      conn.exhibitor_notes || "",
-    ];
-  });
-
-  const header = ["Name", "Company", "Email", "Booth", "Event", "Connected At", "Status", "RFIs", "Meetings", "Notes"];
-  const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `leads-${format(new Date(), "yyyy-MM-dd")}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import { exportLeadsCSV } from "@/utils/csvExport";
 
 export default function ExhibitorDashboard() {
   const { user } = useAuth();
@@ -156,7 +128,7 @@ export default function ExhibitorDashboard() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => exportLeadsCSV(accepted, rfis, meetings)}
+            onClick={() => exportLeadsCSV({ connections: accepted, rfis, meetings })}
             className="shrink-0"
           >
             <Download className="w-4 h-4 mr-1.5" /> Export CSV
