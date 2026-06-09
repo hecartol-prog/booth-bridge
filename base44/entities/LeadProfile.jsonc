@@ -148,9 +148,6 @@
           "data.representative_user_id": "{{user.id}}"
         },
         {
-          "data.buyer_user_id": "{{user.id}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
