@@ -10,13 +10,8 @@ const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b
 const ADMIN_ROLES = ["admin", "superadmin", "systemadmin", "supportadmin"];
 
 // Track failed attempts in memory (session-only)
-// Reset on each page load so a hard refresh clears the counter
 let failedAttempts = 0;
 let lockoutUntil = null;
-
-// Auto-clear lockout on module load (page refresh)
-lockoutUntil = null;
-failedAttempts = 0;
 
 function logAdminAccess(data) {
   const nav = navigator;
