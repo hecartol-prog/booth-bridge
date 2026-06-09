@@ -29,7 +29,7 @@ function logAdminAccess(data) {
 }
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("hector@dgtopindustrial.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
