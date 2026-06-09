@@ -165,7 +165,7 @@ export default function AdminLogin() {
                     type="email"
                     autoComplete="email"
                     autoFocus
-                    placeholder="h.carreno2602@boothbridge.app"
+                    placeholder="admin@boothbridge.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-12 bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
