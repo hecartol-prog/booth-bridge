@@ -53,33 +53,54 @@ const buyerNav = [
   { path: "/billing", icon: CreditCard, labelKey: "nav.billing" },
 ];
 
-function AdminRoleSwitcher({ user }) {
-  const activeRole = user?.user_role || "exhibitor";
-  const roleLabel = { exhibitor: "Exhibitor View", buyer: "Buyer View", admin: "Admin View" };
+const IMPERSONATE_KEY = "bb_impersonate_as_user";
 
-  const switchTo = async (newRole) => {
-    await base44.auth.updateMe({ user_role: newRole });
-    window.location.href = newRole === "admin" ? "/admin" : "/";
+function AdminRoleSwitcher({ user }) {
+  const isImpersonating = localStorage.getItem(IMPERSONATE_KEY) === "true";
+  const activeRole = user?.user_role || "exhibitor";
+
+  const switchToUserMode = async (userRole) => {
+    localStorage.setItem(IMPERSONATE_KEY, "true");
+    await base44.auth.updateMe({ user_role: userRole, role: "user" });
+    window.location.href = "/";
   };
+
+  const switchToAdminMode = async () => {
+    localStorage.removeItem(IMPERSONATE_KEY);
+    await base44.auth.updateMe({ role: "admin" });
+    window.location.href = "/admin";
+  };
+
+  if (isImpersonating) {
+    return (
+      <button
+        onClick={switchToAdminMode}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-colors mb-1"
+      >
+        <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+        <span className="flex-1 text-left">Exit User Preview</span>
+      </button>
+    );
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sidebar-accent/60 text-sidebar-primary border border-sidebar-border hover:bg-sidebar-accent transition-colors mb-1">
           <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-          <span className="flex-1 text-left">{roleLabel[activeRole] || "Switch View"}</span>
+          <span className="flex-1 text-left">Admin Controls</span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-60" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-48">
-        <DropdownMenuItem onClick={() => switchTo("exhibitor")}>
-          <LayoutDashboard className="w-4 h-4 mr-2" /> Exhibitor View
+      <DropdownMenuContent align="start" className="w-52">
+        <DropdownMenuItem onClick={() => switchToUserMode("exhibitor")}>
+          <LayoutDashboard className="w-4 h-4 mr-2" /> Preview as Exhibitor
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => switchTo("buyer")}>
-          <Search className="w-4 h-4 mr-2" /> Buyer View
+        <DropdownMenuItem onClick={() => switchToUserMode("buyer")}>
+          <Search className="w-4 h-4 mr-2" /> Preview as Buyer
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => switchTo("admin")}>
-          <ShieldCheck className="w-4 h-4 mr-2" /> Admin Panel
+        <DropdownMenuItem onClick={() => { window.location.href = "/admin"; }}>
+          <ShieldCheck className="w-4 h-4 mr-2" /> Go to Admin Panel
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

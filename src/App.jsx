@@ -179,9 +179,10 @@ const AuthenticatedApp = () => {
 function OnboardedGuard({ children }) {
   const { user } = useAuth();
   
-  // Admin role users skip onboarding entirely
+  // Admin role users AND admin-impersonating-user both skip onboarding
   const isAdmin = (user?.role || "").toLowerCase() === "admin";
-  if (user && !isAdmin && (!user.onboarded || !user.user_role)) {
+  const isImpersonating = localStorage.getItem("bb_impersonate_as_user") === "true";
+  if (user && !isAdmin && !isImpersonating && (!user.onboarded || !user.user_role)) {
     return <Navigate to="/onboarding" replace />;
   }
   
