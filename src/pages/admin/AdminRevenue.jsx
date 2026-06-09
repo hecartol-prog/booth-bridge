@@ -1,172 +1,174 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  DollarSign, TrendingUp, Crown, Star, Building2, Users, BarChart3, Zap
-} from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line
-} from "recharts";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AdminDataGrid from "@/components/admin/AdminDataGrid";
+import { exportToCSV } from "@/utils/adminExport";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Cell } from "recharts";
+import { DollarSign, Crown, Star, TrendingUp, Zap, Edit, RefreshCcw } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+
+const COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
 
 export default function AdminRevenue() {
-  const { data: subscriptions = [] } = useQuery({
-    queryKey: ["admin-subs"],
-    queryFn: () => base44.entities.PremiumBoothSubscription.list(),
-  });
-  const { data: sponsored = [] } = useQuery({
-    queryKey: ["admin-sponsored"],
-    queryFn: () => base44.entities.SponsoredListing.list(),
-  });
-  const { data: users = [] } = useQuery({
-    queryKey: ["admin-revenue-users"],
-    queryFn: () => base44.entities.User.list(),
-  });
-  const { data: exhibitors = [] } = useQuery({
-    queryKey: ["admin-revenue-exhibitors"],
-    queryFn: () => base44.entities.ExhibitorProfile.list(),
-  });
-  const { data: connections = [] } = useQuery({
-    queryKey: ["admin-revenue-connections"],
-    queryFn: () => base44.entities.Connection.list(),
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(null);
+
+  const { data: subscriptions = [] } = useQuery({ queryKey: ["admin-subs"], queryFn: () => base44.entities.PremiumBoothSubscription.list() });
+  const { data: sponsored = [] } = useQuery({ queryKey: ["admin-sponsored"], queryFn: () => base44.entities.SponsoredListing.list() });
+  const { data: billing = [] } = useQuery({ queryKey: ["admin-billing"], queryFn: () => base44.entities.BillingTransaction.list() });
+  const { data: billingSubs = [] } = useQuery({ queryKey: ["admin-billing-subs"], queryFn: () => base44.entities.BillingSubscription.list() });
+
+  const updateSub = useMutation({
+    mutationFn: d => base44.entities.PremiumBoothSubscription.update(d.id, d),
+    onSuccess: () => { qc.invalidateQueries(["admin-subs"]); toast({ title: "Subscription updated" }); setEditing(null); },
   });
 
   const activeSubs = subscriptions.filter(s => s.status === "active");
-  const premiumSubs = activeSubs.filter(s => s.plan_type === "premium");
-  const activeSponsorships = sponsored.filter(s => s.status === "active");
-  const totalMRR = premiumSubs.reduce((s, sub) => s + (sub.amount_paid || 0), 0);
-  const sponsorRevenue = activeSponsorships.reduce((s, sp) => s + (sp.event_budget || 0), 0);
-  const totalRevenue = totalMRR + sponsorRevenue;
+  const totalRevenue = billing.filter(t => t.status === "succeeded").reduce((s, t) => s + (t.amount || 0), 0);
+  const mrr = activeSubs.reduce((s, sub) => s + (sub.amount_paid || 0), 0);
 
-  const tierBreakdown = sponsored.reduce((acc, s) => {
-    acc[s.visibility_tier] = (acc[s.visibility_tier] || 0) + 1;
-    return acc;
-  }, {});
-
-  const placementBreakdown = sponsored.reduce((acc, s) => {
-    const label = s.placement?.replace(/_/g, " ") || "other";
-    acc[label] = (acc[label] || 0) + 1;
-    return acc;
-  }, {});
-
-  const placementChartData = Object.entries(placementBreakdown).map(([name, count]) => ({ name, count }));
-
-  const sponsorImpressionsTotal = sponsored.reduce((s, sp) => s + (sp.impressions || 0), 0);
-  const sponsorClicksTotal = sponsored.reduce((s, sp) => s + (sp.clicks || 0), 0);
-
-  const metrics = [
-    { label: "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50", sub: "all sources" },
-    { label: "Premium Booths", value: premiumSubs.length, icon: Crown, color: "text-amber-600", bg: "bg-amber-50", sub: "active" },
-    { label: "Sponsored Listings", value: activeSponsorships.length, icon: Star, color: "text-purple-600", bg: "bg-purple-50", sub: "active" },
-    { label: "Total Exhibitors", value: exhibitors.length, icon: Building2, color: "text-blue-600", bg: "bg-blue-50", sub: "registered" },
-    { label: "Total Users", value: users.length, icon: Users, color: "text-primary", bg: "bg-primary/10", sub: "all roles" },
-    { label: "Sponsor Impressions", value: sponsorImpressionsTotal.toLocaleString(), icon: BarChart3, color: "text-teal-600", bg: "bg-teal-50", sub: "total" },
+  const statCards = [
+    { label: "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "MRR (Active Subs)", value: `$${mrr.toLocaleString()}`, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Active Subscriptions", value: activeSubs.length, icon: Crown, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Sponsored Listings", value: sponsored.filter(s => s.status === "active").length, icon: Star, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Transactions", value: billing.length, icon: Zap, color: "text-teal-600", bg: "bg-teal-50" },
+    { label: "Billing Subscriptions", value: billingSubs.length, icon: RefreshCcw, color: "text-indigo-600", bg: "bg-indigo-50" },
   ];
 
-  const tierColors = { bronze: "#cd7f32", silver: "#c0c0c0", gold: "#ffd700", platinum: "#e5e4e2" };
+  const subColumns = [
+    { header: "Exhibitor ID", accessor: "exhibitor_id" },
+    { header: "Plan", accessor: "plan_type", render: r => <Badge className="bg-amber-100 text-amber-700">{r.plan_type}</Badge> },
+    { header: "Status", accessor: "status", render: r => <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>{r.status}</span> },
+    { header: "Payment", accessor: "payment_status", render: r => <span className={`text-xs ${r.payment_status === "paid" ? "text-green-600 font-medium" : "text-slate-500"}`}>{r.payment_status}</span> },
+    { header: "Amount", accessor: "amount_paid", render: r => <span className="font-semibold">${r.amount_paid || 0}</span> },
+    { header: "Start", accessor: "start_date" },
+    { header: "End", accessor: "end_date" },
+    { header: "Actions", sortable: false, render: r => (
+      <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEditing({ ...r })}><Edit className="w-3 h-3" /></Button>
+      </div>
+    )},
+  ];
+
+  const txColumns = [
+    { header: "Type", accessor: "type", render: r => <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100">{r.type}</span> },
+    { header: "Status", accessor: "status", render: r => <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === "succeeded" ? "bg-green-100 text-green-700" : r.status === "failed" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>{r.status}</span> },
+    { header: "Amount", accessor: "amount", render: r => <span className="font-semibold">${r.amount || 0} {r.currency || "USD"}</span> },
+    { header: "Provider", accessor: "provider" },
+    { header: "Description", accessor: "description", render: r => <span className="text-xs text-slate-500 max-w-[200px] truncate block">{r.description || "—"}</span> },
+    { header: "Date", accessor: "created_date", render: r => <span className="text-xs text-slate-400">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</span> },
+  ];
+
+  const tierBreakdown = sponsored.reduce((acc, s) => { acc[s.visibility_tier] = (acc[s.visibility_tier] || 0) + 1; return acc; }, {});
+  const tierData = Object.entries(tierBreakdown).map(([name, value]) => ({ name, value }));
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Zap className="w-6 h-6 text-primary" /> Revenue Control Center
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">BoothBridge monetization intelligence</p>
+    <div className="p-6 space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-500" /> Revenue Operations Center</h2>
+        <p className="text-sm text-slate-500">Financial control & subscription management</p>
       </div>
 
-      {/* Revenue metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        {metrics.map(m => (
-          <Card key={m.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-xl ${m.bg} flex items-center justify-center shrink-0`}>
-                <m.icon className={`w-5 h-5 ${m.color}`} />
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        {statCards.map(s => (
+          <Card key={s.label}>
+            <CardContent className="p-4">
+              <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
+                <s.icon className={`w-4 h-4 ${s.color}`} />
               </div>
-              <div>
-                <p className="text-xl font-bold">{m.value}</p>
-                <p className="text-xs text-slate-500">{m.label}</p>
-                <p className="text-[10px] text-slate-400">{m.sub}</p>
-              </div>
+              <p className="text-xl font-bold">{s.value}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{s.label}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4 mb-4">
-        {/* Sponsored placement breakdown */}
+      {tierData.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Sponsored Placement Distribution</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Sponsored Listing Tier Distribution</CardTitle></CardHeader>
           <CardContent>
-            {placementChartData.length === 0 ? (
-              <div className="py-10 text-center text-sm text-muted-foreground">No sponsored listings yet</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={placementChartData}>
-                  <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="hsl(221,73%,40%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={tierData}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {tierData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
+      )}
 
-        {/* Tier breakdown */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Visibility Tier Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Tabs defaultValue="subscriptions">
+        <TabsList className="mb-3 w-fit">
+          <TabsTrigger value="subscriptions" className="text-xs">Premium Subscriptions ({subscriptions.length})</TabsTrigger>
+          <TabsTrigger value="transactions" className="text-xs">Transactions ({billing.length})</TabsTrigger>
+          <TabsTrigger value="billing-subs" className="text-xs">Billing Subscriptions ({billingSubs.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="subscriptions">
+          <AdminDataGrid data={subscriptions} columns={subColumns}
+            filterOptions={[{ key: "status", label: "Status", options: ["active","expired","cancelled","trial"].map(v => ({ value: v, label: v })) }]}
+            onExport={rows => exportToCSV(rows, "subscriptions")}
+            bulkActions={[{ label: "Export CSV", onClick: ids => exportToCSV(subscriptions.filter(s => ids.includes(s.id)), "subscriptions") }]} />
+        </TabsContent>
+
+        <TabsContent value="transactions">
+          <AdminDataGrid data={billing} columns={txColumns}
+            filterOptions={[{ key: "status", label: "Status", options: ["succeeded","failed","pending","refunded"].map(v => ({ value: v, label: v })) }]}
+            onExport={rows => exportToCSV(rows, "transactions")} />
+        </TabsContent>
+
+        <TabsContent value="billing-subs">
+          <AdminDataGrid data={billingSubs}
+            columns={[
+              { header: "Plan", accessor: "plan_name", render: r => <span className="font-medium">{r.plan_name || r.plan_type}</span> },
+              { header: "Status", accessor: "status", render: r => <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-100"}`}>{r.status}</span> },
+              { header: "Amount", accessor: "amount", render: r => <span className="font-semibold">${r.amount || 0} {r.currency || "USD"}/{r.interval || "mo"}</span> },
+              { header: "Provider", accessor: "provider" },
+              { header: "Period End", accessor: "current_period_end", render: r => <span className="text-xs text-slate-400">{r.current_period_end ? new Date(r.current_period_end).toLocaleDateString() : "—"}</span> },
+            ]}
+            onExport={rows => exportToCSV(rows, "billing-subscriptions")} />
+        </TabsContent>
+      </Tabs>
+
+      {editing && (
+        <Dialog open onOpenChange={() => setEditing(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Edit Subscription</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
-              {["platinum", "gold", "silver", "bronze"].map(tier => {
-                const count = tierBreakdown[tier] || 0;
-                const max = Math.max(...Object.values(tierBreakdown), 1);
-                return (
-                  <div key={tier} className="flex items-center gap-3">
-                    <span className="text-xs font-semibold capitalize w-16" style={{ color: tierColors[tier] }}>{tier}</span>
-                    <div className="flex-1 bg-muted rounded-full h-2">
-                      <div className="h-2 rounded-full" style={{ width: `${(count / max) * 100}%`, backgroundColor: tierColors[tier] }} />
-                    </div>
-                    <span className="text-sm font-bold w-4 text-right">{count}</span>
-                  </div>
-                );
-              })}
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Status</p>
+                <Select value={editing.status} onValueChange={v => setEditing(d => ({ ...d, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["active","expired","cancelled","trial"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Payment Status</p>
+                <Select value={editing.payment_status} onValueChange={v => setEditing(d => ({ ...d, payment_status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["paid","pending","failed","free"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button className="flex-1" onClick={() => updateSub.mutate(editing)}>Save</Button>
+                <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Subscription table */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Active Premium Subscriptions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {premiumSubs.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No premium subscriptions yet</p>
-          ) : (
-            <div className="space-y-2">
-              {premiumSubs.map(sub => (
-                <div key={sub.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{sub.exhibitor_id}</p>
-                    <p className="text-xs text-muted-foreground">{sub.start_date} → {sub.end_date}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-amber-100 text-amber-700">{sub.plan_type}</Badge>
-                    <Badge variant={sub.payment_status === "paid" ? "default" : "secondary"}>{sub.payment_status}</Badge>
-                    <span className="text-sm font-semibold">${sub.amount_paid || 0}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

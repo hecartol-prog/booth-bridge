@@ -1,157 +1,132 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Pencil, Trash2, Upload, Loader2 } from "lucide-react";
+import AdminDataGrid from "@/components/admin/AdminDataGrid";
+import { exportToCSV } from "@/utils/adminExport";
+import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
+const STATUS_COLORS = {
+  active: "bg-green-100 text-green-700",
+  draft: "bg-yellow-100 text-yellow-700",
+  pending: "bg-blue-100 text-blue-700",
+  rejected: "bg-red-100 text-red-700",
+  archived: "bg-slate-100 text-slate-500",
+};
+
 export default function AdminProducts() {
-  const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({});
-  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [editing, setEditing] = useState(null);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => base44.entities.Product.list("-created_date", 300),
+    queryFn: () => base44.entities.Product.list(),
   });
 
-  const { data: exhibitors = [] } = useQuery({
-    queryKey: ["admin-exhibitors"],
-    queryFn: () => base44.entities.ExhibitorProfile.list("-created_date", 200),
+  const saveMutation = useMutation({
+    mutationFn: d => d.id ? base44.entities.Product.update(d.id, d) : base44.entities.Product.create(d),
+    onSuccess: () => { qc.invalidateQueries(["admin-products"]); toast({ title: "Product saved" }); setEditing(null); },
   });
 
-  const updateMut = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Product.update(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-products"] });
-      setEditing(null);
-      toast({ title: "Product updated" });
-    },
+  const deleteMutation = useMutation({
+    mutationFn: id => base44.entities.Product.delete(id),
+    onSuccess: () => { qc.invalidateQueries(["admin-products"]); toast({ title: "Product deleted" }); },
   });
 
-  const deleteMut = useMutation({
-    mutationFn: (id) => base44.entities.Product.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-products"] });
-      toast({ title: "Product deleted" });
-    },
-  });
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, image_url: file_url }));
-    setUploading(false);
+  const bulkApprove = async (ids) => {
+    await Promise.all(ids.map(id => base44.entities.Product.update(id, { status: "active" })));
+    qc.invalidateQueries(["admin-products"]); toast({ title: `${ids.length} products approved` });
   };
 
-  const filtered = products.filter(p =>
-    p.title?.toLowerCase().includes(search.toLowerCase()) ||
-    p.event_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const bulkReject = async (ids) => {
+    await Promise.all(ids.map(id => base44.entities.Product.update(id, { status: "rejected" })));
+    qc.invalidateQueries(["admin-products"]); toast({ title: `${ids.length} products rejected` });
+  };
 
-  const getExhibitorName = (userId) => exhibitors.find(e => e.user_id === userId)?.company_name || userId?.slice(0, 8) + "...";
+  const columns = [
+    { header: "Image", sortable: false, render: r => r.images?.[0] || r.image_url ? (
+      <img src={r.images?.[0] || r.image_url} alt="" className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+    ) : <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 text-xs">No img</div> },
+    { header: "Product Name", accessor: "title", render: r => <span className="font-medium">{r.title || r.name || "—"}</span> },
+    { header: "Category", accessor: "category", render: r => <span className="text-xs text-slate-500">{r.category || "—"}</span> },
+    { header: "Status", accessor: "status", render: r => (
+      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[r.status] || "bg-slate-100 text-slate-600"}`}>{r.status || "active"}</span>
+    )},
+    { header: "MOQ", accessor: "moq", render: r => <span className="text-xs">{r.moq || "—"}</span> },
+    { header: "Created", accessor: "created_date", render: r => <span className="text-xs text-slate-400">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</span> },
+    { header: "Actions", sortable: false, render: r => (
+      <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEditing({ ...r })}><Edit className="w-3 h-3" /></Button>
+        <Button variant="ghost" size="sm" className="h-7 px-2 text-green-600" onClick={() => saveMutation.mutate({ ...r, status: "active" })}><CheckCircle className="w-3 h-3" /></Button>
+        <Button variant="ghost" size="sm" className="h-7 px-2 text-red-500" onClick={() => { if (confirm("Delete?")) deleteMutation.mutate(r.id); }}><Trash2 className="w-3 h-3" /></Button>
+      </div>
+    )},
+  ];
+
+  const filterOptions = [
+    { key: "status", label: "Status", options: ["active","draft","pending","rejected","archived"].map(v => ({ value: v, label: v })) },
+    { key: "category", label: "Category", options: [...new Set(products.map(p => p.category).filter(Boolean))].map(v => ({ value: v, label: v })) },
+  ];
+
+  const bulkActions = [
+    { label: "Approve", icon: CheckCircle, onClick: bulkApprove },
+    { label: "Reject", icon: XCircle, onClick: bulkReject },
+    { label: "Export CSV", onClick: ids => exportToCSV(products.filter(p => ids.includes(p.id)), "products") },
+  ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage all exhibitor products</p>
-      </div>
+    <div className="p-6 h-full flex flex-col">
+      <AdminDataGrid
+        data={products}
+        columns={columns}
+        isLoading={isLoading}
+        title="Product Database"
+        subtitle={`${products.length} products`}
+        filterOptions={filterOptions}
+        bulkActions={bulkActions}
+        onExport={rows => exportToCSV(rows, "products")}
+        actions={<Button size="sm" onClick={() => setEditing({})}><Plus className="w-4 h-4 mr-1" /> New Product</Button>}
+      />
 
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input className="pl-9" placeholder="Search by title or event..." value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading ? (
-          <div className="col-span-3 py-12 text-center text-slate-400">Loading...</div>
-        ) : filtered.length === 0 ? (
-          <div className="col-span-3 py-12 text-center text-slate-400">No products found</div>
-        ) : filtered.map(p => (
-          <div key={p.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            {p.image_url
-              ? <img src={p.image_url} className="w-full h-40 object-cover" alt={p.title} />
-              : <div className="w-full h-40 bg-slate-100 flex items-center justify-center text-slate-300 text-xs">No image</div>
-            }
-            <div className="p-4">
-              <p className="font-semibold text-slate-900 truncate">{p.title}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{getExhibitorName(p.exhibitor_user_id)}</p>
-              {p.description && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{p.description}</p>}
-              <div className="flex gap-2 mt-3">
-                <Button size="sm" variant="outline" className="flex-1" onClick={() => { setForm({ ...p }); setEditing(p); }}>
-                  <Pencil className="w-3 h-3 mr-1" /> Edit
-                </Button>
-                <Button size="sm" variant="outline" className="text-red-500 hover:text-red-600" onClick={() => deleteMut.mutate(p.id)}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+      {editing && (
+        <Dialog open onOpenChange={() => setEditing(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editing.id ? `Edit: ${editing.title || editing.name}` : "New Product"}</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              {[["title", "Product Name", "col-span-2"], ["category", "Category"], ["moq", "MOQ (Min Order Qty)"], ["lead_time", "Lead Time"], ["price_range", "Price Range"]].map(([key, label, cls = ""]) => (
+                <div key={key} className={cls}>
+                  <p className="text-xs text-slate-500 mb-1">{label}</p>
+                  <Input value={editing[key] || ""} onChange={e => setEditing(d => ({ ...d, [key]: e.target.value }))} />
+                </div>
+              ))}
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Status</p>
+                <Select value={editing.status || "active"} onValueChange={v => setEditing(d => ({ ...d, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["active","draft","pending","rejected","archived"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-slate-500 mb-1">Description</p>
+                <Input value={editing.description || ""} onChange={e => setEditing(d => ({ ...d, description: e.target.value }))} />
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Product — {editing?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div>
-              <Label>Title</Label>
-              <Input value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" onClick={() => saveMutation.mutate(editing)}>Save Product</Button>
+              <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             </div>
-            <div>
-              <Label>Exhibitor</Label>
-              <Select value={form.exhibitor_user_id || ""} onValueChange={v => setForm(f => ({ ...f, exhibitor_user_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select exhibitor" /></SelectTrigger>
-                <SelectContent>
-                  {exhibitors.map(ex => <SelectItem key={ex.user_id} value={ex.user_id}>{ex.company_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Event Name</Label>
-              <Input value={form.event_name || ""} onChange={e => setForm(f => ({ ...f, event_name: e.target.value }))} />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <textarea
-                className="w-full border rounded-md px-3 py-2 text-sm min-h-[80px] resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                value={form.description || ""}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Product Image</Label>
-              <div className="flex items-center gap-3 mt-1">
-                {form.image_url && <img src={form.image_url} className="w-14 h-14 rounded object-cover border" alt="" />}
-                <label className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg cursor-pointer hover:bg-muted text-sm text-slate-500">
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  Upload Image
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setEditing(null)}>Cancel</Button>
-              <Button className="flex-1" onClick={() => updateMut.mutate({ id: editing.id, data: form })} disabled={updateMut.isPending}>
-                {updateMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

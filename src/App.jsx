@@ -60,6 +60,11 @@ import AdminCatalogues from "@/pages/admin/AdminCatalogues";
 import AdminEvents from "@/pages/admin/AdminEvents";
 import AdminConnections from "@/pages/admin/AdminConnections";
 import AdminRevenue from "@/pages/admin/AdminRevenue";
+import AdminLeads from "@/pages/admin/AdminLeads";
+import AdminMedia from "@/pages/admin/AdminMedia";
+import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminDataQuality from "@/pages/admin/AdminDataQuality";
+import AdminAuditLog from "@/pages/admin/AdminAuditLog";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
@@ -169,6 +174,11 @@ const AuthenticatedApp = () => {
         <Route path="events" element={<AdminEvents />} />
         <Route path="connections" element={<AdminConnections />} />
         <Route path="revenue" element={<AdminRevenue />} />
+        <Route path="leads" element={<AdminLeads />} />
+        <Route path="media" element={<AdminMedia />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="data-quality" element={<AdminDataQuality />} />
+        <Route path="audit" element={<AdminAuditLog />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />
