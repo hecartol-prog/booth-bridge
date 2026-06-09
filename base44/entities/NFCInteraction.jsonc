@@ -1,0 +1,87 @@
+{
+  "name": "NFCInteraction",
+  "type": "object",
+  "properties": {
+    "initiator_user_id": {
+      "type": "string"
+    },
+    "target_user_id": {
+      "type": "string"
+    },
+    "nfc_identifier": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "interaction_type": {
+      "type": "string",
+      "enum": [
+        "badge_tap",
+        "product_tap",
+        "booth_tap"
+      ],
+      "default": "badge_tap"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "lead_points": {
+      "type": "number",
+      "default": 10
+    },
+    "synced": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "initiator_user_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.initiator_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.initiator_user_id": "{{user.id}}"
+        },
+        {
+          "data.target_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

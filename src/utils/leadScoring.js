@@ -4,6 +4,7 @@
  */
 
 export const SCORE_WEIGHTS = {
+  // QR / existing
   viewed_booth:       10,
   viewed_product:      5,
   opened_profile:      5,
@@ -23,6 +24,13 @@ export const SCORE_WEIGHTS = {
   send_rfi:           35,
   schedule_meeting:   50,
   attend_meeting:     75,
+  // NFC
+  nfc_badge_tap:      10,
+  nfc_product_tap:    15,
+  nfc_booth_tap:      10,
+  // OCR
+  business_card_scan: 20,
+  badge_scan:         15,
 };
 
 export const TEMPERATURE_BANDS = [

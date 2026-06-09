@@ -1,0 +1,147 @@
+{
+  "name": "ScannedContact",
+  "type": "object",
+  "properties": {
+    "scanned_by_user_id": {
+      "type": "string"
+    },
+    "scan_type": {
+      "type": "string",
+      "enum": [
+        "business_card",
+        "badge"
+      ],
+      "default": "business_card"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "position": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "whatsapp": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "linkedin": {
+      "type": "string"
+    },
+    "badge_number": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "booth_number": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "raw_image_url": {
+      "type": "string"
+    },
+    "ocr_confidence": {
+      "type": "number",
+      "default": 0
+    },
+    "notes": {
+      "type": "string"
+    },
+    "follow_up_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "contacted",
+        "converted",
+        "no_action"
+      ],
+      "default": "pending"
+    },
+    "linked_lead_id": {
+      "type": "string"
+    },
+    "linked_project_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "scanned_by_user_id"
+  ],
+  "rls": {
+    "create": {
+      "data.scanned_by_user_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.scanned_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.scanned_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.scanned_by_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

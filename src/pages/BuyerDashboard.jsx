@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Bookmark, Camera, Package, ArrowRight, Building2, FileText,
-  TrendingUp, FolderPlus, SlidersHorizontal
+  TrendingUp, FolderPlus, SlidersHorizontal, Nfc, ScanLine
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -99,22 +99,39 @@ export default function BuyerDashboard() {
         </p>
       </div>
 
-      {/* Primary CTAs */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
+      {/* Primary CTAs — 3 capture methods */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
         <Link to="/scan">
-          <Card className="p-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer h-full">
-            <Camera className="w-6 h-6 mb-2" />
-            <p className="font-bold text-sm">{t("dashboard.scanBoothQR")}</p>
-            <p className="text-xs opacity-80 mt-0.5">{t("dashboard.instantAccess")}</p>
+          <Card className="p-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer h-full text-center">
+            <Camera className="w-5 h-5 mb-1 mx-auto" />
+            <p className="font-bold text-xs">QR Scan</p>
           </Card>
         </Link>
+        <Link to="/nfc">
+          <Card className="p-3 hover:shadow-md transition-shadow cursor-pointer h-full text-center bg-blue-600 text-white hover:bg-blue-700">
+            <Nfc className="w-5 h-5 mb-1 mx-auto" />
+            <p className="font-bold text-xs">NFC Tap</p>
+          </Card>
+        </Link>
+        <Link to="/ocr-scanner">
+          <Card className="p-3 hover:shadow-md transition-shadow cursor-pointer h-full text-center bg-purple-600 text-white hover:bg-purple-700">
+            <ScanLine className="w-5 h-5 mb-1 mx-auto" />
+            <p className="font-bold text-xs">OCR Scan</p>
+          </Card>
+        </Link>
+      </div>
+      <div className="mb-5">
         <Card
-          className="p-4 hover:shadow-md transition-shadow cursor-pointer h-full"
+          className="p-4 hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => setShowProjectSheet(true)}
         >
-          <FolderPlus className="w-6 h-6 text-primary mb-2" />
-          <p className="font-bold text-sm">New Project</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Organize your sourcing</p>
+          <div className="flex items-center gap-3">
+            <FolderPlus className="w-6 h-6 text-primary" />
+            <div>
+              <p className="font-bold text-sm">New Sourcing Project</p>
+              <p className="text-xs text-muted-foreground">Organize suppliers, compare, track</p>
+            </div>
+          </div>
         </Card>
       </div>
 

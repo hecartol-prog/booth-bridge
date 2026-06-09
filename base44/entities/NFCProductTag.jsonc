@@ -1,0 +1,84 @@
+{
+  "name": "NFCProductTag",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string"
+    },
+    "supplier_user_id": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "tag_code": {
+      "type": "string",
+      "description": "Unique NFC tag code"
+    },
+    "tag_label": {
+      "type": "string"
+    },
+    "active_status": {
+      "type": "boolean",
+      "default": true
+    },
+    "tap_count": {
+      "type": "number",
+      "default": 0
+    },
+    "save_count": {
+      "type": "number",
+      "default": 0
+    },
+    "quote_request_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "product_id",
+    "supplier_user_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.supplier_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.supplier_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.supplier_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

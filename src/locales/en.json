@@ -21,7 +21,15 @@
     "events": "Events",
     "discover": "Discover",
     "analytics": "Analytics",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "nfc": "NFC Exchange",
+    "ocrScanner": "Scan Card",
+    "contacts": "Contacts",
+    "billing": "Billing",
+    "workspace": "Workspace",
+    "orgAnalytics": "Org Analytics",
+    "commandCenter": "Command Center",
+    "premium": "Premium Booth"
   },
   "auth": {
     "welcomeBack": "Welcome back",

@@ -42,6 +42,12 @@ import LeadIntelligence from "@/pages/LeadIntelligence";
 import ExhibitorAnalytics from "@/pages/ExhibitorAnalytics";
 import PremiumBooth from "@/pages/PremiumBooth";
 import OrganizerCommandCenter from "@/pages/OrganizerCommandCenter";
+import NFCExchange from "@/pages/NFCExchange";
+import NFCProfileView from "@/pages/NFCProfileView";
+import NFCOrganizerPanel from "@/pages/NFCOrganizerPanel";
+import OCRScanner from "@/pages/OCRScanner";
+import ScannedContacts from "@/pages/ScannedContacts";
+import BillingCenter from "@/pages/BillingCenter";
 
 // Admin pages
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -138,8 +144,16 @@ const AuthenticatedApp = () => {
           <Route path="/analytics" element={<ExhibitorAnalytics />} />
           <Route path="/premium-booth" element={<PremiumBooth />} />
           <Route path="/organizer-command" element={<OrganizerCommandCenter />} />
+          <Route path="/nfc" element={<NFCExchange />} />
+          <Route path="/nfc-admin" element={<NFCOrganizerPanel />} />
+          <Route path="/ocr-scanner" element={<OCRScanner />} />
+          <Route path="/contacts" element={<ScannedContacts />} />
+          <Route path="/billing" element={<BillingCenter />} />
         </Route>
       </Route>
+
+      {/* Public NFC profile — no auth required */}
+      <Route path="/nfc/:userId" element={<NFCProfileView />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLayout />}>

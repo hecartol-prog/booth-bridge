@@ -1,0 +1,184 @@
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Nfc, Mail, Phone, Globe, Linkedin, MapPin, MessageCircle,
+  UserPlus, Calendar, FolderPlus, BookOpen, Loader2, CheckCircle2
+} from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+
+// Standalone page: /nfc/:userId — opened when someone taps an NFC badge
+export default function NFCProfileView() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Extract userId from URL path /nfc/:userId
+  const pathParts = window.location.pathname.split("/");
+  const targetUserId = pathParts[pathParts.length - 1];
+
+  useEffect(() => {
+    if (!targetUserId) return;
+    base44.entities.NFCProfile.filter({ user_id: targetUserId })
+      .then(list => setProfile(list[0] || null))
+      .finally(() => setLoading(false));
+  }, [targetUserId]);
+
+  // Log NFC interaction
+  useEffect(() => {
+    if (!profile || !user) return;
+    base44.entities.NFCInteraction.create({
+      initiator_user_id: user.id,
+      target_user_id: targetUserId,
+      nfc_identifier: profile.nfc_identifier || "",
+      interaction_type: "badge_tap",
+      timestamp: new Date().toISOString(),
+      lead_points: 10,
+      synced: true,
+    }).catch(() => {});
+    // Bump tap count
+    base44.entities.NFCProfile.update(profile.id, {
+      tap_count: (profile.tap_count || 0) + 1,
+    }).catch(() => {});
+  }, [profile, user]);
+
+  const handleSaveContact = async () => {
+    if (!user || !profile) return;
+    setSaving(true);
+    try {
+      await base44.entities.Connection.create({
+        exhibitor_user_id: targetUserId,
+        buyer_user_id: user.id,
+        status: "accepted",
+        initiated_by: "nfc",
+        exhibitor_name: profile.display_name || "",
+        exhibitor_company: profile.company || "",
+        booth_number: profile.booth_number || "",
+        event_name: profile.event_name || "",
+        buyer_name: user.full_name,
+      });
+      setSaved(true);
+      toast({ title: "Contact saved!", description: `${profile.display_name} added to your connections.` });
+    } catch {
+      toast({ title: "Already saved", description: "This contact is already in your network." });
+      setSaved(true);
+    }
+    setSaving(false);
+  };
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+
+  if (!profile) return (
+    <div className="min-h-screen flex items-center justify-center p-6 text-center">
+      <div>
+        <Nfc className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+        <p className="font-semibold">Profile not found</p>
+        <p className="text-sm text-muted-foreground mt-1">This NFC badge hasn't been activated yet.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background p-4 flex flex-col items-center">
+      <div className="w-full max-w-sm mt-8">
+        {/* Profile card */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-blue-800 text-white p-6 shadow-xl mb-4">
+          <div className="absolute top-3 right-3 opacity-20">
+            <Nfc className="w-16 h-16" />
+          </div>
+          <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold mb-3">
+            {(profile.display_name || "?").charAt(0).toUpperCase()}
+          </div>
+          <h1 className="text-2xl font-bold font-display">{profile.display_name}</h1>
+          {profile.position && <p className="text-white/80">{profile.position}</p>}
+          {profile.company && <p className="text-white font-semibold">{profile.company}</p>}
+          {profile.country && (
+            <p className="text-white/70 text-sm mt-1 flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" /> {profile.country}
+              {profile.booth_number && ` · Booth ${profile.booth_number}`}
+            </p>
+          )}
+          <div className="mt-4 pt-4 border-t border-white/20">
+            <span className="text-[10px] text-white/40 font-mono">Powered by BoothBridge NFC</span>
+          </div>
+        </div>
+
+        {/* Contact info */}
+        <Card className="p-4 mb-4 space-y-3">
+          {profile.email && (
+            <a href={`mailto:${profile.email}`} className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
+              <Mail className="w-4 h-4 text-primary shrink-0" />
+              {profile.email}
+            </a>
+          )}
+          {profile.phone && (
+            <a href={`tel:${profile.phone}`} className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
+              <Phone className="w-4 h-4 text-primary shrink-0" />
+              {profile.phone}
+            </a>
+          )}
+          {profile.whatsapp && (
+            <a href={`https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer"
+               className="flex items-center gap-3 text-sm hover:text-green-600 transition-colors">
+              <MessageCircle className="w-4 h-4 text-green-600 shrink-0" />
+              WhatsApp
+            </a>
+          )}
+          {profile.linkedin && (
+            <a href={profile.linkedin} target="_blank" rel="noopener noreferrer"
+               className="flex items-center gap-3 text-sm hover:text-blue-600 transition-colors">
+              <Linkedin className="w-4 h-4 text-blue-600 shrink-0" />
+              LinkedIn
+            </a>
+          )}
+          {profile.website && (
+            <a href={profile.website} target="_blank" rel="noopener noreferrer"
+               className="flex items-center gap-3 text-sm hover:text-primary transition-colors">
+              <Globe className="w-4 h-4 text-primary shrink-0" />
+              {profile.website}
+            </a>
+          )}
+        </Card>
+
+        {/* Action buttons */}
+        <div className="space-y-2">
+          <Button
+            className="w-full"
+            onClick={handleSaveContact}
+            disabled={saved || saving || !user}
+          >
+            {saved ? (
+              <><CheckCircle2 className="w-4 h-4 mr-2" /> Contact Saved</>
+            ) : saving ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+            ) : (
+              <><UserPlus className="w-4 h-4 mr-2" /> Save Contact</>
+            )}
+          </Button>
+          {profile.whatsapp && (
+            <Button variant="outline" className="w-full" asChild>
+              <a href={`https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="w-4 h-4 mr-2 text-green-600" /> Send WhatsApp
+              </a>
+            </Button>
+          )}
+          {!user && (
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              <a href="/login" className="text-primary underline">Log in</a> to save this contact to BoothBridge.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

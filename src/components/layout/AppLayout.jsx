@@ -7,7 +7,7 @@ import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Package, Camera, CreditCard, LogOut, User,
   Bookmark, BookmarkCheck, Library, CalendarDays, Search, BarChart3, PlugZap, SlidersHorizontal,
-  Flame, Crown, Activity
+  Flame, Crown, Activity, Nfc, ScanLine
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -28,9 +28,11 @@ const exhibitorNav = [
   { path: "/lead-intelligence", icon: Flame, labelKey: "nav.leads" },
   { path: "/analytics", icon: BarChart3, labelKey: "nav.analytics" },
   { path: "/premium-booth", icon: Crown, labelKey: "nav.premium" },
+  { path: "/nfc", icon: Nfc, labelKey: "nav.nfc" },
   { path: "/organizer-analytics", icon: Activity, labelKey: "nav.orgAnalytics" },
   { path: "/organizer-command", icon: Activity, labelKey: "nav.commandCenter" },
   { path: "/integrations", icon: PlugZap, labelKey: "nav.integrations" },
+  { path: "/billing", icon: CreditCard, labelKey: "nav.billing" },
 ];
 
 const buyerNav = [
@@ -44,6 +46,10 @@ const buyerNav = [
   { path: "/events", icon: CalendarDays, labelKey: "nav.events" },
   { path: "/workspace/compare", icon: SlidersHorizontal, labelKey: "nav.workspace" },
   { path: "/discover", icon: Search, labelKey: "nav.discover" },
+  { path: "/nfc", icon: Nfc, labelKey: "nav.nfc" },
+  { path: "/ocr-scanner", icon: ScanLine, labelKey: "nav.ocrScanner" },
+  { path: "/contacts", icon: Users, labelKey: "nav.contacts" },
+  { path: "/billing", icon: CreditCard, labelKey: "nav.billing" },
 ];
 
 function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogout }) {
