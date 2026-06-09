@@ -9,9 +9,12 @@ const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b
 
 const ADMIN_ROLES = ["admin", "superadmin", "systemadmin", "supportadmin"];
 
-// Track failed attempts in memory (session-only)
-let failedAttempts = 0;
-let lockoutUntil = null;
+// Track failed attempts in session storage so they reset on page reload
+const getAttempts = () => parseInt(sessionStorage.getItem("bb_admin_attempts") || "0");
+const setAttempts = (n) => sessionStorage.setItem("bb_admin_attempts", String(n));
+const getLockout = () => parseInt(sessionStorage.getItem("bb_admin_lockout") || "0");
+const setLockout = (ts) => sessionStorage.setItem("bb_admin_lockout", String(ts));
+const clearAttempts = () => { sessionStorage.removeItem("bb_admin_attempts"); sessionStorage.removeItem("bb_admin_lockout"); };
 
 function logAdminAccess(data) {
   const nav = navigator;
@@ -42,23 +45,24 @@ export default function AdminLogin() {
   const [mfaCode, setMfaCode] = useState("");
 
   useEffect(() => {
-    // Check if still locked out
-    if (lockoutUntil && Date.now() < lockoutUntil) {
+    // Clear any stale lockout state on mount
+    const lu = getLockout();
+    if (lu && Date.now() < lu) {
       setIsLockedOut(true);
-      const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
-      setLockoutSeconds(remaining);
+      setLockoutSeconds(Math.ceil((lu - Date.now()) / 1000));
+    } else {
+      clearAttempts();
     }
   }, []);
 
   useEffect(() => {
     if (!isLockedOut) return;
     const timer = setInterval(() => {
-      const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+      const remaining = Math.ceil((getLockout() - Date.now()) / 1000);
       if (remaining <= 0) {
         setIsLockedOut(false);
         setLockoutSeconds(0);
-        failedAttempts = 0;
-        lockoutUntil = null;
+        clearAttempts();
       } else {
         setLockoutSeconds(remaining);
       }
@@ -83,24 +87,25 @@ export default function AdminLogin() {
         throw new Error("Invalid credentials.");
       }
 
-      // Success — store a simple session flag and go to admin
-      failedAttempts = 0;
-      lockoutUntil = null;
+      // Success
+      clearAttempts();
       sessionStorage.setItem("bb_admin_authed", "true");
       logAdminAccess({ email, action: "login", status: "success" });
       window.location.href = "/admin";
     } catch (err) {
-      failedAttempts += 1;
+      const attempts = getAttempts() + 1;
+      setAttempts(attempts);
 
-      if (failedAttempts >= 5) {
-        lockoutUntil = Date.now() + 5 * 60 * 1000;
+      if (attempts >= 5) {
+        const lockTs = Date.now() + 5 * 60 * 1000;
+        setLockout(lockTs);
         setIsLockedOut(true);
         setLockoutSeconds(300);
         logAdminAccess({ email, action: "failed_login", status: "failed", notes: "Locked out after 5 attempts" });
         setError("Too many failed attempts. Access locked for 5 minutes.");
       } else {
         logAdminAccess({ email, action: "failed_login", status: "failed" });
-        setError(`Invalid email or password. ${5 - failedAttempts} attempt(s) remaining.`);
+        setError(`Invalid email or password. ${5 - attempts} attempt(s) remaining.`);
       }
     } finally {
       setLoading(false);
