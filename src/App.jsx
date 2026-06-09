@@ -48,6 +48,7 @@ import NFCOrganizerPanel from "@/pages/NFCOrganizerPanel";
 import OCRScanner from "@/pages/OCRScanner";
 import ScannedContacts from "@/pages/ScannedContacts";
 import BillingCenter from "@/pages/BillingCenter";
+import AdminLogin from "@/pages/AdminLogin";
 
 // Admin pages
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -154,6 +155,9 @@ const AuthenticatedApp = () => {
 
       {/* Public NFC profile — no auth required */}
       <Route path="/nfc/:userId" element={<NFCProfileView />} />
+
+      {/* Admin login — public but separate from user login */}
+      <Route path="/admin-login" element={<AdminLogin />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLayout />}>

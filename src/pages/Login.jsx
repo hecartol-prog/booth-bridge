@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,21 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Easter egg: 5 logo taps reveals admin link
+  const logoTapsRef = useRef(0);
+  const logoTapTimerRef = useRef(null);
+  const [showAdminLink, setShowAdminLink] = useState(false);
+
+  const handleLogoTap = () => {
+    logoTapsRef.current += 1;
+    clearTimeout(logoTapTimerRef.current);
+    logoTapTimerRef.current = setTimeout(() => { logoTapsRef.current = 0; }, 3000);
+    if (logoTapsRef.current >= 5) {
+      setShowAdminLink(true);
+      logoTapsRef.current = 0;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +73,8 @@ export default function Login() {
       icon={LogIn}
       title={t("auth.welcomeBack")}
       subtitle={t("auth.loginSubtitle")}
+      onLogoClick={handleLogoTap}
+      adminLinkVisible={showAdminLink}
       footer={
         <>
           {t("auth.noAccount")}{" "}

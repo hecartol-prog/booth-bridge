@@ -4,7 +4,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+export default function AuthLayout({ icon: Icon, title, subtitle, footer, children, onLogoClick, adminLinkVisible }) {
   return (
     <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start sm:justify-center py-10 px-4">
       {/* Language switcher top-right */}
@@ -18,7 +18,9 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           <img
             src={LOGO}
             alt="Booth Bridge"
-            className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4"
+            className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 cursor-pointer select-none"
+            onClick={onLogoClick}
+            draggable={false}
           />
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2 text-sm">{subtitle}</p>}
@@ -28,6 +30,16 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         </div>
         {footer && (
           <p className="text-center text-sm text-muted-foreground mt-6 pb-4">{footer}</p>
+        )}
+        {adminLinkVisible && (
+          <div className="text-center mt-3">
+            <a
+              href="/admin-login"
+              className="text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+            >
+              HCT
+            </a>
+          </div>
         )}
       </div>
     </div>

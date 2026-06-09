@@ -25,7 +25,10 @@ export default function AdminLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  if (!user || user.role !== "admin") {
+  const ADMIN_ROLES = ["admin", "superadmin", "systemadmin", "supportadmin"];
+  const role = (user?.role || "").toLowerCase();
+
+  if (!user || !ADMIN_ROLES.includes(role)) {
     return <Navigate to="/" replace />;
   }
 

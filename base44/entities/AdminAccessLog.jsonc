@@ -1,0 +1,77 @@
+{
+  "name": "AdminAccessLog",
+  "type": "object",
+  "properties": {
+    "admin_id": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "login_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "logout_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ip_address": {
+      "type": "string"
+    },
+    "browser": {
+      "type": "string"
+    },
+    "device": {
+      "type": "string"
+    },
+    "action_performed": {
+      "type": "string",
+      "enum": [
+        "login",
+        "logout",
+        "password_change",
+        "permission_change",
+        "revenue_access",
+        "user_management",
+        "system_config",
+        "failed_login"
+      ],
+      "default": "login"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failed",
+        "blocked"
+      ],
+      "default": "success"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "email",
+    "action_performed"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
