@@ -179,7 +179,9 @@ const AuthenticatedApp = () => {
 function OnboardedGuard({ children }) {
   const { user } = useAuth();
   
-  if (user && (!user.onboarded || !user.user_role)) {
+  // Admin role users skip onboarding entirely
+  const isAdmin = (user?.role || "").toLowerCase() === "admin";
+  if (user && !isAdmin && (!user.onboarded || !user.user_role)) {
     return <Navigate to="/onboarding" replace />;
   }
   

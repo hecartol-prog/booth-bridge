@@ -6,9 +6,10 @@
       "type": "string",
       "enum": [
         "exhibitor",
-        "buyer"
+        "buyer",
+        "admin"
       ],
-      "description": "App-level role: exhibitor or buyer"
+      "description": "App-level role: exhibitor, buyer, or admin"
     },
     "onboarded": {
       "type": "boolean",

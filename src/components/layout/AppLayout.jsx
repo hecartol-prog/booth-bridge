@@ -7,8 +7,9 @@ import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Package, Camera, CreditCard, LogOut, User,
   Bookmark, BookmarkCheck, Library, CalendarDays, Search, BarChart3, PlugZap, SlidersHorizontal,
-  Flame, Crown, Activity, Nfc, ScanLine
+  Flame, Crown, Activity, Nfc, ScanLine, ShieldCheck, ChevronDown
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -52,7 +53,40 @@ const buyerNav = [
   { path: "/billing", icon: CreditCard, labelKey: "nav.billing" },
 ];
 
-function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogout }) {
+function AdminRoleSwitcher({ user }) {
+  const activeRole = user?.user_role || "exhibitor";
+  const roleLabel = { exhibitor: "Exhibitor View", buyer: "Buyer View", admin: "Admin View" };
+
+  const switchTo = async (newRole) => {
+    await base44.auth.updateMe({ user_role: newRole });
+    window.location.href = newRole === "admin" ? "/admin" : "/";
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sidebar-accent/60 text-sidebar-primary border border-sidebar-border hover:bg-sidebar-accent transition-colors mb-1">
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1 text-left">{roleLabel[activeRole] || "Switch View"}</span>
+          <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuItem onClick={() => switchTo("exhibitor")}>
+          <LayoutDashboard className="w-4 h-4 mr-2" /> Exhibitor View
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => switchTo("buyer")}>
+          <Search className="w-4 h-4 mr-2" /> Buyer View
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => switchTo("admin")}>
+          <ShieldCheck className="w-4 h-4 mr-2" /> Admin Panel
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogout, user }) {
   return (
     <>
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
@@ -73,6 +107,9 @@ function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogo
         ))}
       </nav>
       <div className="p-3 border-t border-sidebar-border">
+        {(user?.role || "").toLowerCase() === "admin" && (
+          <AdminRoleSwitcher user={user} />
+        )}
         <Link
           to="/notifications"
           onClick={onNavigate}
@@ -112,7 +149,9 @@ export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = user?.user_role === "exhibitor" ? exhibitorNav : buyerNav;
+  const isAdminRole = (user?.role || "").toLowerCase() === "admin";
+  // Admin defaults to exhibitor nav unless explicitly switched to buyer
+  const navItems = user?.user_role === "buyer" ? buyerNav : exhibitorNav;
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["unread-notifications", user?.id],
@@ -146,6 +185,7 @@ export default function AppLayout() {
           unreadCount={unreadCount}
           onNavigate={undefined}
           onLogout={handleLogout}
+          user={user}
         />
       </aside>
 
@@ -172,6 +212,7 @@ export default function AppLayout() {
               unreadCount={unreadCount}
               onNavigate={() => setMobileOpen(false)}
               onLogout={handleLogout}
+              user={user}
             />
           </aside>
         </div>
