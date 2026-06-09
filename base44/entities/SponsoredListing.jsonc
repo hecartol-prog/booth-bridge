@@ -1,0 +1,120 @@
+{
+  "name": "SponsoredListing",
+  "type": "object",
+  "properties": {
+    "exhibitor_user_id": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "placement": {
+      "type": "string",
+      "enum": [
+        "homepage",
+        "search",
+        "event_page",
+        "category",
+        "recommendations"
+      ],
+      "default": "homepage"
+    },
+    "visibility_tier": {
+      "type": "string",
+      "enum": [
+        "bronze",
+        "silver",
+        "gold",
+        "platinum"
+      ],
+      "default": "bronze"
+    },
+    "label": {
+      "type": "string",
+      "enum": [
+        "sponsored",
+        "featured"
+      ],
+      "default": "sponsored"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "expired"
+      ],
+      "default": "active"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "daily_budget": {
+      "type": "number",
+      "default": 0
+    },
+    "event_budget": {
+      "type": "number",
+      "default": 0
+    },
+    "impressions": {
+      "type": "number",
+      "default": 0
+    },
+    "clicks": {
+      "type": "number",
+      "default": 0
+    },
+    "booth_visits": {
+      "type": "number",
+      "default": 0
+    },
+    "leads_generated": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "exhibitor_user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.exhibitor_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

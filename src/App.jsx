@@ -38,6 +38,10 @@ import ExhibitorDiscover from "@/pages/ExhibitorDiscover";
 import OrganizerAnalytics from "@/pages/OrganizerAnalytics";
 import SupplierCompare from "@/pages/SupplierCompare";
 import IntegrationHub from "@/pages/IntegrationHub";
+import LeadIntelligence from "@/pages/LeadIntelligence";
+import ExhibitorAnalytics from "@/pages/ExhibitorAnalytics";
+import PremiumBooth from "@/pages/PremiumBooth";
+import OrganizerCommandCenter from "@/pages/OrganizerCommandCenter";
 
 // Admin pages
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -48,6 +52,7 @@ import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminCatalogues from "@/pages/admin/AdminCatalogues";
 import AdminEvents from "@/pages/admin/AdminEvents";
 import AdminConnections from "@/pages/admin/AdminConnections";
+import AdminRevenue from "@/pages/admin/AdminRevenue";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
@@ -129,6 +134,10 @@ const AuthenticatedApp = () => {
           <Route path="/organizer-analytics" element={<OrganizerAnalytics />} />
           <Route path="/integrations" element={<IntegrationHub />} />
           <Route path="/workspace/compare" element={<SupplierCompare />} />
+          <Route path="/lead-intelligence" element={<LeadIntelligence />} />
+          <Route path="/analytics" element={<ExhibitorAnalytics />} />
+          <Route path="/premium-booth" element={<PremiumBooth />} />
+          <Route path="/organizer-command" element={<OrganizerCommandCenter />} />
         </Route>
       </Route>
 
@@ -141,6 +150,7 @@ const AuthenticatedApp = () => {
         <Route path="catalogues" element={<AdminCatalogues />} />
         <Route path="events" element={<AdminEvents />} />
         <Route path="connections" element={<AdminConnections />} />
+        <Route path="revenue" element={<AdminRevenue />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

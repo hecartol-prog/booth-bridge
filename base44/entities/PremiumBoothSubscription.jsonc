@@ -1,0 +1,88 @@
+{
+  "name": "PremiumBoothSubscription",
+  "type": "object",
+  "properties": {
+    "exhibitor_id": {
+      "type": "string"
+    },
+    "plan_type": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "premium"
+      ],
+      "default": "standard"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expired",
+        "cancelled",
+        "trial"
+      ],
+      "default": "trial"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "pending",
+        "failed",
+        "free"
+      ],
+      "default": "pending"
+    },
+    "auto_renew": {
+      "type": "boolean",
+      "default": false
+    },
+    "stripe_subscription_id": {
+      "type": "string"
+    },
+    "amount_paid": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "exhibitor_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.exhibitor_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

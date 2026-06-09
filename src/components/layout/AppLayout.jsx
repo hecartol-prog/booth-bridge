@@ -6,7 +6,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   QrCode, Users, Inbox, Calendar, LayoutDashboard,
   Bell, Menu, X, Package, Camera, CreditCard, LogOut, User,
-  Bookmark, BookmarkCheck, Library, CalendarDays, Search, BarChart3, PlugZap, SlidersHorizontal
+  Bookmark, BookmarkCheck, Library, CalendarDays, Search, BarChart3, PlugZap, SlidersHorizontal,
+  Flame, Crown, Activity
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -24,7 +25,11 @@ const exhibitorNav = [
   { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
   { path: "/business-card", icon: CreditCard, labelKey: "nav.myCard" },
   { path: "/events", icon: CalendarDays, labelKey: "nav.events" },
-  { path: "/organizer-analytics", icon: BarChart3, labelKey: "nav.analytics" },
+  { path: "/lead-intelligence", icon: Flame, labelKey: "nav.leads" },
+  { path: "/analytics", icon: BarChart3, labelKey: "nav.analytics" },
+  { path: "/premium-booth", icon: Crown, labelKey: "nav.premium" },
+  { path: "/organizer-analytics", icon: Activity, labelKey: "nav.orgAnalytics" },
+  { path: "/organizer-command", icon: Activity, labelKey: "nav.commandCenter" },
   { path: "/integrations", icon: PlugZap, labelKey: "nav.integrations" },
 ];
 

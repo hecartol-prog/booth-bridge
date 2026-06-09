@@ -1,31 +1,55 @@
-export const INTERACTION_POINTS = {
-  scan_qr: 10,
-  view_booth: 10,
-  view_product: 15,
-  download_catalog: 25,
-  send_rfi: 50,
-  schedule_meeting: 75,
-  attend_meeting: 100,
+/**
+ * leadScoring — canonical scoring engine for Booth Bridge.
+ * Used by both the exhibitor dashboard and the Lead Intelligence page.
+ */
+
+export const SCORE_WEIGHTS = {
+  viewed_booth:       10,
+  viewed_product:      5,
+  opened_profile:      5,
+  saved_supplier:     20,
+  saved_product:      15,
+  scanned_qr:         10,
+  downloaded_catalog: 25,
+  submitted_rfi:      35,
+  requested_meeting:  50,
+  accepted_meeting:   50,
+  completed_meeting:  75,
+  sent_message:        5,
+  scan_qr:            10,
+  view_booth:         10,
+  view_product:        5,
+  download_catalog:   25,
+  send_rfi:           35,
+  schedule_meeting:   50,
+  attend_meeting:     75,
 };
 
+export const TEMPERATURE_BANDS = [
+  { min: 300, label: "Ready to Buy", emoji: "🔥", color: "text-red-700",    bg: "bg-red-100",    border: "border-red-300"    },
+  { min: 150, label: "Hot",          emoji: "♨️", color: "text-orange-700", bg: "bg-orange-100", border: "border-orange-300" },
+  { min:  50, label: "Warm",         emoji: "🌡️", color: "text-amber-700",  bg: "bg-amber-100",  border: "border-amber-300"  },
+  { min:   0, label: "Cold",         emoji: "❄️", color: "text-blue-700",   bg: "bg-blue-100",   border: "border-blue-300"   },
+];
+
 export function calculateLeadScore(interactions = []) {
-  return interactions.reduce((sum, i) => sum + (i.points || INTERACTION_POINTS[i.interaction_type] || 0), 0);
+  return interactions.reduce((total, i) => {
+    const type = i.interaction_type || i.activity_type || "";
+    return total + (SCORE_WEIGHTS[type] || 0) + (i.points || 0);
+  }, 0);
 }
 
 export function getLeadTemperature(score) {
-  if (score >= 151) return { label: "Hot", color: "text-red-600", bg: "bg-red-50", border: "border-red-200", emoji: "🔥" };
-  if (score >= 51) return { label: "Warm", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200", emoji: "🌡️" };
-  return { label: "Cold", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200", emoji: "❄️" };
+  return TEMPERATURE_BANDS.find(b => score >= b.min) || TEMPERATURE_BANDS[3];
 }
 
-export async function trackInteraction(base44, { buyer_user_id, exhibitor_user_id, interaction_type, event_name, metadata }) {
-  const points = INTERACTION_POINTS[interaction_type] || 0;
-  await base44.entities.LeadInteraction.create({
-    buyer_user_id,
-    exhibitor_user_id,
-    interaction_type,
-    points,
-    event_name: event_name || "",
-    metadata: metadata || {},
-  });
+export function categorizeLeads(leadMap) {
+  // leadMap: { buyerId: { name, company, country, interactions[] } }
+  return Object.entries(leadMap)
+    .map(([buyerId, data]) => {
+      const score = calculateLeadScore(data.interactions || []);
+      const temp = getLeadTemperature(score);
+      return { buyerId, score, temp, ...data };
+    })
+    .sort((a, b) => b.score - a.score);
 }

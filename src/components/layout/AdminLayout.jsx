@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import {
   LayoutDashboard, Users, Building2, Package, FileText,
-  Calendar, MessageSquare, Menu, X, ChevronRight, ShieldCheck, LogOut
+  Calendar, MessageSquare, Menu, X, ChevronRight, ShieldCheck, LogOut, TrendingUp
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -17,6 +17,7 @@ const navItems = [
   { path: "/admin/catalogues", label: "Catalogues", icon: FileText },
   { path: "/admin/events", label: "Events", icon: Calendar },
   { path: "/admin/connections", label: "Connections", icon: MessageSquare },
+  { path: "/admin/revenue", label: "Revenue", icon: TrendingUp },
 ];
 
 export default function AdminLayout() {
