@@ -4,12 +4,42 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard, Flame, Thermometer, Snowflake } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard, Flame, Download } from "lucide-react";
 import { calculateLeadScore, getLeadTemperature } from "@/utils/leadScoring";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
+function exportLeadsCSV(connections, rfis, meetings) {
+  const rows = connections.map(conn => {
+    const connRfis = rfis.filter(r => r.connection_id === conn.id);
+    const connMeetings = meetings.filter(m => m.connection_id === conn.id);
+    return [
+      conn.buyer_name || "",
+      conn.buyer_company || "",
+      conn.buyer_email || "",
+      conn.booth_number || "",
+      conn.event_name || "",
+      format(new Date(conn.created_date), "yyyy-MM-dd HH:mm"),
+      conn.status || "",
+      connRfis.length,
+      connMeetings.length,
+      conn.exhibitor_notes || "",
+    ];
+  });
+
+  const header = ["Name", "Company", "Email", "Booth", "Event", "Connected At", "Status", "RFIs", "Meetings", "Notes"];
+  const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `leads-${format(new Date(), "yyyy-MM-dd")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ExhibitorDashboard() {
   const { user } = useAuth();
@@ -113,12 +143,24 @@ export default function ExhibitorDashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-display font-bold">{t("dashboard.dashboard")}</h1>
-        {profile && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {profile.company_name} · {t("dashboard.booth")} {profile.booth_number} · {profile.event_name}
-          </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold">{t("dashboard.dashboard")}</h1>
+          {profile && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {profile.company_name} · {t("dashboard.booth")} {profile.booth_number} · {profile.event_name}
+            </p>
+          )}
+        </div>
+        {accepted.length > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => exportLeadsCSV(accepted, rfis, meetings)}
+            className="shrink-0"
+          >
+            <Download className="w-4 h-4 mr-1.5" /> Export CSV
+          </Button>
         )}
       </div>
 

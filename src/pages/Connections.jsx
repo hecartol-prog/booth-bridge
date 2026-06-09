@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,16 @@ export default function Connections() {
   const [noteText, setNoteText] = useState("");
 
   const isExhibitor = user?.user_role === "exhibitor";
+
+  // Real-time subscription — invalidate on any Connection change so the list
+  // updates instantly without a manual refresh when a new scan arrives.
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = base44.entities.Connection.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["connections", user.id] });
+    });
+    return unsub;
+  }, [user?.id, queryClient]);
 
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ["connections", user?.id],
