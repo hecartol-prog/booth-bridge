@@ -25,11 +25,10 @@ export default function AdminLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const ADMIN_ROLES = ["admin", "superadmin", "systemadmin", "supportadmin"];
-  const role = (user?.role || "").toLowerCase();
+  const isAdminAuthed = sessionStorage.getItem("bb_admin_authed") === "true";
 
-  if (!user || !ADMIN_ROLES.includes(role)) {
-    return <Navigate to="/" replace />;
+  if (!isAdminAuthed) {
+    return <Navigate to="/admin-login" replace />;
   }
 
   const isActive = (item) =>
@@ -75,7 +74,7 @@ export default function AdminLayout() {
             ← Back to App
           </Link>
           <button
-            onClick={() => base44.auth.logout("/login")}
+            onClick={() => { sessionStorage.removeItem("bb_admin_authed"); window.location.href = "/admin-login"; }}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/10"
           >
             <LogOut className="w-4 h-4" /> Logout

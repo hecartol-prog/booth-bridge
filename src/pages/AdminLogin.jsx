@@ -77,26 +77,20 @@ export default function AdminLogin() {
 
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email.trim(), password);
-      const user = await base44.auth.me();
+      const res = await base44.functions.invoke("adminAuth", { email: email.trim(), password });
 
-      const role = (user?.role || "").toLowerCase();
-      if (!ADMIN_ROLES.includes(role)) {
-        logAdminAccess({ email, action: "login", status: "blocked", notes: `Blocked: role=${role}` });
-        setError(`Access denied. Your account role (${role || "none"}) does not have admin permissions. Contact support to have your role updated.`);
-        setLoading(false);
-        return;
+      if (!res.data?.success) {
+        throw new Error("Invalid credentials.");
       }
 
-      // Success
+      // Success — store a simple session flag and go to admin
       failedAttempts = 0;
       lockoutUntil = null;
+      sessionStorage.setItem("bb_admin_authed", "true");
       logAdminAccess({ email, action: "login", status: "success" });
       window.location.href = "/admin";
     } catch (err) {
       failedAttempts += 1;
-      const errMsg = err?.message || err?.data?.message || "";
-      const isCredentialError = errMsg.toLowerCase().includes("invalid") || errMsg.toLowerCase().includes("password") || errMsg.toLowerCase().includes("credentials") || err?.status === 401 || err?.status === 400;
 
       if (failedAttempts >= 5) {
         lockoutUntil = Date.now() + 5 * 60 * 1000;
@@ -105,11 +99,8 @@ export default function AdminLogin() {
         logAdminAccess({ email, action: "failed_login", status: "failed", notes: "Locked out after 5 attempts" });
         setError("Too many failed attempts. Access locked for 5 minutes.");
       } else {
-        logAdminAccess({ email, action: "failed_login", status: "failed", notes: errMsg });
-        setError(isCredentialError
-          ? `Incorrect email or password. ${5 - failedAttempts} attempt(s) remaining.`
-          : `Login failed: ${errMsg || "Please check your credentials and try again."}`
-        );
+        logAdminAccess({ email, action: "failed_login", status: "failed" });
+        setError(`Invalid email or password. ${5 - failedAttempts} attempt(s) remaining.`);
       }
     } finally {
       setLoading(false);
