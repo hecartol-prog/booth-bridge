@@ -84,6 +84,8 @@ export default function ExhibitorSetupWizard() {
   const [productName, setProductName] = useState("");
   const [productDesc, setProductDesc] = useState("");
   const [productMoq, setProductMoq] = useState("");
+  const [productImageUrl, setProductImageUrl] = useState("");
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
 
   // Step 4 – Booth
@@ -99,13 +101,13 @@ export default function ExhibitorSetupWizard() {
 
   const { data: myProducts = [], refetch: refetchProducts } = useQuery({
     queryKey: ["esw-products", user?.id],
-    queryFn: () => base44.entities.Product.filter({ user_id: user?.id }),
+    queryFn: () => base44.entities.Product.filter({ exhibitor_user_id: user?.id }),
     enabled: !!user?.id,
   });
 
   const { data: myCatalogs = [], refetch: refetchCatalogs } = useQuery({
     queryKey: ["esw-catalogs", user?.id],
-    queryFn: () => base44.entities.CatalogItem.filter({ user_id: user?.id }),
+    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user?.id }),
     enabled: !!user?.id,
   });
 
@@ -174,16 +176,25 @@ export default function ExhibitorSetupWizard() {
     setSaving(false);
   };
 
+  const handleProductImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingProductImage(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setProductImageUrl(file_url);
+    setUploadingProductImage(false);
+  };
+
   const addProduct = async () => {
-    if (!productName) return;
+    if (!productName || !productImageUrl) return;
     setAddingProduct(true);
     await base44.entities.Product.create({
-      user_id: user.id,
+      exhibitor_user_id: user.id,
       title: productName,
       description: productDesc,
-      moq: productMoq ? Number(productMoq) : undefined,
+      image_url: productImageUrl,
     });
-    setProductName(""); setProductDesc(""); setProductMoq("");
+    setProductName(""); setProductDesc(""); setProductMoq(""); setProductImageUrl("");
     refetchProducts();
     setAddingProduct(false);
   };
@@ -192,11 +203,12 @@ export default function ExhibitorSetupWizard() {
     const file = e.target.files[0];
     if (!file) return;
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const isVideo = file.type.startsWith("video/");
     await base44.entities.CatalogItem.create({
-      user_id: user.id,
+      exhibitor_user_id: user.id,
       title: file.name,
       file_url,
-      file_type: file.type,
+      type: isVideo ? "video" : "product_catalog",
     });
     refetchCatalogs();
   };
@@ -292,8 +304,22 @@ export default function ExhibitorSetupWizard() {
                 <p className="text-sm font-medium">Add Product</p>
                 <Input placeholder="Product name *" value={productName} onChange={e => setProductName(e.target.value)} />
                 <Input placeholder="Short description" value={productDesc} onChange={e => setProductDesc(e.target.value)} />
-                <Input placeholder="MOQ (minimum order qty)" value={productMoq} onChange={e => setProductMoq(e.target.value)} type="number" />
-                <Button size="sm" onClick={addProduct} disabled={!productName || addingProduct}>
+                {/* Product image upload */}
+                {productImageUrl ? (
+                  <div className="relative w-20 h-20">
+                    <img src={productImageUrl} className="w-20 h-20 rounded-lg object-cover border" alt="Product" />
+                    <button onClick={() => setProductImageUrl("")} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-2 px-4 py-3 border border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors">
+                    {uploadingProductImage ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Upload className="w-4 h-4 text-muted-foreground" />}
+                    <span className="text-sm text-muted-foreground">{uploadingProductImage ? "Uploading..." : "Product image * (JPG, PNG)"}</span>
+                    <input type="file" accept="image/jpeg,image/png,image/jpg" className="hidden" onChange={handleProductImageUpload} disabled={uploadingProductImage} />
+                  </label>
+                )}
+                <Button size="sm" onClick={addProduct} disabled={!productName || !productImageUrl || addingProduct}>
                   {addingProduct ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                   Add Product
                 </Button>
