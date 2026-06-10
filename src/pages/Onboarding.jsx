@@ -168,7 +168,9 @@ export default function Onboarding() {
   };
 
   const handleFinish = async () => {
-    if (!role) {
+    // Derive role from current step context if not explicitly set
+    const effectiveRole = role || (step === 3 ? "buyer" : step === 2 && !role ? null : null);
+    if (!effectiveRole) {
       setFinishError("Please select a role to continue.");
       return;
     }
@@ -177,7 +179,7 @@ export default function Onboarding() {
     try {
       const me = await base44.auth.me();
 
-      if (role === "exhibitor") {
+      if (effectiveRole === "exhibitor") {
         let existing = [];
         try { existing = await base44.entities.ExhibitorProfile.filter({ user_id: me.id }); } catch { existing = []; }
         let profile;
