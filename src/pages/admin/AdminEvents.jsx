@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminDataGrid from "@/components/admin/AdminDataGrid";
 import { exportToCSV, exportToJSON } from "@/utils/adminExport";
-import { Plus, Edit, Trash2, Copy } from "lucide-react";
+import { Plus, Edit, Trash2, Copy, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const STATUS_COLORS = {
@@ -28,6 +28,7 @@ export default function AdminEvents() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(null);
   const [isNew, setIsNew] = useState(false);
+  const [sortOrder, setSortOrder] = useState("default");
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["admin-events"],
@@ -65,14 +66,24 @@ export default function AdminEvents() {
     )},
   ];
 
+  const industries = [...new Set(events.map(e => e.industry).filter(Boolean))].sort();
+
+  const sortedEvents = [...events].sort((a, b) => {
+    if (sortOrder === "date_asc") return (a.start_date || "") > (b.start_date || "") ? 1 : -1;
+    if (sortOrder === "date_desc") return (a.start_date || "") < (b.start_date || "") ? 1 : -1;
+    if (sortOrder === "industry") return (a.industry || "").localeCompare(b.industry || "");
+    return 0;
+  });
+
   const filterOptions = [
     { key: "status", label: "Status", options: ["upcoming","active","past","planning","live","completed","cancelled"].map(v => ({ value: v, label: v })) },
+    { key: "industry", label: "Industry", options: industries.map(v => ({ value: v, label: v })) },
   ];
 
   return (
     <div className="p-6 h-full flex flex-col">
       <AdminDataGrid
-        data={events}
+        data={sortedEvents}
         columns={columns}
         isLoading={isLoading}
         title="Event Management"
@@ -80,7 +91,23 @@ export default function AdminEvents() {
         filterOptions={filterOptions}
         bulkActions={[{ label: "Export CSV", onClick: ids => exportToCSV(events.filter(e => ids.includes(e.id)), "events") }]}
         onExport={rows => exportToCSV(rows, "events")}
-        actions={<Button size="sm" onClick={openNew}><Plus className="w-4 h-4 mr-1" /> New Event</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger className="h-8 text-xs w-44">
+                <ArrowUpDown className="w-3 h-3 mr-1" />
+                <SelectValue placeholder="Sort order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default Order</SelectItem>
+                <SelectItem value="date_asc">Date: Earliest First</SelectItem>
+                <SelectItem value="date_desc">Date: Latest First</SelectItem>
+                <SelectItem value="industry">Sort by Industry</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={openNew}><Plus className="w-4 h-4 mr-1" /> New Event</Button>
+          </div>
+        }
       />
 
       {editing && (
