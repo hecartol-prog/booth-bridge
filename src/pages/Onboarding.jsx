@@ -178,7 +178,8 @@ export default function Onboarding() {
       const me = await base44.auth.me();
 
       if (role === "exhibitor") {
-        const existing = await base44.entities.ExhibitorProfile.filter({ user_id: me.id });
+        let existing = [];
+        try { existing = await base44.entities.ExhibitorProfile.filter({ user_id: me.id }); } catch { existing = []; }
         let profile;
         if (existing.length > 0) {
           profile = await base44.entities.ExhibitorProfile.update(existing[0].id, {
@@ -217,7 +218,8 @@ export default function Onboarding() {
             linkedin: linkedin || "",
           },
         };
-        const existing = await base44.entities.BuyerProfile.filter({ user_id: me.id });
+        let existing = [];
+        try { existing = await base44.entities.BuyerProfile.filter({ user_id: me.id }); } catch { existing = []; }
         let profile;
         if (existing.length > 0) {
           profile = await base44.entities.BuyerProfile.update(existing[0].id, buyerData);
