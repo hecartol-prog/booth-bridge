@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import DigitalBooth from "./DigitalBooth";
 import { enqueueScan, getPendingCount } from "@/utils/offlineScanQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { validateQRPayload } from "@/utils/securitySanitizer";
 
 export default function ScanQR() {
   const { user } = useAuth();
@@ -120,8 +121,17 @@ export default function ScanQR() {
 
   // ── Scan handler ───────────────────────────────────────────────────────
 
-  const handleScan = async (code) => {
+  const handleScan = async (rawCode) => {
     setErrorMsg("");
+
+    // Security: validate QR payload before any processing
+    const qrCheck = validateQRPayload(rawCode);
+    if (!qrCheck.valid) {
+      setErrorMsg(qrCheck.reason || "Invalid or unreadable scan format. Please try again.");
+      return;
+    }
+    const code = qrCheck.sanitized;
+
     const parts = code.split(":");
     // Format: boothbridge:connect:userId:role
     if (parts.length !== 4 || parts[0] !== "boothbridge") {
