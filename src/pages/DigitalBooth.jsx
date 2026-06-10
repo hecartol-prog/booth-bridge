@@ -12,7 +12,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import {
   Building2, Globe, Mail, Phone, MessageCircle, Download, Bookmark,
   BookmarkCheck, Package, FileText, ExternalLink, MapPin, ArrowLeft,
-  Share2, ChevronRight, Image, Loader2
+  Share2, ChevronRight, Image, Loader2, Video, Film, Plus
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
@@ -378,37 +378,101 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           </CardContent>
         </Card>
 
-        {/* Catalog Library */}
-        {catalogs.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary" /> Catalog Library
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {catalogs.map(cat => {
-                const Icon = catalogTypeIcons[cat.type] || FileText;
-                return (
-                  <div key={cat.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{cat.title}</p>
-                        <p className="text-xs text-muted-foreground">{catalogTypeLabels[cat.type]}</p>
-                      </div>
+        {/* Catalog Library — always shown */}
+        {(() => {
+          const docs = catalogs.filter(c => c.type !== "video");
+          const videos = catalogs.filter(c => c.type === "video");
+          const isOwnBooth = user?.id === exhibitorUserId;
+
+          return (
+            <>
+              {/* Documents & Catalogs */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" /> Catalogs &amp; Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {docs.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-xs">No documents shared yet</p>
+                      {isOwnBooth && (
+                        <a href="/catalog-library" className="text-xs text-primary hover:underline mt-1 block">
+                          <Plus className="w-3 h-3 inline mr-0.5" />Upload catalogs
+                        </a>
+                      )}
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => handleDownload(cat)}>
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
+                  ) : (
+                    <div className="space-y-2">
+                      {docs.map(cat => {
+                        const Icon = catalogTypeIcons[cat.type] || FileText;
+                        return (
+                          <div key={cat.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Icon className="w-4 h-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">{cat.title}</p>
+                                <p className="text-xs text-muted-foreground">{catalogTypeLabels[cat.type]}</p>
+                              </div>
+                            </div>
+                            <Button size="sm" variant="ghost" onClick={() => handleDownload(cat)}>
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Videos */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Film className="w-4 h-4 text-primary" /> Videos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {videos.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Video className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-xs">No videos shared yet</p>
+                      {isOwnBooth && (
+                        <a href="/catalog-library" className="text-xs text-primary hover:underline mt-1 block">
+                          <Plus className="w-3 h-3 inline mr-0.5" />Upload a video
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {videos.map(cat => (
+                        <div key={cat.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                              <Video className="w-4 h-4 text-red-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{cat.title}</p>
+                              <p className="text-xs text-muted-foreground">Video</p>
+                            </div>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => handleDownload(cat)}>
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          );
+        })()}
 
         {/* Products */}
         {products.length > 0 && (
