@@ -159,10 +159,7 @@ const AuthenticatedApp = () => {
           <Route path="/ocr-scanner" element={<OCRScanner />} />
           <Route path="/contacts" element={<ScannedContacts />} />
           <Route path="/billing" element={<BillingCenter />} />
-          <Route path="/event-readiness" element={<EventReadinessCenter />} />
           <Route path="/setup-wizard" element={<ExhibitorSetupWizard />} />
-          <Route path="/control-room" element={<LiveEventControlRoom />} />
-          <Route path="/support-center" element={<EventSupportCenter />} />
         </Route>
       </Route>
 
@@ -187,6 +184,9 @@ const AuthenticatedApp = () => {
         <Route path="settings" element={<AdminSettings />} />
         <Route path="data-quality" element={<AdminDataQuality />} />
         <Route path="audit" element={<AdminAuditLog />} />
+        <Route path="event-readiness" element={<EventReadinessCenter />} />
+        <Route path="control-room" element={<LiveEventControlRoom />} />
+        <Route path="support-center" element={<EventSupportCenter />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

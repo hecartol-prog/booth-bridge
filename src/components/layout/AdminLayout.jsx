@@ -49,9 +49,9 @@ const navGroups = [
   {
     label: "Event Operations",
     items: [
-      { path: "/event-readiness", label: "Readiness Center", icon: CheckCircle2 },
-      { path: "/control-room", label: "Live Control Room", icon: Radio },
-      { path: "/support-center", label: "Support Center", icon: HeadphonesIcon },
+      { path: "/admin/event-readiness", label: "Readiness Center", icon: CheckCircle2 },
+      { path: "/admin/control-room", label: "Live Control Room", icon: Radio },
+      { path: "/admin/support-center", label: "Support Center", icon: HeadphonesIcon },
     ]
   },
   {

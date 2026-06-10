@@ -258,9 +258,9 @@ export default function OrganizerCommandCenter() {
       {activeTab === "operations" && (
         <div className="grid md:grid-cols-3 gap-4">
           {[
-            { icon: CheckCircle2, label: "Event Readiness Center", desc: "Track exhibitor readiness scores and fix missing profiles before launch.", path: "/event-readiness", color: "text-green-600", bg: "bg-green-50" },
-            { icon: Radio, label: "Live Control Room", desc: "Mission-control dashboard with real-time metrics, health monitoring, and activity feed.", path: "/control-room", color: "text-red-600", bg: "bg-red-50" },
-            { icon: HeadphonesIcon, label: "Event Support Center", desc: "Global search, support ticketing, and rapid issue resolution for exhibitors and attendees.", path: "/support-center", color: "text-blue-600", bg: "bg-blue-50" },
+            { icon: CheckCircle2, label: "Event Readiness Center", desc: "Track exhibitor readiness scores and fix missing profiles before launch.", path: "/admin/event-readiness", color: "text-green-600", bg: "bg-green-50" },
+            { icon: Radio, label: "Live Control Room", desc: "Mission-control dashboard with real-time metrics, health monitoring, and activity feed.", path: "/admin/control-room", color: "text-red-600", bg: "bg-red-50" },
+            { icon: HeadphonesIcon, label: "Event Support Center", desc: "Global search, support ticketing, and rapid issue resolution for exhibitors and attendees.", path: "/admin/support-center", color: "text-blue-600", bg: "bg-blue-50" },
           ].map(item => (
             <Link key={item.path} to={item.path}>
               <div className="p-5 border rounded-xl hover:shadow-md transition-shadow cursor-pointer bg-card">
