@@ -49,6 +49,10 @@ import OCRScanner from "@/pages/OCRScanner";
 import ScannedContacts from "@/pages/ScannedContacts";
 import BillingCenter from "@/pages/BillingCenter";
 import AdminLogin from "@/pages/AdminLogin";
+import EventReadinessCenter from "@/pages/EventReadinessCenter";
+import ExhibitorSetupWizard from "@/pages/ExhibitorSetupWizard";
+import LiveEventControlRoom from "@/pages/LiveEventControlRoom";
+import EventSupportCenter from "@/pages/EventSupportCenter";
 
 // Admin pages
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -155,6 +159,10 @@ const AuthenticatedApp = () => {
           <Route path="/ocr-scanner" element={<OCRScanner />} />
           <Route path="/contacts" element={<ScannedContacts />} />
           <Route path="/billing" element={<BillingCenter />} />
+          <Route path="/event-readiness" element={<EventReadinessCenter />} />
+          <Route path="/setup-wizard" element={<ExhibitorSetupWizard />} />
+          <Route path="/control-room" element={<LiveEventControlRoom />} />
+          <Route path="/support-center" element={<EventSupportCenter />} />
         </Route>
       </Route>
 

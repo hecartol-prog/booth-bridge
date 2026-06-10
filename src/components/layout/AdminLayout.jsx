@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Building2, Package, FileText,
   Calendar, MessageSquare, Menu, X, ChevronRight, ShieldCheck,
   LogOut, TrendingUp, Image, Settings, Activity, Shield, Zap,
-  ChevronDown, Search
+  ChevronDown, Search, CheckCircle2, Radio, HeadphonesIcon, Wand2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -44,6 +44,14 @@ const navGroups = [
     label: "Finance",
     items: [
       { path: "/admin/revenue", label: "Revenue Center", icon: TrendingUp },
+    ]
+  },
+  {
+    label: "Event Operations",
+    items: [
+      { path: "/event-readiness", label: "Readiness Center", icon: CheckCircle2 },
+      { path: "/control-room", label: "Live Control Room", icon: Radio },
+      { path: "/support-center", label: "Support Center", icon: HeadphonesIcon },
     ]
   },
   {

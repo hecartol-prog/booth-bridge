@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard, Flame, Download } from "lucide-react";
+import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard, Flame, Download, Wand2 } from "lucide-react";
 import { calculateLeadScore, getLeadTemperature } from "@/utils/leadScoring";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -124,16 +124,22 @@ export default function ExhibitorDashboard() {
             </p>
           )}
         </div>
-        {accepted.length > 0 && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => exportLeadsCSV({ connections: accepted, rfis, meetings })}
-            className="shrink-0"
-          >
-            <Download className="w-4 h-4 mr-1.5" /> Export CSV
-          </Button>
-        )}
+        <div className="flex gap-2 shrink-0">
+          <Link to="/setup-wizard">
+            <Button size="sm" variant="outline">
+              <Wand2 className="w-4 h-4 mr-1.5" /> Setup Wizard
+            </Button>
+          </Link>
+          {accepted.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportLeadsCSV({ connections: accepted, rfis, meetings })}
+            >
+              <Download className="w-4 h-4 mr-1.5" /> Export CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}

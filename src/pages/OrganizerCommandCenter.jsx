@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, Building2, MessageSquare, Calendar, FileText, Download,
-  TrendingUp, Trophy, Globe, BarChart3, Star, Activity, QrCode, Bookmark
+  TrendingUp, Trophy, Globe, BarChart3, Star, Activity, QrCode, Bookmark,
+  CheckCircle2, Radio, HeadphonesIcon
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -90,7 +92,7 @@ export default function OrganizerCommandCenter() {
     { label: "Active Sponsors", value: sponsored.filter(s => s.status === "active").length, icon: Star, color: "text-orange-600", bg: "bg-orange-50" },
   ];
 
-  const tabs = ["overview", "exhibitors", "buyers", "sponsors"];
+  const tabs = ["overview", "exhibitors", "buyers", "sponsors", "operations"];
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -250,6 +252,26 @@ export default function OrganizerCommandCenter() {
               })()}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === "operations" && (
+        <div className="grid md:grid-cols-3 gap-4">
+          {[
+            { icon: CheckCircle2, label: "Event Readiness Center", desc: "Track exhibitor readiness scores and fix missing profiles before launch.", path: "/event-readiness", color: "text-green-600", bg: "bg-green-50" },
+            { icon: Radio, label: "Live Control Room", desc: "Mission-control dashboard with real-time metrics, health monitoring, and activity feed.", path: "/control-room", color: "text-red-600", bg: "bg-red-50" },
+            { icon: HeadphonesIcon, label: "Event Support Center", desc: "Global search, support ticketing, and rapid issue resolution for exhibitors and attendees.", path: "/support-center", color: "text-blue-600", bg: "bg-blue-50" },
+          ].map(item => (
+            <Link key={item.path} to={item.path}>
+              <div className="p-5 border rounded-xl hover:shadow-md transition-shadow cursor-pointer bg-card">
+                <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center mb-3`}>
+                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                </div>
+                <p className="font-semibold text-sm">{item.label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
 
