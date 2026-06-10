@@ -57,11 +57,7 @@
     "action_performed"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": {},
     "read": {
       "user_condition": {
         "role": "admin"
