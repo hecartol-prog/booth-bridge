@@ -51,7 +51,8 @@ export default function AdminEvents() {
 
   const columns = [
     { header: "Event Name", accessor: "name", render: r => <span className="font-medium text-slate-900">{r.name}</span> },
-    { header: "Venue / City", render: r => <span className="text-xs text-slate-500">{[r.venue, r.city, r.country].filter(Boolean).join(", ") || "—"}</span> },
+    { header: "City / Venue", render: r => <span className="text-xs text-slate-500">{[r.city, r.venue].filter(Boolean).join(", ") || "—"}</span> },
+    { header: "Country", accessor: "country", render: r => r.country ? <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{r.country}</span> : <span className="text-xs text-slate-400">—</span> },
     { header: "Dates", render: r => <span className="text-xs text-slate-500">{r.start_date} {r.end_date ? `→ ${r.end_date}` : ""}</span> },
     { header: "Status", accessor: "status", render: r => (
       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[r.status] || STATUS_COLORS[r.event_status] || "bg-slate-100"}`}>{r.event_status || r.status}</span>
@@ -67,6 +68,7 @@ export default function AdminEvents() {
   ];
 
   const industries = [...new Set(events.map(e => e.industry).filter(Boolean))].sort();
+  const countries = [...new Set(events.map(e => e.country).filter(Boolean))].sort();
 
   const sortedEvents = [...events].sort((a, b) => {
     if (sortOrder === "date_asc") return (a.start_date || "") > (b.start_date || "") ? 1 : -1;
@@ -77,6 +79,7 @@ export default function AdminEvents() {
 
   const filterOptions = [
     { key: "status", label: "Status", options: ["upcoming","active","past","planning","live","completed","cancelled"].map(v => ({ value: v, label: v })) },
+    { key: "country", label: "Country", options: countries.map(v => ({ value: v, label: v })) },
     { key: "industry", label: "Industry", options: industries.map(v => ({ value: v, label: v })) },
   ];
 
