@@ -164,9 +164,14 @@ export default function Onboarding() {
 
   const skipScan = () => {
     setScanStep("done");
+    setStep(3);
   };
 
   const handleFinish = async () => {
+    if (!role) {
+      setFinishError("Please select a role to continue.");
+      return;
+    }
     setSaving(true);
     setFinishError(null);
     try {
