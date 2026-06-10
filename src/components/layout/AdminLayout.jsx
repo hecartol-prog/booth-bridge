@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Users, Building2, Package, FileText,
   Calendar, MessageSquare, Menu, X, ChevronRight, ShieldCheck,
   LogOut, TrendingUp, Image, Settings, Activity, Shield, Zap,
-  ChevronDown, Search, CheckCircle2, Radio, HeadphonesIcon, Wand2
+  ChevronDown, Search, CheckCircle2, Radio, HeadphonesIcon,
+  Ticket, ScanLine, FlaskConical, Monitor
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -52,6 +53,17 @@ const navGroups = [
       { path: "/admin/event-readiness", label: "Readiness Center", icon: CheckCircle2 },
       { path: "/admin/control-room", label: "Live Control Room", icon: Radio },
       { path: "/admin/support-center", label: "Support Center", icon: HeadphonesIcon },
+    ]
+  },
+  {
+    label: "Production",
+    items: [
+      { path: "/admin/search", label: "Global Search", icon: Search },
+      { path: "/admin/tickets", label: "Support Tickets", icon: Ticket },
+      { path: "/admin/nfc-validation", label: "NFC Validation", icon: Radio },
+      { path: "/admin/ocr-review", label: "OCR Review", icon: ScanLine },
+      { path: "/admin/stress-test", label: "Stress Test", icon: FlaskConical },
+      { path: "/admin/monitoring", label: "Monitoring", icon: Monitor },
     ]
   },
   {

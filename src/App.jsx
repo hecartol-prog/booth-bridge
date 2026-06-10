@@ -69,6 +69,12 @@ import AdminMedia from "@/pages/admin/AdminMedia";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminDataQuality from "@/pages/admin/AdminDataQuality";
 import AdminAuditLog from "@/pages/admin/AdminAuditLog";
+import AdminSupportTickets from "@/pages/admin/AdminSupportTickets";
+import AdminNFCValidation from "@/pages/admin/AdminNFCValidation";
+import AdminGlobalSearch from "@/pages/admin/AdminGlobalSearch";
+import AdminStressTest from "@/pages/admin/AdminStressTest";
+import AdminMonitoring from "@/pages/admin/AdminMonitoring";
+import AdminOCRReview from "@/pages/admin/AdminOCRReview";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
@@ -187,6 +193,12 @@ const AuthenticatedApp = () => {
         <Route path="event-readiness" element={<EventReadinessCenter />} />
         <Route path="control-room" element={<LiveEventControlRoom />} />
         <Route path="support-center" element={<EventSupportCenter />} />
+        <Route path="tickets" element={<AdminSupportTickets />} />
+        <Route path="nfc-validation" element={<AdminNFCValidation />} />
+        <Route path="search" element={<AdminGlobalSearch />} />
+        <Route path="stress-test" element={<AdminStressTest />} />
+        <Route path="monitoring" element={<AdminMonitoring />} />
+        <Route path="ocr-review" element={<AdminOCRReview />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

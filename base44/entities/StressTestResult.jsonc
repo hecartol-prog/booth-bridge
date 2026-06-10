@@ -1,0 +1,79 @@
+{
+  "name": "StressTestResult",
+  "type": "object",
+  "properties": {
+    "test_name": {
+      "type": "string"
+    },
+    "action_count": {
+      "type": "number"
+    },
+    "action_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "duration_ms": {
+      "type": "number"
+    },
+    "avg_latency_ms": {
+      "type": "number"
+    },
+    "failure_count": {
+      "type": "number"
+    },
+    "duplicate_count": {
+      "type": "number"
+    },
+    "sync_errors": {
+      "type": "number"
+    },
+    "offline_queue_errors": {
+      "type": "number"
+    },
+    "failure_rate": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "running",
+        "completed",
+        "failed"
+      ],
+      "default": "running"
+    },
+    "report_url": {
+      "type": "string"
+    },
+    "raw_results": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "test_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
