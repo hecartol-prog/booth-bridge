@@ -93,7 +93,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
   // ── Data fetching with cache fallback ───────────────────────────────────
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["digital-booth-profile", exhibitorUserId],
     queryFn: async () => {
       const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: exhibitorUserId });
@@ -279,11 +279,26 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (!profile) {
+  if (profileLoading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
         <p>Loading booth...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        {onBack && (
+          <button onClick={onBack} className="flex items-center gap-1.5 text-sm mb-6 hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
+        )}
+        <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+        <p className="font-semibold">Booth not found</p>
+        <p className="text-sm mt-1">This exhibitor hasn't set up their profile yet.</p>
       </div>
     );
   }
