@@ -48,14 +48,20 @@ export default function EventDirectory() {
     queryKey: ["event-exhibitor-counts"],
     queryFn: async () => {
       const exhibitors = await base44.entities.ExhibitorProfile.list();
-      const counts = exhibitors.reduce((acc, ex) => {
-        if (ex.event_name) acc[ex.event_name] = (acc[ex.event_name] || 0) + 1;
-        return acc;
-      }, {});
-      cacheWrite("exhibitor-counts", counts);
-      return counts;
+      // Count by both event_id and event_name so either matching field works
+      const countsByName = {};
+      const countsByEventId = {};
+      exhibitors.forEach(ex => {
+        if (ex.event_name) countsByName[ex.event_name] = (countsByName[ex.event_name] || 0) + 1;
+        if (ex.event_id) countsByEventId[ex.event_id] = (countsByEventId[ex.event_id] || 0) + 1;
+      });
+      cacheWrite("exhibitor-counts", { byName: countsByName, byEventId: countsByEventId });
+      return { byName: countsByName, byEventId: countsByEventId };
     },
-    placeholderData: () => cacheRead("exhibitor-counts") || {},
+    placeholderData: () => {
+      const cached = cacheRead("exhibitor-counts");
+      return cached?.byName ? cached : { byName: {}, byEventId: {} };
+    },
   });
 
   const countries = [...new Set(events.map(e => e.country).filter(Boolean))].sort();

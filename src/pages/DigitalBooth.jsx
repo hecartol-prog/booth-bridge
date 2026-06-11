@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import AiBoothAssistant from "@/components/AiBoothAssistant";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -12,7 +13,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import {
   Building2, Globe, Mail, Phone, MessageCircle, Download, Bookmark,
   BookmarkCheck, Package, FileText, ExternalLink, MapPin, ArrowLeft,
-  Share2, ChevronRight, Image, Loader2, Video, Film, Plus
+  Share2, ChevronRight, Image, Loader2, Video, Film, Plus, Calendar
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
@@ -47,6 +48,7 @@ const catalogTypeIcons = {
 export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [saveDialog, setSaveDialog] = useState(false);
   const [saveNotes, setSaveNotes] = useState("");
@@ -346,6 +348,9 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           </Button>
           <Button variant="outline" className="flex-1 shadow-lg" onClick={() => setRfiDialog(true)}>
             <FileText className="w-4 h-4 mr-2" /> Send Request
+          </Button>
+          <Button variant="outline" className="flex-1 shadow-lg" onClick={() => navigate("/meetings")}>
+            <Calendar className="w-4 h-4 mr-2" /> Schedule Meeting
           </Button>
         </div>
       )}

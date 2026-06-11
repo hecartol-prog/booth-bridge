@@ -62,23 +62,42 @@ export default function Meetings() {
   const { data: connections = [] } = useQuery({
     queryKey: ["meeting-conns", user?.id],
     queryFn: async () => {
-      const filter = user?.user_role === "exhibitor"
-        ? { exhibitor_user_id: user.id, status: "accepted" }
-        : { buyer_user_id: user.id, status: "accepted" };
-      return base44.entities.Connection.filter(filter);
+      if (user?.user_role === "exhibitor") {
+        return base44.entities.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" });
+      }
+      // For buyers: accepted connections + all exhibitor profiles as fallback
+      const [accepted, exhibitorProfiles] = await Promise.all([
+        base44.entities.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
+        base44.entities.ExhibitorProfile.list("-created_date", 200),
+      ]);
+      // Build a synthetic connection list from all exhibitor profiles not already in accepted
+      const acceptedIds = new Set(accepted.map(c => c.exhibitor_user_id));
+      const fromProfiles = exhibitorProfiles
+        .filter(p => !acceptedIds.has(p.user_id))
+        .map(p => ({
+          id: `profile_${p.id}`,
+          exhibitor_user_id: p.user_id,
+          buyer_user_id: user.id,
+          exhibitor_company: p.company_name,
+          exhibitor_name: p.company_name,
+          booth_number: p.booth_number,
+          status: "accepted",
+          _fromProfile: true,
+        }));
+      return [...accepted, ...fromProfiles];
     },
     enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => {
-      const conn = connections.find(c => c.id === selectedConnection);
+    mutationFn: async ({ connId, connList }) => {
+      const conn = connList.find(c => c.id === connId);
       if (!conn) return;
       const targetId = user.user_role === "exhibitor" ? conn.buyer_user_id : conn.exhibitor_user_id;
-      const targetName = user.user_role === "exhibitor" ? conn.buyer_name : conn.exhibitor_name;
+      const targetName = user.user_role === "exhibitor" ? (conn.buyer_name || conn.buyer_company) : (conn.exhibitor_name || conn.exhibitor_company);
       
       const meeting = await base44.entities.Meeting.create({
-        connection_id: selectedConnection,
+        connection_id: conn._fromProfile ? "" : connId,
         proposed_by: user.id,
         proposed_to: targetId,
         proposed_time: proposedTime,
@@ -289,7 +308,7 @@ END:VCALENDAR`;
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewMeeting(false)}>Cancel</Button>
-            <Button onClick={() => createMutation.mutate()} disabled={!selectedConnection || !proposedTime || createMutation.isPending}>
+            <Button onClick={() => createMutation.mutate({ connId: selectedConnection, connList: connections })} disabled={!selectedConnection || !proposedTime || createMutation.isPending}>
               Propose Meeting
             </Button>
           </DialogFooter>
