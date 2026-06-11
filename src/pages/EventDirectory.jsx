@@ -211,7 +211,7 @@ export default function EventDirectory() {
                               )}
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-lg font-bold text-primary">{exhibitorCounts[ev.name] || 0}</p>
+                              <p className="text-lg font-bold text-primary">{(exhibitorCounts.byEventId?.[ev.id] || 0) + (exhibitorCounts.byName?.[ev.name] && !exhibitorCounts.byEventId?.[ev.id] ? exhibitorCounts.byName[ev.name] : 0)}</p>
                               <p className="text-[10px] text-muted-foreground">exhibitors</p>
                             </div>
                           </div>
@@ -281,7 +281,7 @@ export default function EventDirectory() {
                         {ev.organizer && <p className="text-xs text-muted-foreground mt-0.5">by {ev.organizer}</p>}
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-lg font-bold text-primary">{exhibitorCounts[ev.name] || 0}</p>
+                        <p className="text-lg font-bold text-primary">{(exhibitorCounts.byEventId?.[ev.id] || 0) + (exhibitorCounts.byName?.[ev.name] && !exhibitorCounts.byEventId?.[ev.id] ? exhibitorCounts.byName[ev.name] : 0)}</p>
                         <p className="text-[10px] text-muted-foreground">exhibitors</p>
                       </div>
                     </div>
