@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { auth } from "@/api/authClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
+      await auth.loginWithEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
       // Map common error codes to user-friendly messages
@@ -61,11 +61,11 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", "/");
+    auth.loginWithProvider("google", "/");
   };
 
   const handleLinkedIn = () => {
-    base44.auth.loginWithProvider("linkedin", "/");
+    auth.loginWithProvider("linkedin", "/");
   };
 
   return (

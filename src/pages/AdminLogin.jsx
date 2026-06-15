@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { auth } from "@/api/authClient";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +29,7 @@ function logAdminAccess(data) {
     notes: data.notes || "",
   };
   // Fire and forget — don't block login flow
-  base44.entities.AdminAccessLog.create(entry).catch(() => {});
+  db.AdminAccessLog.create(entry).catch(() => {});
 }
 
 export default function AdminLogin() {
@@ -81,7 +82,7 @@ export default function AdminLogin() {
 
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("adminAuth", { email: email.trim(), password });
+      const res = await auth.adminLogin(email.trim(), password);
 
       if (!res.data?.success) {
         throw new Error("Invalid credentials.");
