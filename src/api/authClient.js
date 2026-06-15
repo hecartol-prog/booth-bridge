@@ -54,22 +54,62 @@ export async function register({ email, password }) {
   supabaseNotReady("register");
 }
 
-export async function verifyOtp(email, token) {
+export async function verifyOtp(emailOrPayload, token) {
   if (isBase44()) {
+    const isObjectPayload =
+      emailOrPayload !== null &&
+      typeof emailOrPayload === "object" &&
+      !Array.isArray(emailOrPayload);
+
     if (typeof base44.auth.verifyOtp === "function") {
-      return base44.auth.verifyOtp(email, token);
+      if (isObjectPayload) {
+        return base44.auth.verifyOtp(emailOrPayload);
+      }
+      return base44.auth.verifyOtp(emailOrPayload, token);
     }
     if (typeof base44.auth.confirmSignUp === "function") {
-      return base44.auth.confirmSignUp(email, token);
+      const email = isObjectPayload ? emailOrPayload.email : emailOrPayload;
+      const otpCode = isObjectPayload ? emailOrPayload.otpCode : token;
+      return base44.auth.confirmSignUp(email, otpCode);
     }
     throw new Error("OTP verification not supported by current Base44 SDK");
   }
   supabaseNotReady("verifyOtp");
 }
 
+export function setToken(access_token) {
+  if (isBase44()) {
+    if (typeof base44.auth.setToken === "function") {
+      return base44.auth.setToken(access_token);
+    }
+    throw new Error("setToken not supported by current Base44 SDK");
+  }
+  supabaseNotReady("setToken");
+}
+
+export async function resendOtp(email) {
+  if (isBase44()) {
+    if (typeof base44.auth.resendOtp === "function") {
+      return base44.auth.resendOtp(email);
+    }
+    throw new Error("resendOtp not supported by current Base44 SDK");
+  }
+  supabaseNotReady("resendOtp");
+}
+
 export async function requestPasswordReset(email) {
   if (isBase44()) return base44.auth.resetPasswordRequest(email);
   supabaseNotReady("requestPasswordReset");
+}
+
+export async function resetPassword({ resetToken, newPassword }) {
+  if (isBase44()) {
+    if (typeof base44.auth.resetPassword === "function") {
+      return base44.auth.resetPassword({ resetToken, newPassword });
+    }
+    throw new Error("resetPassword not supported by current Base44 SDK");
+  }
+  supabaseNotReady("resetPassword");
 }
 
 export async function updatePassword(newPassword) {
@@ -115,6 +155,7 @@ export async function checkAppReady() {
   supabaseNotReady("checkAppReady");
 }
 
+/** @returns {Promise<{ data?: { success?: boolean } }>} — same shape as functions.invoke("adminAuth") */
 export async function adminLogin(email, password) {
   if (isBase44()) {
     return base44.functions.invoke("adminAuth", { email, password });
@@ -136,7 +177,10 @@ export const auth = {
   loginWithProvider,
   register,
   verifyOtp,
+  setToken,
+  resendOtp,
   requestPasswordReset,
+  resetPassword,
   updatePassword,
   updateUserMetadata,
   logout,
