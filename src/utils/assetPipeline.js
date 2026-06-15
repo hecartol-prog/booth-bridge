@@ -10,7 +10,7 @@
  * FUTURE: Swap upload/signedUrl internals to use Supabase Storage SDK.
  */
 
-import { base44 } from "@/api/base44Client";
+import { storage } from "@/api/storageClient";
 
 // ── Path builders ──────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ export function companyCatalogPath(companyId, filename) {
  * The returned file_url is a private URI — use getSignedUrl() before displaying.
  */
 export async function uploadAsset(file) {
-  const result = await base44.integrations.Core.UploadFile({ file });
+  const result = await storage.uploadFile(file);
   return { file_url: result.file_url };
 }
 
@@ -44,11 +44,7 @@ export async function getSignedUrl(fileUri, expiresInSeconds = 900) {
   if (!fileUri) return null;
   // If it's already a public HTTP URL (legacy data), return as-is
   if (fileUri.startsWith("http")) return fileUri;
-  const result = await base44.integrations.Core.CreateFileSignedUrl({
-    file_uri: fileUri,
-    expires_in: expiresInSeconds,
-  });
-  return result?.signed_url || null;
+  return await storage.getSignedUrl(fileUri, { expiresIn: expiresInSeconds });
 }
 
 /**

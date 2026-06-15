@@ -4,7 +4,7 @@
  * when network is restored.
  */
 import { useEffect, useRef, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { getPendingScans, removeSyncedScan } from "@/utils/offlineScanQueue";
 import {
   getPendingVisitorActions,
@@ -22,16 +22,16 @@ async function syncScans() {
   for (const scan of pending) {
     try {
       const { targetId, scannedByUserId, scannedByName } = scan;
-      const existing = await base44.entities.Connection.filter({
+      const existing = await db.Connection.filter({
         exhibitor_user_id: targetId,
         buyer_user_id: scannedByUserId,
       });
 
       if (existing.length === 0) {
-        const exProfiles = await base44.entities.ExhibitorProfile.filter({ user_id: targetId });
+        const exProfiles = await db.ExhibitorProfile.filter({ user_id: targetId });
         const exProfile = exProfiles[0];
 
-        await base44.entities.Connection.create({
+        await db.Connection.create({
           exhibitor_user_id: targetId,
           buyer_user_id: scannedByUserId,
           status: "accepted",
@@ -43,7 +43,7 @@ async function syncScans() {
           buyer_name: scannedByName,
         });
 
-        await base44.entities.Notification.create({
+        await db.Notification.create({
           user_id: targetId,
           type: "connection_accepted",
           title: "Booth Visit (Synced)",
@@ -74,12 +74,12 @@ async function syncVisitorActions() {
       switch (action.actionType) {
 
         case VISITOR_ACTIONS.SAVE_BOOTH: {
-          const existing = await base44.entities.SavedBooth.filter({
+          const existing = await db.SavedBooth.filter({
             buyer_id: action.userId,
             exhibitor_user_id: action.exhibitorUserId,
           });
           if (existing.length === 0) {
-            await base44.entities.SavedBooth.create({
+            await db.SavedBooth.create({
               buyer_id: action.userId,
               exhibitor_user_id: action.exhibitorUserId,
               exhibitor_profile_id: action.exhibitorProfileId,
@@ -94,12 +94,12 @@ async function syncVisitorActions() {
         }
 
         case VISITOR_ACTIONS.SAVE_PRODUCT: {
-          const existing = await base44.entities.SavedProduct.filter({
+          const existing = await db.SavedProduct.filter({
             buyer_id: action.userId,
             product_id: action.productId,
           });
           if (existing.length === 0) {
-            await base44.entities.SavedProduct.create({
+            await db.SavedProduct.create({
               buyer_id: action.userId,
               product_id: action.productId,
               exhibitor_user_id: action.exhibitorUserId,
@@ -115,14 +115,14 @@ async function syncVisitorActions() {
 
         case VISITOR_ACTIONS.DOWNLOAD_CATALOG: {
           // Just increment download count — fire-and-forget if already done is OK
-          await base44.entities.CatalogItem.update(action.catalogId, {
+          await db.CatalogItem.update(action.catalogId, {
             download_count: action.currentCount + 1,
           });
           break;
         }
 
         case VISITOR_ACTIONS.SUBMIT_RFI: {
-          await base44.entities.RFI.create({
+          await db.RFI.create({
             connection_id: action.connectionId || "",
             buyer_user_id: action.userId,
             exhibitor_user_id: action.exhibitorUserId,
@@ -132,7 +132,7 @@ async function syncVisitorActions() {
             buyer_name: action.buyerName,
             exhibitor_company: action.exhibitorCompany,
           });
-          await base44.entities.Notification.create({
+          await db.Notification.create({
             user_id: action.exhibitorUserId,
             type: "rfi_received",
             title: "New Request Received (Synced)",

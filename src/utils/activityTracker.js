@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { saveActivity } from "@/utils/dbClient";
 
 const ACTIVITY_POINTS = {
   scanned_qr: 10,
@@ -34,7 +34,7 @@ const ACTIVITY_POINTS = {
 export async function trackActivity(activityType, context = {}) {
   try {
     const points = ACTIVITY_POINTS[activityType] ?? 0;
-    await base44.entities.Activity.create({
+    await saveActivity({
       activity_type: activityType,
       points,
       source_device: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
