@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { auth } from "@/api/authClient";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +29,10 @@ export default function Profile() {
     queryKey: ["profile-data", user?.id, user?.user_role],
     queryFn: async () => {
       if (isExhibitor) {
-        const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: user.id });
+        const profiles = await db.ExhibitorProfile.filter({ user_id: user.id });
         return profiles[0] || null;
       } else {
-        const profiles = await base44.entities.BuyerProfile.filter({ user_id: user.id });
+        const profiles = await db.BuyerProfile.filter({ user_id: user.id });
         return profiles[0] || null;
       }
     },
@@ -47,9 +48,9 @@ export default function Profile() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (isExhibitor) {
-        await base44.entities.ExhibitorProfile.update(profile.id, form);
+        await db.ExhibitorProfile.update(profile.id, form);
       } else {
-        await base44.entities.BuyerProfile.update(profile.id, form);
+        await db.BuyerProfile.update(profile.id, form);
       }
     },
     onSuccess: () => {
@@ -235,7 +236,7 @@ export default function Profile() {
           )}
         </div>
 
-        <Button variant="outline" className="w-full mt-6" onClick={() => base44.auth.logout("/login")}>
+        <Button variant="outline" className="w-full mt-6" onClick={() => auth.logout("/login")}>
           <LogOut className="w-4 h-4 mr-2" /> Log Out
         </Button>
       </Card>
