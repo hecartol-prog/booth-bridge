@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { base44 } from "@/api/base44Client";
+import { auth } from "@/api/authClient";
+import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 
 const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
@@ -61,13 +62,13 @@ function AdminRoleSwitcher({ user }) {
 
   const switchToUserMode = async (userRole) => {
     localStorage.setItem(IMPERSONATE_KEY, "true");
-    await base44.auth.updateMe({ user_role: userRole, role: "user" });
+    await auth.updateUserMetadata({ user_role: userRole, role: "user" });
     window.location.href = "/";
   };
 
   const switchToAdminMode = async () => {
     localStorage.removeItem(IMPERSONATE_KEY);
-    await base44.auth.updateMe({ role: "admin" });
+    await auth.updateUserMetadata({ role: "admin" });
     window.location.href = "/admin";
   };
 
@@ -178,14 +179,14 @@ export default function AppLayout() {
     queryKey: ["unread-notifications", user?.id],
     queryFn: async () => {
       if (!user?.id) return 0;
-      const notifs = await base44.entities.Notification.filter({ user_id: user.id, read: false });
+      const notifs = await db.Notification.filter({ user_id: user.id, read: false });
       return notifs.length;
     },
     refetchInterval: 10000,
     enabled: !!user?.id,
   });
 
-  const handleLogout = () => base44.auth.logout("/login");
+  const handleLogout = () => auth.logout("/login");
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">
