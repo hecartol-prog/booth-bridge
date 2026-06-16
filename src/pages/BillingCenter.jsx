@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,13 +84,13 @@ export default function BillingCenter() {
 
   const { data: subscriptions = [] } = useQuery({
     queryKey: ["billing-subscriptions", user?.id],
-    queryFn: () => base44.entities.BillingSubscription.filter({ user_id: user.id }, "-created_date"),
+    queryFn: () => db.BillingSubscription.filter({ user_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["billing-transactions", user?.id],
-    queryFn: () => base44.entities.BillingTransaction.filter({ user_id: user.id }, "-created_date", 50),
+    queryFn: () => db.BillingTransaction.filter({ user_id: user.id }, "-created_date", 50),
     enabled: !!user?.id,
   });
 
