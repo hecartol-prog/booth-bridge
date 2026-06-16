@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AiBoothAssistant from "@/components/AiBoothAssistant";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +95,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["digital-booth-profile", exhibitorUserId],
     queryFn: async () => {
-      const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: exhibitorUserId });
+      const profiles = await db.ExhibitorProfile.filter({ user_id: exhibitorUserId });
       const result = profiles[0] || null;
       if (result) {
         // Update cache alongside the live data
@@ -112,7 +111,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const { data: products = [] } = useQuery({
     queryKey: ["digital-booth-products", exhibitorUserId],
     queryFn: async () => {
-      const result = await base44.entities.Product.filter({ exhibitor_user_id: exhibitorUserId });
+      const result = await db.Product.filter({ exhibitor_user_id: exhibitorUserId });
       const cached = cacheRead(BOOTH_CACHE_KEY) || {};
       cacheWrite(BOOTH_CACHE_KEY, { ...cached, products: result });
       return result;
@@ -124,7 +123,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const { data: catalogs = [] } = useQuery({
     queryKey: ["digital-booth-catalogs", exhibitorUserId],
     queryFn: async () => {
-      const result = await base44.entities.CatalogItem.filter({ exhibitor_user_id: exhibitorUserId });
+      const result = await db.CatalogItem.filter({ exhibitor_user_id: exhibitorUserId });
       const cached = cacheRead(BOOTH_CACHE_KEY) || {};
       cacheWrite(BOOTH_CACHE_KEY, { ...cached, catalogs: result });
       return result;
@@ -137,7 +136,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     queryKey: ["saved-booth-check", user?.id, exhibitorUserId],
     queryFn: async () => {
       if (!user?.id) return null;
-      const saved = await base44.entities.SavedBooth.filter({ buyer_id: user.id, exhibitor_user_id: exhibitorUserId });
+      const saved = await db.SavedBooth.filter({ buyer_id: user.id, exhibitor_user_id: exhibitorUserId });
       return saved[0] || null;
     },
     enabled: !!user?.id && !!exhibitorUserId && isBuyer,
@@ -147,7 +146,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     queryKey: ["booth-connection", user?.id, exhibitorUserId],
     queryFn: async () => {
       if (!user?.id) return null;
-      const conns = await base44.entities.Connection.filter({
+      const conns = await db.Connection.filter({
         exhibitor_user_id: exhibitorUserId,
         buyer_user_id: user.id,
       });
@@ -159,7 +158,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   // ── Save Booth ──────────────────────────────────────────────────────────
 
   const saveBoothMutation = useMutation({
-    mutationFn: () => base44.entities.SavedBooth.create({
+    mutationFn: () => db.SavedBooth.create({
       buyer_id: user.id,
       exhibitor_user_id: exhibitorUserId,
       exhibitor_profile_id: profile?.id,
@@ -215,7 +214,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   // ── RFI ─────────────────────────────────────────────────────────────────
 
   const rfiMutation = useMutation({
-    mutationFn: () => base44.entities.RFI.create({
+    mutationFn: () => db.RFI.create({
       connection_id: existingConnection?.id || "",
       buyer_user_id: user.id,
       exhibitor_user_id: exhibitorUserId,
@@ -226,7 +225,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       exhibitor_company: profile?.company_name,
     }),
     onSuccess: async () => {
-      await base44.entities.Notification.create({
+      await db.Notification.create({
         user_id: exhibitorUserId,
         type: "rfi_received",
         title: "New Request Received",
@@ -274,7 +273,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       await refreshPending();
       return;
     }
-    await base44.entities.CatalogItem.update(catalog.id, { download_count: (catalog.download_count || 0) + 1 });
+    await db.CatalogItem.update(catalog.id, { download_count: (catalog.download_count || 0) + 1 });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -629,14 +628,14 @@ function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, isO
   const { data: isSaved } = useQuery({
     queryKey: ["saved-product-check", user?.id, product.id],
     queryFn: async () => {
-      const saved = await base44.entities.SavedProduct.filter({ buyer_id: user.id, product_id: product.id });
+      const saved = await db.SavedProduct.filter({ buyer_id: user.id, product_id: product.id });
       return saved.length > 0;
     },
     enabled: !!user?.id && isBuyer,
   });
 
   const saveMutation = useMutation({
-    mutationFn: () => base44.entities.SavedProduct.create({
+    mutationFn: () => db.SavedProduct.create({
       buyer_id: user.id,
       product_id: product.id,
       exhibitor_user_id: exhibitorUserId,
