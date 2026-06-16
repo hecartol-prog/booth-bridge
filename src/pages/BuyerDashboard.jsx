@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +44,7 @@ export default function BuyerDashboard() {
   const { data: profile } = useQuery({
     queryKey: ["buyer-profile", user?.id],
     queryFn: async () => {
-      const profiles = await base44.entities.BuyerProfile.filter({ user_id: user.id });
+      const profiles = await db.BuyerProfile.filter({ user_id: user.id });
       return profiles[0] || null;
     },
     enabled: !!user?.id,
@@ -59,7 +58,7 @@ export default function BuyerDashboard() {
 
   const { data: upcomingMeetings = [] } = useQuery({
     queryKey: ["buyer-upcoming-meetings", user?.id],
-    queryFn: () => base44.entities.Meeting.filter({ proposed_to: user.id, status: "scheduled" }, "proposed_time", 5),
+    queryFn: () => db.Meeting.filter({ proposed_to: user.id, status: "scheduled" }, "proposed_time", 5),
     enabled: !!user?.id,
   });
 
@@ -72,7 +71,7 @@ export default function BuyerDashboard() {
   const staleRFIs = computeStaleRFIs(rfis);
 
   const handleMarkResponded = async (boothId) => {
-    await base44.entities.SavedBooth.update(boothId, { visit_status: "follow_up" });
+    await db.SavedBooth.update(boothId, { visit_status: "follow_up" });
     queryClient.invalidateQueries({ queryKey: ["buyer-saved-booths", user?.id] });
   };
 
