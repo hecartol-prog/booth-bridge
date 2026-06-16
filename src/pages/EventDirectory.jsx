@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import OfflineBanner from "@/components/OfflineBanner";
 import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export default function EventDirectory() {
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
-      const result = await base44.entities.Event.list("-start_date", 200);
+      const result = await db.Event.list("-start_date", 200);
       cacheWrite("events", result);
       return result;
     },
@@ -47,7 +47,7 @@ export default function EventDirectory() {
   const { data: exhibitorCounts = {} } = useQuery({
     queryKey: ["event-exhibitor-counts"],
     queryFn: async () => {
-      const exhibitors = await base44.entities.ExhibitorProfile.list();
+      const exhibitors = await db.ExhibitorProfile.list();
       // Count by both event_id and event_name so either matching field works
       const countsByName = {};
       const countsByEventId = {};

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,19 +123,19 @@ export default function EventReadinessCenter() {
   const [expandWarnings, setExpandWarnings] = useState(false);
 
   const { data: exhibitors = [], isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["erc-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list(),
+    queryKey: ["erc-exhibitors"], queryFn: () => db.ExhibitorProfile.list(),
   });
   const { data: products = [] } = useQuery({
-    queryKey: ["erc-products"], queryFn: () => base44.entities.Product.list(),
+    queryKey: ["erc-products"], queryFn: () => db.Product.list(),
   });
   const { data: catalogs = [] } = useQuery({
-    queryKey: ["erc-catalogs"], queryFn: () => base44.entities.CatalogItem.list(),
+    queryKey: ["erc-catalogs"], queryFn: () => db.CatalogItem.list(),
   });
   const { data: nfcProfiles = [] } = useQuery({
-    queryKey: ["erc-nfc"], queryFn: () => base44.entities.NFCProfile.list(),
+    queryKey: ["erc-nfc"], queryFn: () => db.NFCProfile.list(),
   });
   const { data: events = [] } = useQuery({
-    queryKey: ["erc-events"], queryFn: () => base44.entities.Event.list(),
+    queryKey: ["erc-events"], queryFn: () => db.Event.list(),
   });
 
   const eventNames = [...new Set(exhibitors.map(e => e.event_name).filter(Boolean))].sort();
