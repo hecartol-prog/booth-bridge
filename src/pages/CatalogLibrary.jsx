@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ export default function CatalogLibrary() {
   const { data: profile } = useQuery({
     queryKey: ["ex-profile-catalog", user?.id],
     queryFn: async () => {
-      const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: user.id });
+      const profiles = await db.ExhibitorProfile.filter({ user_id: user.id });
       return profiles[0] || null;
     },
     enabled: !!user?.id,
@@ -57,12 +58,12 @@ export default function CatalogLibrary() {
 
   const { data: catalogs = [], isLoading } = useQuery({
     queryKey: ["my-catalogs", user?.id],
-    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user.id }, "-created_date"),
+    queryFn: () => db.CatalogItem.filter({ exhibitor_user_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
-    mutationFn: () => base44.entities.CatalogItem.create({
+    mutationFn: () => db.CatalogItem.create({
       exhibitor_user_id: user.id,
       exhibitor_profile_id: profile?.id,
       event_name: profile?.event_name,
@@ -84,7 +85,7 @@ export default function CatalogLibrary() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CatalogItem.delete(id),
+    mutationFn: (id) => db.CatalogItem.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-catalogs"] }),
   });
 
