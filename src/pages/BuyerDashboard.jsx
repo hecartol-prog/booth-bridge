@@ -26,19 +26,19 @@ export default function BuyerDashboard() {
 
   const { data: savedBooths = [] } = useQuery({
     queryKey: ["buyer-saved-booths", user?.id],
-    queryFn: () => base44.entities.SavedBooth.filter({ buyer_id: user.id }, "-created_date"),
+    queryFn: () => db.SavedBooth.filter({ buyer_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const { data: savedProducts = [] } = useQuery({
     queryKey: ["buyer-saved-products", user?.id],
-    queryFn: () => base44.entities.SavedProduct.filter({ buyer_id: user.id }, "-created_date"),
+    queryFn: () => db.SavedProduct.filter({ buyer_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ["buyer-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ buyer_user_id: user.id }, "-created_date"),
+    queryFn: () => db.RFI.filter({ buyer_user_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 

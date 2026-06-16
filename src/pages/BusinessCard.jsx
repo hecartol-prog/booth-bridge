@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,10 +22,10 @@ export default function BusinessCard() {
     queryKey: ["card-profile", user?.id, user?.role],
     queryFn: async () => {
       if (isExhibitor) {
-        const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: user.id });
+        const profiles = await db.ExhibitorProfile.filter({ user_id: user.id });
         return profiles[0];
       } else {
-        const profiles = await base44.entities.BuyerProfile.filter({ user_id: user.id });
+        const profiles = await db.BuyerProfile.filter({ user_id: user.id });
         return profiles[0];
       }
     },
@@ -47,9 +47,9 @@ export default function BusinessCard() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (isExhibitor) {
-        await base44.entities.ExhibitorProfile.update(profile.id, { digital_card: card });
+        await db.ExhibitorProfile.update(profile.id, { digital_card: card });
       } else {
-        await base44.entities.BuyerProfile.update(profile.id, { digital_card: card });
+        await db.BuyerProfile.update(profile.id, { digital_card: card });
       }
     },
     onSuccess: () => {
