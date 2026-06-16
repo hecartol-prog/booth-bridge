@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,12 +20,12 @@ export default function EventsDirectory() {
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events-directory"],
-    queryFn: () => base44.entities.Event.list("-start_date", 100),
+    queryFn: () => db.Event.list("-start_date", 100),
   });
 
   const { data: exhibitors = [] } = useQuery({
     queryKey: ["events-exhibitors-count"],
-    queryFn: () => base44.entities.ExhibitorProfile.list("-created_date", 500),
+    queryFn: () => db.ExhibitorProfile.list("-created_date", 500),
   });
 
   const countries = [...new Set(events.map(e => e.country).filter(Boolean))].sort();

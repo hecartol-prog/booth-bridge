@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -202,11 +202,11 @@ export default function EventSupportCenter() {
   const [ticketFilter, setTicketFilter] = useState("all");
   const { tickets, addTicket, updateTicket } = useTickets();
 
-  const { data: users = [] } = useQuery({ queryKey: ["esc-users"], queryFn: () => base44.entities.User.list() });
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["esc-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list() });
-  const { data: products = [] } = useQuery({ queryKey: ["esc-products"], queryFn: () => base44.entities.Product.list() });
-  const { data: nfcProfiles = [] } = useQuery({ queryKey: ["esc-nfc"], queryFn: () => base44.entities.NFCProfile.list() });
-  const { data: meetings = [] } = useQuery({ queryKey: ["esc-meetings"], queryFn: () => base44.entities.Meeting.list() });
+  const { data: users = [] } = useQuery({ queryKey: ["esc-users"], queryFn: () => db.User.list() });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["esc-exhibitors"], queryFn: () => db.ExhibitorProfile.list() });
+  const { data: products = [] } = useQuery({ queryKey: ["esc-products"], queryFn: () => db.Product.list() });
+  const { data: nfcProfiles = [] } = useQuery({ queryKey: ["esc-nfc"], queryFn: () => db.NFCProfile.list() });
+  const { data: meetings = [] } = useQuery({ queryKey: ["esc-meetings"], queryFn: () => db.Meeting.list() });
 
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
