@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,13 +11,13 @@ export default function Catalogue() {
 
   const { data: connections = [] } = useQuery({
     queryKey: ["cat-conns", user?.id],
-    queryFn: () => base44.entities.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
+    queryFn: () => db.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
     enabled: !!user?.id,
   });
 
   const { data: media = [] } = useQuery({
     queryKey: ["cat-media", user?.id],
-    queryFn: () => base44.entities.Media.filter({ uploaded_by: user.id }),
+    queryFn: () => db.Media.filter({ uploaded_by: user.id }),
     enabled: !!user?.id,
   });
 
