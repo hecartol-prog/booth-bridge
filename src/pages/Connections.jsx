@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ export default function Connections() {
   // updates instantly without a manual refresh when a new scan arrives.
   useEffect(() => {
     if (!user?.id) return;
-    const unsub = base44.entities.Connection.subscribe(() => {
+    const unsub = db.Connection.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["connections", user.id] });
     });
     return unsub;
@@ -40,7 +40,7 @@ export default function Connections() {
       const filter = isExhibitor
         ? { exhibitor_user_id: user.id }
         : { buyer_user_id: user.id };
-      return base44.entities.Connection.filter(filter, "-created_date");
+      return db.Connection.filter(filter, "-created_date");
     },
     enabled: !!user?.id,
   });
@@ -48,7 +48,7 @@ export default function Connections() {
   // For exhibitors, also get RFIs and media for intent scoring
   const { data: allRfis = [] } = useQuery({
     queryKey: ["connection-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter(
+    queryFn: () => db.RFI.filter(
       isExhibitor ? { exhibitor_user_id: user.id } : { buyer_user_id: user.id }
     ),
     enabled: !!user?.id,
@@ -56,7 +56,7 @@ export default function Connections() {
 
   const { data: allMedia = [] } = useQuery({
     queryKey: ["connection-media", user?.id],
-    queryFn: () => base44.entities.Media.list("-created_date", 200),
+    queryFn: () => db.Media.list("-created_date", 200),
     enabled: !!user?.id,
   });
 
@@ -64,8 +64,8 @@ export default function Connections() {
     queryKey: ["connection-meetings", user?.id],
     queryFn: async () => {
       const [asProposedTo, asProposedBy] = await Promise.all([
-        base44.entities.Meeting.filter({ proposed_to: user.id }),
-        base44.entities.Meeting.filter({ proposed_by: user.id }),
+        db.Meeting.filter({ proposed_to: user.id }),
+        db.Meeting.filter({ proposed_by: user.id }),
       ]);
       return [...asProposedTo, ...asProposedBy];
     },
@@ -73,14 +73,14 @@ export default function Connections() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Connection.update(id, data),
+    mutationFn: ({ id, data }) => db.Connection.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["connections"] }),
   });
 
   const handleAccept = async (conn) => {
     await updateMutation.mutateAsync({ id: conn.id, data: { status: "accepted" } });
     const notifUserId = isExhibitor ? conn.buyer_user_id : conn.exhibitor_user_id;
-    await base44.entities.Notification.create({
+    await db.Notification.create({
       user_id: notifUserId,
       type: "connection_accepted",
       title: "Connection Accepted!",
