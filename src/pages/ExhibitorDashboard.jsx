@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,13 +19,13 @@ export default function ExhibitorDashboard() {
 
   const { data: connections = [] } = useQuery({
     queryKey: ["ex-connections", user?.id],
-    queryFn: () => base44.entities.Connection.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.Connection.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ["ex-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.RFI.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
@@ -33,8 +33,8 @@ export default function ExhibitorDashboard() {
     queryKey: ["ex-meetings", user?.id],
     queryFn: async () => {
       const [asProposer, asRecipient] = await Promise.all([
-        base44.entities.Meeting.filter({ proposed_by: user.id }),
-        base44.entities.Meeting.filter({ proposed_to: user.id }),
+        db.Meeting.filter({ proposed_by: user.id }),
+        db.Meeting.filter({ proposed_to: user.id }),
       ]);
       return [...asProposer, ...asRecipient];
     },
@@ -43,23 +43,23 @@ export default function ExhibitorDashboard() {
 
   const { data: catalogues = [] } = useQuery({
     queryKey: ["ex-catalogues", user?.id],
-    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.CatalogItem.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const { data: leadInteractions = [] } = useQuery({
     queryKey: ["ex-interactions", user?.id],
-    queryFn: () => base44.entities.LeadInteraction.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.LeadInteraction.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const { data: buyerProfiles = [] } = useQuery({
     queryKey: ["ex-buyer-profiles", user?.id],
     queryFn: async () => {
-      const conns = await base44.entities.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" });
+      const conns = await db.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" });
       const buyerIds = conns.map(c => c.buyer_user_id).filter(Boolean);
       if (!buyerIds.length) return [];
-      const profiles = await base44.entities.BuyerProfile.list();
+      const profiles = await db.BuyerProfile.list();
       return profiles.filter(p => buyerIds.includes(p.user_id));
     },
     enabled: !!user?.id,
@@ -68,7 +68,7 @@ export default function ExhibitorDashboard() {
   const { data: profile } = useQuery({
     queryKey: ["ex-profile", user?.id],
     queryFn: async () => {
-      const profiles = await base44.entities.ExhibitorProfile.filter({ user_id: user.id });
+      const profiles = await db.ExhibitorProfile.filter({ user_id: user.id });
       return profiles[0] || null;
     },
     enabled: !!user?.id,

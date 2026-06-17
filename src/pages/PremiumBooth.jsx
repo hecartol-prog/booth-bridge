@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,7 @@ export default function PremiumBooth() {
   const { data: profile } = useQuery({
     queryKey: ["premium-profile", user?.id],
     queryFn: async () => {
-      const p = await base44.entities.ExhibitorProfile.filter({ user_id: user.id });
+      const p = await db.ExhibitorProfile.filter({ user_id: user.id });
       return p[0] || null;
     },
     enabled: !!user?.id,
@@ -37,7 +36,7 @@ export default function PremiumBooth() {
   const { data: subscription } = useQuery({
     queryKey: ["premium-sub", user?.id],
     queryFn: async () => {
-      const subs = await base44.entities.PremiumBoothSubscription.filter({ exhibitor_id: user.id });
+      const subs = await db.PremiumBoothSubscription.filter({ exhibitor_id: user.id });
       return subs[0] || null;
     },
     enabled: !!user?.id,
@@ -45,27 +44,27 @@ export default function PremiumBooth() {
 
   const { data: connections = [] } = useQuery({
     queryKey: ["pb-connections", user?.id],
-    queryFn: () => base44.entities.Connection.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.Connection.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
   const { data: rfis = [] } = useQuery({
     queryKey: ["pb-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.RFI.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
   const { data: meetings = [] } = useQuery({
     queryKey: ["pb-meetings", user?.id],
-    queryFn: () => base44.entities.Meeting.filter({ proposed_to: user.id }),
+    queryFn: () => db.Meeting.filter({ proposed_to: user.id }),
     enabled: !!user?.id,
   });
   const { data: catalogs = [] } = useQuery({
     queryKey: ["pb-catalogs", user?.id],
-    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.CatalogItem.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const updateProfile = useMutation({
-    mutationFn: (data) => base44.entities.ExhibitorProfile.update(profile.id, data),
+    mutationFn: (data) => db.ExhibitorProfile.update(profile.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["premium-profile", user?.id] });
       setEditingSection(null);
