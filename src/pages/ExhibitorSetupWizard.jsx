@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -95,25 +96,25 @@ export default function ExhibitorSetupWizard() {
   // Load existing profile
   const { data: profiles = [] } = useQuery({
     queryKey: ["esw-profile", user?.id],
-    queryFn: () => base44.entities.ExhibitorProfile.filter({ user_id: user?.id }),
+    queryFn: () => db.ExhibitorProfile.filter({ user_id: user?.id }),
     enabled: !!user?.id,
   });
 
   const { data: myProducts = [], refetch: refetchProducts } = useQuery({
     queryKey: ["esw-products", user?.id],
-    queryFn: () => base44.entities.Product.filter({ exhibitor_user_id: user?.id }),
+    queryFn: () => db.Product.filter({ exhibitor_user_id: user?.id }),
     enabled: !!user?.id,
   });
 
   const { data: myCatalogs = [], refetch: refetchCatalogs } = useQuery({
     queryKey: ["esw-catalogs", user?.id],
-    queryFn: () => base44.entities.CatalogItem.filter({ exhibitor_user_id: user?.id }),
+    queryFn: () => db.CatalogItem.filter({ exhibitor_user_id: user?.id }),
     enabled: !!user?.id,
   });
 
   const { data: myNFC = [] } = useQuery({
     queryKey: ["esw-nfc", user?.id],
-    queryFn: () => base44.entities.NFCProfile.filter({ user_id: user?.id }),
+    queryFn: () => db.NFCProfile.filter({ user_id: user?.id }),
     enabled: !!user?.id,
   });
 
@@ -168,9 +169,9 @@ export default function ExhibitorSetupWizard() {
       event_name: eventName,
     };
     if (profile) {
-      await base44.entities.ExhibitorProfile.update(profile.id, data);
+      await db.ExhibitorProfile.update(profile.id, data);
     } else {
-      await base44.entities.ExhibitorProfile.create(data);
+      await db.ExhibitorProfile.create(data);
     }
     qc.invalidateQueries(["esw-profile"]);
     setSaving(false);
@@ -188,7 +189,7 @@ export default function ExhibitorSetupWizard() {
   const addProduct = async () => {
     if (!productName || !productImageUrl) return;
     setAddingProduct(true);
-    await base44.entities.Product.create({
+    await db.Product.create({
       exhibitor_user_id: user.id,
       title: productName,
       description: productDesc,
@@ -204,7 +205,7 @@ export default function ExhibitorSetupWizard() {
     if (!file) return;
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     const isVideo = file.type.startsWith("video/");
-    await base44.entities.CatalogItem.create({
+    await db.CatalogItem.create({
       exhibitor_user_id: user.id,
       title: file.name,
       file_url,
