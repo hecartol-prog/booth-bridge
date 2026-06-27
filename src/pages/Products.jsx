@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,12 @@ export default function Products() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products", user?.id],
-    queryFn: () => base44.entities.Product.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.Product.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
-    mutationFn: () => base44.entities.Product.create({
+    mutationFn: () => db.Product.create({
       exhibitor_user_id: user.id,
       title,
       description,
@@ -42,7 +43,7 @@ export default function Products() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Product.delete(id),
+    mutationFn: (id) => db.Product.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,16 +32,16 @@ export default function RFIInbox() {
 
   const { data: rfis = [], isLoading } = useQuery({
     queryKey: ["rfi-inbox", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ exhibitor_user_id: user.id }, "-created_date"),
+    queryFn: () => db.RFI.filter({ exhibitor_user_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const replyMutation = useMutation({
     mutationFn: async ({ id, reply }) => {
-      await base44.entities.RFI.update(id, { reply, status: "replied" });
+      await db.RFI.update(id, { reply, status: "replied" });
       const rfi = rfis.find(r => r.id === id);
       if (rfi) {
-        await base44.entities.Notification.create({
+        await db.Notification.create({
           user_id: rfi.buyer_user_id,
           type: "rfi_replied",
           title: "RFI Replied",
