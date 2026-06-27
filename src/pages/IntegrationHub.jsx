@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,28 +108,28 @@ export default function IntegrationHub() {
 
   const { data: connections = [] } = useQuery({
     queryKey: ["integrations"],
-    queryFn: () => base44.entities.IntegrationConnection.list("-created_date", 100),
+    queryFn: () => db.IntegrationConnection.list("-created_date", 100),
   });
 
   const { data: syncLogs = [] } = useQuery({
     queryKey: ["sync-logs"],
-    queryFn: () => base44.entities.IntegrationSyncLog.list("-created_date", 50),
+    queryFn: () => db.IntegrationSyncLog.list("-created_date", 50),
   });
 
   const { data: activities = [] } = useQuery({
     queryKey: ["activities-hub"],
-    queryFn: () => base44.entities.Activity.list("-created_date", 200),
+    queryFn: () => db.Activity.list("-created_date", 200),
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }) =>
-      base44.entities.IntegrationConnection.update(id, { is_active }),
+      db.IntegrationConnection.update(id, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
   });
 
   const disconnectMutation = useMutation({
     mutationFn: (id) =>
-      base44.entities.IntegrationConnection.update(id, { status: "disconnected", is_active: false }),
+      db.IntegrationConnection.update(id, { status: "disconnected", is_active: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
   });
 

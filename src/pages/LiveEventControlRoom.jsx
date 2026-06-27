@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,14 +105,14 @@ export default function LiveEventControlRoom() {
 
   const queryOpts = { refetchInterval: REFRESH_INTERVAL, staleTime: 20000 };
 
-  const { data: connections = [], refetch: refetchConn } = useQuery({ queryKey: ["lcr-connections"], queryFn: () => base44.entities.Connection.list(), ...queryOpts });
-  const { data: meetings = [], refetch: refetchMeet } = useQuery({ queryKey: ["lcr-meetings"], queryFn: () => base44.entities.Meeting.list(), ...queryOpts });
-  const { data: rfis = [], refetch: refetchRfi } = useQuery({ queryKey: ["lcr-rfis"], queryFn: () => base44.entities.RFI.list(), ...queryOpts });
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["lcr-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list(), ...queryOpts });
-  const { data: nfcInteractions = [] } = useQuery({ queryKey: ["lcr-nfc"], queryFn: () => base44.entities.NFCInteraction.list(), ...queryOpts });
-  const { data: scannedContacts = [] } = useQuery({ queryKey: ["lcr-ocr"], queryFn: () => base44.entities.ScannedContact.list(), ...queryOpts });
-  const { data: savedBooths = [] } = useQuery({ queryKey: ["lcr-saved"], queryFn: () => base44.entities.SavedBooth.list(), ...queryOpts });
-  const { data: events = [] } = useQuery({ queryKey: ["lcr-events"], queryFn: () => base44.entities.Event.list() });
+  const { data: connections = [], refetch: refetchConn } = useQuery({ queryKey: ["lcr-connections"], queryFn: () => db.Connection.list(), ...queryOpts });
+  const { data: meetings = [], refetch: refetchMeet } = useQuery({ queryKey: ["lcr-meetings"], queryFn: () => db.Meeting.list(), ...queryOpts });
+  const { data: rfis = [], refetch: refetchRfi } = useQuery({ queryKey: ["lcr-rfis"], queryFn: () => db.RFI.list(), ...queryOpts });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["lcr-exhibitors"], queryFn: () => db.ExhibitorProfile.list(), ...queryOpts });
+  const { data: nfcInteractions = [] } = useQuery({ queryKey: ["lcr-nfc"], queryFn: () => db.NFCInteraction.list(), ...queryOpts });
+  const { data: scannedContacts = [] } = useQuery({ queryKey: ["lcr-ocr"], queryFn: () => db.ScannedContact.list(), ...queryOpts });
+  const { data: savedBooths = [] } = useQuery({ queryKey: ["lcr-saved"], queryFn: () => db.SavedBooth.list(), ...queryOpts });
+  const { data: events = [] } = useQuery({ queryKey: ["lcr-events"], queryFn: () => db.Event.list() });
 
   const eventNames = [...new Set(exhibitors.map(e => e.event_name).filter(Boolean))].sort();
 
