@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,13 +41,13 @@ export default function LeadScoring() {
 
   const { data: connections = [] } = useQuery({
     queryKey: ["ls-connections", user?.id],
-    queryFn: () => base44.entities.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" }),
+    queryFn: () => db.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" }),
     enabled: !!user?.id,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ["ls-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.RFI.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
@@ -55,8 +55,8 @@ export default function LeadScoring() {
     queryKey: ["ls-meetings", user?.id],
     queryFn: async () => {
       const [a, b] = await Promise.all([
-        base44.entities.Meeting.filter({ proposed_by: user.id }),
-        base44.entities.Meeting.filter({ proposed_to: user.id }),
+        db.Meeting.filter({ proposed_by: user.id }),
+        db.Meeting.filter({ proposed_to: user.id }),
       ]);
       return [...a, ...b];
     },

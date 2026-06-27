@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export default function ExhibitorDiscover() {
   const { data: exhibitors = [], isLoading } = useQuery({
     queryKey: ["discover-exhibitors"],
     queryFn: async () => {
-      const result = await base44.entities.ExhibitorProfile.list("-created_date", 500);
+      const result = await db.ExhibitorProfile.list("-created_date", 500);
       cacheWrite("exhibitors", result);
       return result;
     },
