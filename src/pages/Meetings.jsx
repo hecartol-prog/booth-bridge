@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export default function Meetings() {
   // Real-time subscription — update meeting status changes instantly
   useEffect(() => {
     if (!user?.id) return;
-    const unsub = base44.entities.Meeting.subscribe(() => {
+    const unsub = db.Meeting.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["meetings", user.id] });
     });
     return unsub;
@@ -33,10 +33,10 @@ export default function Meetings() {
   // Derive venue TZ from the exhibitor's event profile when available
   useEffect(() => {
     if (!user?.id || user?.user_role !== "exhibitor") return;
-    base44.entities.ExhibitorProfile.filter({ user_id: user.id }).then(profiles => {
+    db.ExhibitorProfile.filter({ user_id: user.id }).then(profiles => {
       const eventId = profiles[0]?.event_id;
       if (!eventId) return;
-      base44.entities.Event.filter({ id: eventId }).then(events => {
+      db.Event.filter({ id: eventId }).then(events => {
         if (events[0]?.timezone) setVenueTimezone(events[0].timezone);
       });
     });
@@ -46,8 +46,8 @@ export default function Meetings() {
     queryKey: ["meetings", user?.id],
     queryFn: async () => {
       const [asProposer, asRecipient] = await Promise.all([
-        base44.entities.Meeting.filter({ proposed_by: user.id }, "-created_date"),
-        base44.entities.Meeting.filter({ proposed_to: user.id }, "-created_date"),
+        db.Meeting.filter({ proposed_by: user.id }, "-created_date"),
+        db.Meeting.filter({ proposed_to: user.id }, "-created_date"),
       ]);
       const seen = new Set();
       return [...asProposer, ...asRecipient].filter(m => {
@@ -63,12 +63,12 @@ export default function Meetings() {
     queryKey: ["meeting-conns", user?.id],
     queryFn: async () => {
       if (user?.user_role === "exhibitor") {
-        return base44.entities.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" });
+        return db.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" });
       }
       // For buyers: accepted connections + all exhibitor profiles as fallback
       const [accepted, exhibitorProfiles] = await Promise.all([
-        base44.entities.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
-        base44.entities.ExhibitorProfile.list("-created_date", 200),
+        db.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
+        db.ExhibitorProfile.list("-created_date", 200),
       ]);
       // Build a synthetic connection list from all exhibitor profiles not already in accepted
       const acceptedIds = new Set(accepted.map(c => c.exhibitor_user_id));
@@ -96,7 +96,7 @@ export default function Meetings() {
       const targetId = user.user_role === "exhibitor" ? conn.buyer_user_id : conn.exhibitor_user_id;
       const targetName = user.user_role === "exhibitor" ? (conn.buyer_name || conn.buyer_company) : (conn.exhibitor_name || conn.exhibitor_company);
       
-      const meeting = await base44.entities.Meeting.create({
+      const meeting = await db.Meeting.create({
         connection_id: conn._fromProfile ? "" : connId,
         proposed_by: user.id,
         proposed_to: targetId,
@@ -107,7 +107,7 @@ export default function Meetings() {
         proposer_name: user.full_name,
         recipient_name: targetName,
       });
-      await base44.entities.Notification.create({
+      await db.Notification.create({
         user_id: targetId,
         type: "meeting_proposed",
         title: "Meeting Proposed",
@@ -126,10 +126,10 @@ export default function Meetings() {
 
   const respondMutation = useMutation({
     mutationFn: async ({ id, status }) => {
-      await base44.entities.Meeting.update(id, { status });
+      await db.Meeting.update(id, { status });
       const meeting = meetings.find(m => m.id === id);
       if (meeting) {
-        await base44.entities.Notification.create({
+        await db.Notification.create({
           user_id: meeting.proposed_by,
           type: status === "accepted" ? "meeting_accepted" : "meeting_declined",
           title: `Meeting ${status}`,

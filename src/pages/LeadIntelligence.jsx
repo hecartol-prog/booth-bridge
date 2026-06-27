@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,25 +23,25 @@ export default function LeadIntelligence() {
 
   const { data: connections = [] } = useQuery({
     queryKey: ["li-connections", user?.id],
-    queryFn: () => base44.entities.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" }),
+    queryFn: () => db.Connection.filter({ exhibitor_user_id: user.id, status: "accepted" }),
     enabled: !!user?.id,
   });
 
   const { data: interactions = [] } = useQuery({
     queryKey: ["li-interactions", user?.id],
-    queryFn: () => base44.entities.LeadInteraction.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.LeadInteraction.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ["li-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ exhibitor_user_id: user.id }),
+    queryFn: () => db.RFI.filter({ exhibitor_user_id: user.id }),
     enabled: !!user?.id,
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ["li-meetings", user?.id],
-    queryFn: () => base44.entities.Meeting.filter({ proposed_to: user.id }),
+    queryFn: () => db.Meeting.filter({ proposed_to: user.id }),
     enabled: !!user?.id,
   });
 
