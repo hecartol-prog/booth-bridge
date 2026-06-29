@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -25,26 +25,26 @@ export default function AdminProducts() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => base44.entities.Product.list(),
+    queryFn: () => db.Product.list(),
   });
 
   const saveMutation = useMutation({
-    mutationFn: d => d.id ? base44.entities.Product.update(d.id, d) : base44.entities.Product.create(d),
+    mutationFn: d => d.id ? db.Product.update(d.id, d) : db.Product.create(d),
     onSuccess: () => { qc.invalidateQueries(["admin-products"]); toast({ title: "Product saved" }); setEditing(null); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: id => base44.entities.Product.delete(id),
+    mutationFn: id => db.Product.delete(id),
     onSuccess: () => { qc.invalidateQueries(["admin-products"]); toast({ title: "Product deleted" }); },
   });
 
   const bulkApprove = async (ids) => {
-    await Promise.all(ids.map(id => base44.entities.Product.update(id, { status: "active" })));
+    await Promise.all(ids.map(id => db.Product.update(id, { status: "active" })));
     qc.invalidateQueries(["admin-products"]); toast({ title: `${ids.length} products approved` });
   };
 
   const bulkReject = async (ids) => {
-    await Promise.all(ids.map(id => base44.entities.Product.update(id, { status: "rejected" })));
+    await Promise.all(ids.map(id => db.Product.update(id, { status: "rejected" })));
     qc.invalidateQueries(["admin-products"]); toast({ title: `${ids.length} products rejected` });
   };
 

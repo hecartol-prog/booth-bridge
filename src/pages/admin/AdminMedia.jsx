@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +30,11 @@ export default function AdminMedia() {
 
   const { data: media = [], isLoading } = useQuery({
     queryKey: ["admin-media"],
-    queryFn: () => base44.entities.Media.list("-created_date"),
+    queryFn: () => db.Media.list("-created_date"),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: id => base44.entities.Media.delete(id),
+    mutationFn: id => db.Media.delete(id),
     onSuccess: () => { qc.invalidateQueries(["admin-media"]); toast({ title: "Media deleted" }); },
   });
 
@@ -41,7 +42,7 @@ export default function AdminMedia() {
     setUploading(true);
     for (const file of files) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.Media.create({
+      await db.Media.create({
         file_url,
         file_name: file.name,
         file_size: file.size,

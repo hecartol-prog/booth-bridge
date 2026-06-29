@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -35,18 +36,18 @@ export default function AdminCatalogues() {
 
   const { data: catalogues = [], isLoading } = useQuery({
     queryKey: ["admin-catalogues"],
-    queryFn: () => base44.entities.CatalogItem.list("-created_date", 300),
+    queryFn: () => db.CatalogItem.list("-created_date", 300),
   });
 
   const { data: exhibitors = [] } = useQuery({
     queryKey: ["admin-exhibitors"],
-    queryFn: () => base44.entities.ExhibitorProfile.list("-created_date", 200),
+    queryFn: () => db.ExhibitorProfile.list("-created_date", 200),
   });
 
   const saveMut = useMutation({
     mutationFn: ({ id, data }) => id
-      ? base44.entities.CatalogItem.update(id, data)
-      : base44.entities.CatalogItem.create(data),
+      ? db.CatalogItem.update(id, data)
+      : db.CatalogItem.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-catalogues"] });
       setEditing(null);
@@ -56,7 +57,7 @@ export default function AdminCatalogues() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => base44.entities.CatalogItem.delete(id),
+    mutationFn: (id) => db.CatalogItem.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-catalogues"] });
       toast({ title: "Catalogue deleted" });
