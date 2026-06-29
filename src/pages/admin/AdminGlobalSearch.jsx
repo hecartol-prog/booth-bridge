@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,13 +21,13 @@ export default function AdminGlobalSearch() {
   const [query, setQuery] = useState("");
   const [entityFilter, setEntityFilter] = useState("all");
 
-  const { data: users = [] } = useQuery({ queryKey: ["gs-users"], queryFn: () => base44.entities.User.list("-created_date", 500) });
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["gs-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list("-created_date", 500) });
-  const { data: products = [] } = useQuery({ queryKey: ["gs-products"], queryFn: () => base44.entities.Product.list("-created_date", 500) });
-  const { data: events = [] } = useQuery({ queryKey: ["gs-events"], queryFn: () => base44.entities.Event.list("-created_date", 200) });
-  const { data: tickets = [] } = useQuery({ queryKey: ["gs-tickets"], queryFn: () => base44.entities.SupportTicket.list("-created_date", 200) });
-  const { data: nfc = [] } = useQuery({ queryKey: ["gs-nfc"], queryFn: () => base44.entities.NFCProductTag.list("-created_date", 500) });
-  const { data: leads = [] } = useQuery({ queryKey: ["gs-leads"], queryFn: () => base44.entities.LeadProfile.list("-created_date", 500) });
+  const { data: users = [] } = useQuery({ queryKey: ["gs-users"], queryFn: () => db.User.list("-created_date", 500) });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["gs-exhibitors"], queryFn: () => db.ExhibitorProfile.list("-created_date", 500) });
+  const { data: products = [] } = useQuery({ queryKey: ["gs-products"], queryFn: () => db.Product.list("-created_date", 500) });
+  const { data: events = [] } = useQuery({ queryKey: ["gs-events"], queryFn: () => db.Event.list("-created_date", 200) });
+  const { data: tickets = [] } = useQuery({ queryKey: ["gs-tickets"], queryFn: () => db.SupportTicket.list("-created_date", 200) });
+  const { data: nfc = [] } = useQuery({ queryKey: ["gs-nfc"], queryFn: () => db.NFCProductTag.list("-created_date", 500) });
+  const { data: leads = [] } = useQuery({ queryKey: ["gs-leads"], queryFn: () => db.LeadProfile.list("-created_date", 500) });
 
   const allData = { users, exhibitors, products, events, tickets, nfc, leads };
 
