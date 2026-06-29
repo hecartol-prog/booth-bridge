@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,16 +25,16 @@ export default function AdminSupportTickets() {
 
   const { data: tickets = [] } = useQuery({
     queryKey: ["support-tickets"],
-    queryFn: () => base44.entities.SupportTicket.list("-created_date", 200),
+    queryFn: () => db.SupportTicket.list("-created_date", 200),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SupportTicket.update(id, data),
+    mutationFn: ({ id, data }) => db.SupportTicket.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["support-tickets"] }),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SupportTicket.create({ ...data, ticket_number: `TKT-${Date.now()}` }),
+    mutationFn: (data) => db.SupportTicket.create({ ...data, ticket_number: `TKT-${Date.now()}` }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["support-tickets"] }); setCreating(false); setForm({ subject: "", description: "", priority: "medium", category: "other", created_by: "admin", created_by_name: "Admin" }); },
   });
 

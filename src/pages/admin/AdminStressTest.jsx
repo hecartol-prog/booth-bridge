@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,11 +50,11 @@ export default function AdminStressTest() {
 
   const { data: history = [] } = useQuery({
     queryKey: ["stress-tests"],
-    queryFn: () => base44.entities.StressTestResult.list("-created_date", 50),
+    queryFn: () => db.StressTestResult.list("-created_date", 50),
   });
 
   const saveMutation = useMutation({
-    mutationFn: (data) => base44.entities.StressTestResult.create(data),
+    mutationFn: (data) => db.StressTestResult.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["stress-tests"] }),
   });
 

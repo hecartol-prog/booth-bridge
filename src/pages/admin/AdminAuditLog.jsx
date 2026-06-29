@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import AdminDataGrid from "@/components/admin/AdminDataGrid";
 import { exportToCSV } from "@/utils/adminExport";
 import { Activity, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
@@ -24,7 +24,7 @@ const ACTION_COLORS = {
 export default function AdminAuditLog() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["admin-audit-logs"],
-    queryFn: () => base44.entities.AdminAccessLog.list("-created_date"),
+    queryFn: () => db.AdminAccessLog.list("-created_date"),
   });
 
   const columns = [

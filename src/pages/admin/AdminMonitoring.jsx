@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,17 +49,17 @@ export default function AdminMonitoring() {
 
   const { data: alerts = [], refetch } = useQuery({
     queryKey: ["system-alerts"],
-    queryFn: () => base44.entities.SystemAlert.list("-created_date", 200),
+    queryFn: () => db.SystemAlert.list("-created_date", 200),
     refetchInterval: 30000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SystemAlert.create(data),
+    mutationFn: (data) => db.SystemAlert.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["system-alerts"] }); setCreating(false); setForm({ title: "", message: "", severity: "info", category: "system" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SystemAlert.update(id, data),
+    mutationFn: ({ id, data }) => db.SystemAlert.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["system-alerts"] }),
   });
 

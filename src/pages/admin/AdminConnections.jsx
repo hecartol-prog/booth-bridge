@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,11 @@ export default function AdminConnections() {
 
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ["admin-connections"],
-    queryFn: () => base44.entities.Connection.list("-created_date", 300),
+    queryFn: () => db.Connection.list("-created_date", 300),
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => base44.entities.Connection.delete(id),
+    mutationFn: (id) => db.Connection.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-connections"] });
       toast({ title: "Connection deleted" });
