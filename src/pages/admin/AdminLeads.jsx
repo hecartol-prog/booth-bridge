@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,17 +22,17 @@ export default function AdminLeads() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(null);
 
-  const { data: leads = [], isLoading } = useQuery({ queryKey: ["admin-leads"], queryFn: () => base44.entities.LeadProfile.list() });
-  const { data: meetings = [], isLoading: loadingMeetings } = useQuery({ queryKey: ["admin-meetings"], queryFn: () => base44.entities.Meeting.list() });
-  const { data: rfis = [], isLoading: loadingRFIs } = useQuery({ queryKey: ["admin-rfis"], queryFn: () => base44.entities.RFI.list() });
+  const { data: leads = [], isLoading } = useQuery({ queryKey: ["admin-leads"], queryFn: () => db.LeadProfile.list() });
+  const { data: meetings = [], isLoading: loadingMeetings } = useQuery({ queryKey: ["admin-meetings"], queryFn: () => db.Meeting.list() });
+  const { data: rfis = [], isLoading: loadingRFIs } = useQuery({ queryKey: ["admin-rfis"], queryFn: () => db.RFI.list() });
 
   const updateLead = useMutation({
-    mutationFn: d => base44.entities.LeadProfile.update(d.id, d),
+    mutationFn: d => db.LeadProfile.update(d.id, d),
     onSuccess: () => { qc.invalidateQueries(["admin-leads"]); toast({ title: "Lead updated" }); setEditing(null); },
   });
 
   const deleteLead = useMutation({
-    mutationFn: id => base44.entities.LeadProfile.delete(id),
+    mutationFn: id => db.LeadProfile.delete(id),
     onSuccess: () => { qc.invalidateQueries(["admin-leads"]); toast({ title: "Lead deleted" }); },
   });
 
