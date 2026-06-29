@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,14 +47,14 @@ export default function AdminDataQuality() {
   const [scanning, setScanning] = useState(false);
   const [lastScan, setLastScan] = useState(null);
 
-  const { data: users = [] } = useQuery({ queryKey: ["dq-users"], queryFn: () => base44.entities.User.list() });
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["dq-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list() });
-  const { data: products = [] } = useQuery({ queryKey: ["dq-products"], queryFn: () => base44.entities.Product.list() });
-  const { data: leads = [] } = useQuery({ queryKey: ["dq-leads"], queryFn: () => base44.entities.LeadProfile.list() });
-  const { data: events = [] } = useQuery({ queryKey: ["dq-events"], queryFn: () => base44.entities.Event.list() });
-  const { data: subs = [] } = useQuery({ queryKey: ["dq-subs"], queryFn: () => base44.entities.PremiumBoothSubscription.list() });
-  const { data: nfcProfiles = [] } = useQuery({ queryKey: ["dq-nfc"], queryFn: () => base44.entities.NFCProfile.list() });
-  const { data: scanned = [] } = useQuery({ queryKey: ["dq-scanned"], queryFn: () => base44.entities.ScannedContact.list() });
+  const { data: users = [] } = useQuery({ queryKey: ["dq-users"], queryFn: () => db.User.list() });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["dq-exhibitors"], queryFn: () => db.ExhibitorProfile.list() });
+  const { data: products = [] } = useQuery({ queryKey: ["dq-products"], queryFn: () => db.Product.list() });
+  const { data: leads = [] } = useQuery({ queryKey: ["dq-leads"], queryFn: () => db.LeadProfile.list() });
+  const { data: events = [] } = useQuery({ queryKey: ["dq-events"], queryFn: () => db.Event.list() });
+  const { data: subs = [] } = useQuery({ queryKey: ["dq-subs"], queryFn: () => db.PremiumBoothSubscription.list() });
+  const { data: nfcProfiles = [] } = useQuery({ queryKey: ["dq-nfc"], queryFn: () => db.NFCProfile.list() });
+  const { data: scanned = [] } = useQuery({ queryKey: ["dq-scanned"], queryFn: () => db.ScannedContact.list() });
 
   // Compute issues
   const dupUserEmails = (() => {
