@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,10 +182,10 @@ export default function Onboarding() {
 
       if (effectiveRole === "exhibitor") {
         let existing = [];
-        try { existing = await base44.entities.ExhibitorProfile.filter({ user_id: me.id }); } catch { existing = []; }
+        try { existing = await db.ExhibitorProfile.filter({ user_id: me.id }); } catch { existing = []; }
         let profile;
         if (existing.length > 0) {
-          profile = await base44.entities.ExhibitorProfile.update(existing[0].id, {
+          profile = await db.ExhibitorProfile.update(existing[0].id, {
             company_name: companyName,
             booth_number: boothNumber,
             event_name: eventName,
@@ -192,7 +193,7 @@ export default function Onboarding() {
           });
           profile = { ...existing[0], ...profile };
         } else {
-          profile = await base44.entities.ExhibitorProfile.create({
+          profile = await db.ExhibitorProfile.create({
             user_id: me.id,
             company_name: companyName,
             booth_number: boothNumber,
@@ -221,13 +222,13 @@ export default function Onboarding() {
           },
         };
         let existing = [];
-        try { existing = await base44.entities.BuyerProfile.filter({ user_id: me.id }); } catch { existing = []; }
+        try { existing = await db.BuyerProfile.filter({ user_id: me.id }); } catch { existing = []; }
         let profile;
         if (existing.length > 0) {
-          profile = await base44.entities.BuyerProfile.update(existing[0].id, buyerData);
+          profile = await db.BuyerProfile.update(existing[0].id, buyerData);
           profile = { ...existing[0], ...profile };
         } else {
-          profile = await base44.entities.BuyerProfile.create({ user_id: me.id, ...buyerData });
+          profile = await db.BuyerProfile.create({ user_id: me.id, ...buyerData });
         }
         await base44.auth.updateMe({ user_role: "buyer", onboarded: true, profile_id: profile.id });
       }
