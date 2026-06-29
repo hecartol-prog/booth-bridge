@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,13 @@ export default function AdminRevenue() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(null);
 
-  const { data: subscriptions = [] } = useQuery({ queryKey: ["admin-subs"], queryFn: () => base44.entities.PremiumBoothSubscription.list() });
-  const { data: sponsored = [] } = useQuery({ queryKey: ["admin-sponsored"], queryFn: () => base44.entities.SponsoredListing.list() });
-  const { data: billing = [] } = useQuery({ queryKey: ["admin-billing"], queryFn: () => base44.entities.BillingTransaction.list() });
-  const { data: billingSubs = [] } = useQuery({ queryKey: ["admin-billing-subs"], queryFn: () => base44.entities.BillingSubscription.list() });
+  const { data: subscriptions = [] } = useQuery({ queryKey: ["admin-subs"], queryFn: () => db.PremiumBoothSubscription.list() });
+  const { data: sponsored = [] } = useQuery({ queryKey: ["admin-sponsored"], queryFn: () => db.SponsoredListing.list() });
+  const { data: billing = [] } = useQuery({ queryKey: ["admin-billing"], queryFn: () => db.BillingTransaction.list() });
+  const { data: billingSubs = [] } = useQuery({ queryKey: ["admin-billing-subs"], queryFn: () => db.BillingSubscription.list() });
 
   const updateSub = useMutation({
-    mutationFn: d => base44.entities.PremiumBoothSubscription.update(d.id, d),
+    mutationFn: d => db.PremiumBoothSubscription.update(d.id, d),
     onSuccess: () => { qc.invalidateQueries(["admin-subs"]); toast({ title: "Subscription updated" }); setEditing(null); },
   });
 
