@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,11 +20,11 @@ export default function AdminExhibitors() {
 
   const { data: exhibitors = [], isLoading } = useQuery({
     queryKey: ["admin-exhibitors"],
-    queryFn: () => base44.entities.ExhibitorProfile.list("-created_date", 200),
+    queryFn: () => db.ExhibitorProfile.list("-created_date", 200),
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ExhibitorProfile.update(id, data),
+    mutationFn: ({ id, data }) => db.ExhibitorProfile.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-exhibitors"] });
       setEditing(null);
@@ -32,7 +33,7 @@ export default function AdminExhibitors() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => base44.entities.ExhibitorProfile.delete(id),
+    mutationFn: (id) => db.ExhibitorProfile.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-exhibitors"] });
       toast({ title: "Exhibitor deleted" });

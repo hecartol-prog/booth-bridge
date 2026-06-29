@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,16 +32,16 @@ export default function AdminEvents() {
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["admin-events"],
-    queryFn: () => base44.entities.Event.list(),
+    queryFn: () => db.Event.list(),
   });
 
   const saveMutation = useMutation({
-    mutationFn: (d) => d.id ? base44.entities.Event.update(d.id, d) : base44.entities.Event.create(d),
+    mutationFn: (d) => d.id ? db.Event.update(d.id, d) : db.Event.create(d),
     onSuccess: () => { qc.invalidateQueries(["admin-events"]); toast({ title: "Event saved" }); setEditing(null); setIsNew(false); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: id => base44.entities.Event.delete(id),
+    mutationFn: id => db.Event.delete(id),
     onSuccess: () => { qc.invalidateQueries(["admin-events"]); toast({ title: "Event deleted" }); },
   });
 
