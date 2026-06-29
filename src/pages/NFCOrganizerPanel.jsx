@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,24 +22,24 @@ export default function NFCOrganizerPanel() {
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["all-nfc-profiles"],
-    queryFn: () => base44.entities.NFCProfile.list("-created_date", 100),
+    queryFn: () => db.NFCProfile.list("-created_date", 100),
     enabled: user?.role === "admin",
   });
 
   const { data: productTags = [] } = useQuery({
     queryKey: ["nfc-product-tags"],
-    queryFn: () => base44.entities.NFCProductTag.list("-created_date", 100),
+    queryFn: () => db.NFCProductTag.list("-created_date", 100),
     enabled: user?.role === "admin",
   });
 
   const { data: interactions = [] } = useQuery({
     queryKey: ["all-nfc-interactions"],
-    queryFn: () => base44.entities.NFCInteraction.list("-created_date", 200),
+    queryFn: () => db.NFCInteraction.list("-created_date", 200),
     enabled: user?.role === "admin",
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, active }) => base44.entities.NFCProfile.update(id, { active }),
+    mutationFn: ({ id, active }) => db.NFCProfile.update(id, { active }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-nfc-profiles"] });
       toast({ title: "NFC profile updated" });
@@ -47,7 +47,7 @@ export default function NFCOrganizerPanel() {
   });
 
   const toggleTagMutation = useMutation({
-    mutationFn: ({ id, active_status }) => base44.entities.NFCProductTag.update(id, { active_status }),
+    mutationFn: ({ id, active_status }) => db.NFCProductTag.update(id, { active_status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["nfc-product-tags"] }),
   });
 

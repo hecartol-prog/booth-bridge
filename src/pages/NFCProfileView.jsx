@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ export default function NFCProfileView() {
 
   useEffect(() => {
     if (!targetUserId) return;
-    base44.entities.NFCProfile.filter({ user_id: targetUserId })
+    db.NFCProfile.filter({ user_id: targetUserId })
       .then(list => setProfile(list[0] || null))
       .finally(() => setLoading(false));
   }, [targetUserId]);
@@ -33,7 +33,7 @@ export default function NFCProfileView() {
   // Log NFC interaction
   useEffect(() => {
     if (!profile || !user) return;
-    base44.entities.NFCInteraction.create({
+    db.NFCInteraction.create({
       initiator_user_id: user.id,
       target_user_id: targetUserId,
       nfc_identifier: profile.nfc_identifier || "",
@@ -43,7 +43,7 @@ export default function NFCProfileView() {
       synced: true,
     }).catch(() => {});
     // Bump tap count
-    base44.entities.NFCProfile.update(profile.id, {
+    db.NFCProfile.update(profile.id, {
       tap_count: (profile.tap_count || 0) + 1,
     }).catch(() => {});
   }, [profile, user]);
@@ -52,7 +52,7 @@ export default function NFCProfileView() {
     if (!user || !profile) return;
     setSaving(true);
     try {
-      await base44.entities.Connection.create({
+      await db.Connection.create({
         exhibitor_user_id: targetUserId,
         buyer_user_id: user.id,
         status: "accepted",

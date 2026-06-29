@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export default function NFCExchange() {
   const { data: nfcProfile, isLoading } = useQuery({
     queryKey: ["nfc-profile", user?.id],
     queryFn: async () => {
-      const list = await base44.entities.NFCProfile.filter({ user_id: user.id });
+      const list = await db.NFCProfile.filter({ user_id: user.id });
       return list[0] || null;
     },
     enabled: !!user?.id,
@@ -43,7 +43,7 @@ export default function NFCExchange() {
 
   const { data: interactions = [] } = useQuery({
     queryKey: ["nfc-interactions", user?.id],
-    queryFn: () => base44.entities.NFCInteraction.filter({ target_user_id: user.id }, "-created_date", 20),
+    queryFn: () => db.NFCInteraction.filter({ target_user_id: user.id }, "-created_date", 20),
     enabled: !!user?.id,
   });
 
@@ -75,10 +75,10 @@ export default function NFCExchange() {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (nfcProfile) {
-        return base44.entities.NFCProfile.update(nfcProfile.id, data);
+        return db.NFCProfile.update(nfcProfile.id, data);
       } else {
         const nfcId = `bb-nfc-${user.id}-${Date.now()}`;
-        return base44.entities.NFCProfile.create({
+        return db.NFCProfile.create({
           ...data,
           user_id: user.id,
           nfc_identifier: nfcId,
