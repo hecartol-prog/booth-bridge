@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,7 +105,7 @@ export default function OCRScanner() {
     setFieldErrors({});
     setLoading(true);
     try {
-      const contact = await base44.entities.ScannedContact.create({
+      const contact = await db.ScannedContact.create({
         scanned_by_user_id: user.id,
         scan_type: scanType,
         ...editData,
@@ -112,7 +113,7 @@ export default function OCRScanner() {
         ocr_confidence: confidence,
         follow_up_status: "pending",
       });
-      await base44.entities.Activity.create({
+      await db.Activity.create({
         activity_type: "scanned_qr",
         user_id: user.id,
         company_name: editData.company || "",

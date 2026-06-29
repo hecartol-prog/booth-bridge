@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,14 +25,14 @@ export default function Notifications() {
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications", user?.id],
-    queryFn: () => base44.entities.Notification.filter({ user_id: user.id }, "-created_date", 50),
+    queryFn: () => db.Notification.filter({ user_id: user.id }, "-created_date", 50),
     enabled: !!user?.id,
   });
 
   const markReadMutation = useMutation({
     mutationFn: async () => {
       const unread = notifications.filter(n => !n.read);
-      await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { read: true })));
+      await Promise.all(unread.map(n => db.Notification.update(n.id, { read: true })));
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
