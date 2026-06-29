@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, AlertTriangle, CheckCircle2, XCircle, Radio, BarChart3 } from "lucide-react";
@@ -9,9 +9,9 @@ export default function AdminNFCValidation() {
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState(null);
 
-  const { data: tags = [] } = useQuery({ queryKey: ["nfc-tags"], queryFn: () => base44.entities.NFCProductTag.list("-created_date", 500) });
-  const { data: profiles = [] } = useQuery({ queryKey: ["nfc-profiles"], queryFn: () => base44.entities.NFCProfile.list("-created_date", 500) });
-  const { data: products = [] } = useQuery({ queryKey: ["products-all"], queryFn: () => base44.entities.Product.list("-created_date", 1000) });
+  const { data: tags = [] } = useQuery({ queryKey: ["nfc-tags"], queryFn: () => db.NFCProductTag.list("-created_date", 500) });
+  const { data: profiles = [] } = useQuery({ queryKey: ["nfc-profiles"], queryFn: () => db.NFCProfile.list("-created_date", 500) });
+  const { data: products = [] } = useQuery({ queryKey: ["products-all"], queryFn: () => db.Product.list("-created_date", 1000) });
 
   const runValidation = () => {
     setRunning(true);
