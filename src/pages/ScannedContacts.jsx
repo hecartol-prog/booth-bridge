@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,17 +29,17 @@ export default function ScannedContacts() {
 
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ["scanned-contacts", user?.id],
-    queryFn: () => base44.entities.ScannedContact.filter({ scanned_by_user_id: user.id }, "-created_date"),
+    queryFn: () => db.ScannedContact.filter({ scanned_by_user_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ScannedContact.update(id, data),
+    mutationFn: ({ id, data }) => db.ScannedContact.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scanned-contacts", user?.id] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ScannedContact.delete(id),
+    mutationFn: (id) => db.ScannedContact.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scanned-contacts", user?.id] });
       toast({ title: "Contact deleted" });
