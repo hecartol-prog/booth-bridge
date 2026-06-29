@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,16 +13,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4"];
 
 export default function AdminDashboard() {
-  const { data: users = [] } = useQuery({ queryKey: ["adm-users"], queryFn: () => base44.entities.User.list() });
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["adm-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list() });
-  const { data: buyers = [] } = useQuery({ queryKey: ["adm-buyers"], queryFn: () => base44.entities.BuyerProfile.list() });
-  const { data: products = [] } = useQuery({ queryKey: ["adm-products"], queryFn: () => base44.entities.Product.list() });
-  const { data: events = [] } = useQuery({ queryKey: ["adm-events"], queryFn: () => base44.entities.Event.list() });
-  const { data: meetings = [] } = useQuery({ queryKey: ["adm-meetings"], queryFn: () => base44.entities.Meeting.list() });
-  const { data: leads = [] } = useQuery({ queryKey: ["adm-leads"], queryFn: () => base44.entities.LeadProfile.list() });
-  const { data: subs = [] } = useQuery({ queryKey: ["adm-subs"], queryFn: () => base44.entities.PremiumBoothSubscription.list() });
-  const { data: connections = [] } = useQuery({ queryKey: ["adm-conn"], queryFn: () => base44.entities.Connection.list() });
-  const { data: billingTx = [] } = useQuery({ queryKey: ["adm-billing"], queryFn: () => base44.entities.BillingTransaction.list() });
+  const { data: users = [] } = useQuery({ queryKey: ["adm-users"], queryFn: () => db.User.list() });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["adm-exhibitors"], queryFn: () => db.ExhibitorProfile.list() });
+  const { data: buyers = [] } = useQuery({ queryKey: ["adm-buyers"], queryFn: () => db.BuyerProfile.list() });
+  const { data: products = [] } = useQuery({ queryKey: ["adm-products"], queryFn: () => db.Product.list() });
+  const { data: events = [] } = useQuery({ queryKey: ["adm-events"], queryFn: () => db.Event.list() });
+  const { data: meetings = [] } = useQuery({ queryKey: ["adm-meetings"], queryFn: () => db.Meeting.list() });
+  const { data: leads = [] } = useQuery({ queryKey: ["adm-leads"], queryFn: () => db.LeadProfile.list() });
+  const { data: subs = [] } = useQuery({ queryKey: ["adm-subs"], queryFn: () => db.PremiumBoothSubscription.list() });
+  const { data: connections = [] } = useQuery({ queryKey: ["adm-conn"], queryFn: () => db.Connection.list() });
+  const { data: billingTx = [] } = useQuery({ queryKey: ["adm-billing"], queryFn: () => db.BillingTransaction.list() });
 
   const totalRevenue = billingTx.filter(t => t.status === "succeeded").reduce((s, t) => s + (t.amount || 0), 0);
   const activeSubs = subs.filter(s => s.status === "active").length;
