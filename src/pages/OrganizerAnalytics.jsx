@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +16,12 @@ import {
 export default function OrganizerAnalytics() {
   const [selectedEvent, setSelectedEvent] = useState("all");
 
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["org-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list() });
-  const { data: connections = [] } = useQuery({ queryKey: ["org-connections"], queryFn: () => base44.entities.Connection.list() });
-  const { data: meetings = [] } = useQuery({ queryKey: ["org-meetings"], queryFn: () => base44.entities.Meeting.list() });
-  const { data: rfis = [] } = useQuery({ queryKey: ["org-rfis"], queryFn: () => base44.entities.RFI.list() });
-  const { data: catalogs = [] } = useQuery({ queryKey: ["org-catalogs"], queryFn: () => base44.entities.CatalogItem.list() });
-  const { data: events = [] } = useQuery({ queryKey: ["org-events"], queryFn: () => base44.entities.Event.list() });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["org-exhibitors"], queryFn: () => db.ExhibitorProfile.list() });
+  const { data: connections = [] } = useQuery({ queryKey: ["org-connections"], queryFn: () => db.Connection.list() });
+  const { data: meetings = [] } = useQuery({ queryKey: ["org-meetings"], queryFn: () => db.Meeting.list() });
+  const { data: rfis = [] } = useQuery({ queryKey: ["org-rfis"], queryFn: () => db.RFI.list() });
+  const { data: catalogs = [] } = useQuery({ queryKey: ["org-catalogs"], queryFn: () => db.CatalogItem.list() });
+  const { data: events = [] } = useQuery({ queryKey: ["org-events"], queryFn: () => db.Event.list() });
 
   const eventNames = [...new Set(exhibitors.map(e => e.event_name).filter(Boolean))].sort();
 

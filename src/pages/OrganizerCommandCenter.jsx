@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,14 +23,14 @@ export default function OrganizerCommandCenter() {
   const [selectedEvent, setSelectedEvent] = useState("all");
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["occ-exhibitors"], queryFn: () => base44.entities.ExhibitorProfile.list() });
-  const { data: connections = [] } = useQuery({ queryKey: ["occ-connections"], queryFn: () => base44.entities.Connection.list() });
-  const { data: meetings = [] } = useQuery({ queryKey: ["occ-meetings"], queryFn: () => base44.entities.Meeting.list() });
-  const { data: rfis = [] } = useQuery({ queryKey: ["occ-rfis"], queryFn: () => base44.entities.RFI.list() });
-  const { data: catalogs = [] } = useQuery({ queryKey: ["occ-catalogs"], queryFn: () => base44.entities.CatalogItem.list() });
-  const { data: events = [] } = useQuery({ queryKey: ["occ-events"], queryFn: () => base44.entities.Event.list() });
-  const { data: saved = [] } = useQuery({ queryKey: ["occ-saved"], queryFn: () => base44.entities.SavedBooth.list() });
-  const { data: sponsored = [] } = useQuery({ queryKey: ["occ-sponsored"], queryFn: () => base44.entities.SponsoredListing.list() });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["occ-exhibitors"], queryFn: () => db.ExhibitorProfile.list() });
+  const { data: connections = [] } = useQuery({ queryKey: ["occ-connections"], queryFn: () => db.Connection.list() });
+  const { data: meetings = [] } = useQuery({ queryKey: ["occ-meetings"], queryFn: () => db.Meeting.list() });
+  const { data: rfis = [] } = useQuery({ queryKey: ["occ-rfis"], queryFn: () => db.RFI.list() });
+  const { data: catalogs = [] } = useQuery({ queryKey: ["occ-catalogs"], queryFn: () => db.CatalogItem.list() });
+  const { data: events = [] } = useQuery({ queryKey: ["occ-events"], queryFn: () => db.Event.list() });
+  const { data: saved = [] } = useQuery({ queryKey: ["occ-saved"], queryFn: () => db.SavedBooth.list() });
+  const { data: sponsored = [] } = useQuery({ queryKey: ["occ-sponsored"], queryFn: () => db.SponsoredListing.list() });
 
   const eventNames = [...new Set(exhibitors.map(e => e.event_name).filter(Boolean))].sort();
   const filterByEvent = (arr, field = "event_name") =>
