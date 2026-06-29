@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -175,16 +175,16 @@ export default function ScanQR() {
 
     // ── ONLINE PATH ──────────────────────────────────────────────────
     try {
-      const existing = await base44.entities.Connection.filter({
+      const existing = await db.Connection.filter({
         exhibitor_user_id: targetId,
         buyer_user_id: user.id,
       });
 
       if (existing.length === 0) {
-        const exProfiles = await base44.entities.ExhibitorProfile.filter({ user_id: targetId });
+        const exProfiles = await db.ExhibitorProfile.filter({ user_id: targetId });
         const exProfile = exProfiles[0];
 
-        await base44.entities.Connection.create({
+        await db.Connection.create({
           exhibitor_user_id: targetId,
           buyer_user_id: user.id,
           status: "accepted",
@@ -196,7 +196,7 @@ export default function ScanQR() {
           buyer_name: user.full_name,
         });
 
-        await base44.entities.Notification.create({
+        await db.Notification.create({
           user_id: targetId,
           type: "connection_accepted",
           title: "Booth Visit",
