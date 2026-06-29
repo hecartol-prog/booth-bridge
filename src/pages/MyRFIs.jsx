@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,13 +25,13 @@ export default function MyRFIs() {
 
   const { data: rfis = [], isLoading } = useQuery({
     queryKey: ["my-rfis", user?.id],
-    queryFn: () => base44.entities.RFI.filter({ buyer_user_id: user.id }, "-created_date"),
+    queryFn: () => db.RFI.filter({ buyer_user_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const { data: connections = [] } = useQuery({
     queryKey: ["buyer-conns-rfi", user?.id],
-    queryFn: () => base44.entities.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
+    queryFn: () => db.Connection.filter({ buyer_user_id: user.id, status: "accepted" }),
     enabled: !!user?.id,
   });
 
@@ -39,7 +39,7 @@ export default function MyRFIs() {
     mutationFn: async () => {
       const conn = connections.find(c => c.id === selectedConnection);
       if (!conn) return;
-      const rfi = await base44.entities.RFI.create({
+      const rfi = await db.RFI.create({
         connection_id: selectedConnection,
         buyer_user_id: user.id,
         exhibitor_user_id: conn.exhibitor_user_id,
@@ -50,7 +50,7 @@ export default function MyRFIs() {
         buyer_company: conn.buyer_company,
         exhibitor_company: conn.exhibitor_company,
       });
-      await base44.entities.Notification.create({
+      await db.Notification.create({
         user_id: conn.exhibitor_user_id,
         type: "rfi_received",
         title: "New RFI Request",

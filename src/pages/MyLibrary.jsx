@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,17 +29,17 @@ export default function MyLibrary() {
 
   const { data: savedProducts = [], isLoading } = useQuery({
     queryKey: ["saved-products", user?.id],
-    queryFn: () => base44.entities.SavedProduct.filter({ buyer_id: user.id }, "-created_date"),
+    queryFn: () => db.SavedProduct.filter({ buyer_id: user.id }, "-created_date"),
     enabled: !!user?.id,
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SavedProduct.update(id, data),
+    mutationFn: ({ id, data }) => db.SavedProduct.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-products"] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SavedProduct.delete(id),
+    mutationFn: (id) => db.SavedProduct.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-products"] }),
   });
 
