@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { invokeLLM } from "@/api/aiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, X, Send, Loader2, Bot } from "lucide-react";
@@ -47,7 +47,7 @@ export default function AiBoothAssistant({ profile, products, catalogs }) {
     setLoading(true);
     const context = buildContext();
     const history = messages.slice(-6).map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n");
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt: `You are the AI assistant for ${profile?.company_name}, an exhibitor at a trade show. 
 Answer questions based ONLY on the following company information. Be concise and helpful.
 If you don't know the answer from the context, say "I don't have that information — please contact us directly."
