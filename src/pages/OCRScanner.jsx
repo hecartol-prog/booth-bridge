@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { invokeLLM } from "@/api/aiClient";
 import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,7 +43,7 @@ export default function OCRScanner() {
       const prompt = scanType === "business_card"
         ? "Extract all contact information from this business card image. Return a JSON object with: first_name, last_name, full_name, position, company, department, email, phone, mobile, whatsapp, website, address, country, city, linkedin, confidence (0-100 number). Set fields to empty string if not found."
         : "Extract all information from this trade show badge. Return a JSON object with: first_name, last_name, full_name, company, position, country, industry, badge_number, booth_number, event_name, confidence (0-100 number). Set fields to empty string if not found.";
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await invokeLLM({
         prompt,
         add_context_from_internet: false,
         response_json_schema: {
