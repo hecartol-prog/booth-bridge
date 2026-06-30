@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +112,7 @@ export default function Onboarding() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     setLogo(file_url);
     setUploadingLogo(false);
   };
@@ -129,7 +130,7 @@ export default function Onboarding() {
 
     try {
       // Upload then extract
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await uploadFile(file);
       const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
         json_schema: CARD_SCHEMA,

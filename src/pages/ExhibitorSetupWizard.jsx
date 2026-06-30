@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -150,7 +150,7 @@ export default function ExhibitorSetupWizard() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     setLogoUrl(file_url);
     setUploadingLogo(false);
   };
@@ -181,7 +181,7 @@ export default function ExhibitorSetupWizard() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingProductImage(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     setProductImageUrl(file_url);
     setUploadingProductImage(false);
   };
@@ -203,7 +203,7 @@ export default function ExhibitorSetupWizard() {
   const uploadCatalog = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     const isVideo = file.type.startsWith("video/");
     await db.CatalogItem.create({
       exhibitor_user_id: user.id,

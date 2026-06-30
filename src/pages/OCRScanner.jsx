@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +38,7 @@ export default function OCRScanner() {
     setStep("processing");
     setLoading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await uploadFile(file);
       setImageUrl(file_url);
       const prompt = scanType === "business_card"
         ? "Extract all contact information from this business card image. Return a JSON object with: first_name, last_name, full_name, position, company, department, email, phone, mobile, whatsapp, website, address, country, city, linkedin, confidence (0-100 number). Set fields to empty string if not found."

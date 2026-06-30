@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +68,7 @@ export default function AdminCatalogues() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingFile(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     setForm(f => ({ ...f, file_url }));
     setUploadingFile(false);
   };
@@ -77,7 +77,7 @@ export default function AdminCatalogues() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingThumb(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await uploadFile(file);
     setForm(f => ({ ...f, thumbnail_url: file_url }));
     setUploadingThumb(false);
   };
