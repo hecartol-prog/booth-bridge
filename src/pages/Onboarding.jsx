@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { extractFromUploadedFile } from "@/api/aiClient";
 import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
@@ -131,7 +132,7 @@ export default function Onboarding() {
     try {
       // Upload then extract
       const { file_url } = await uploadFile(file);
-      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+      const result = await extractFromUploadedFile({
         file_url,
         json_schema: CARD_SCHEMA,
       });
