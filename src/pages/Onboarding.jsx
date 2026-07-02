@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { auth } from "@/api/authClient";
 import { extractFromUploadedFile } from "@/api/aiClient";
 import { uploadFile } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
@@ -180,7 +180,7 @@ export default function Onboarding() {
     setSaving(true);
     setFinishError(null);
     try {
-      const me = await base44.auth.me();
+      const me = await auth.getCurrentUser();
 
       if (effectiveRole === "exhibitor") {
         let existing = [];
@@ -204,7 +204,7 @@ export default function Onboarding() {
             digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
           });
         }
-        await base44.auth.updateMe({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
+        await auth.updateUserMetadata({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
       } else {
         const buyerData = {
           job_title: jobTitle,
@@ -232,7 +232,7 @@ export default function Onboarding() {
         } else {
           profile = await db.BuyerProfile.create({ user_id: me.id, ...buyerData });
         }
-        await base44.auth.updateMe({ user_role: "buyer", onboarded: true, profile_id: profile.id });
+        await auth.updateUserMetadata({ user_role: "buyer", onboarded: true, profile_id: profile.id });
       }
       window.location.href = "/";
     } catch (err) {

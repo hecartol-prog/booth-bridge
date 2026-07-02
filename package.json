@@ -9,7 +9,12 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "phase6:dry-run": "node scripts/phase6/dry-run-estimate.mjs",
+    "phase6:verify-infra": "node scripts/phase6/verify-infrastructure.mjs",
+    "phase6:verify-uuid": "node scripts/phase6/verify-uuid-sample.mjs",
+    "phase6:export": "node scripts/phase6/export-entities.mjs",
+    "phase6:manifest": "node scripts/phase6/generate-manifest.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.32",

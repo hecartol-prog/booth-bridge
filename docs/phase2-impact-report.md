@@ -1,7 +1,9 @@
 # Phase 2 — Impact Report
 
+> **Status update (2026-07-01):** Mechanical refactor **largely complete** — pages use foundation clients; ~14 runtime files remain at client layer. Active work: Phase 7.4.
+
 **Date:** 2026-06-13  
-**Phase:** 2 — Mechanical Import Refactor (planned, not yet executed)  
+**Phase:** 2 — Mechanical Import Refactor (**largely complete**)  
 **Prerequisite:** Phase 1 complete ([phase1-foundation-report.md](./phase1-foundation-report.md))  
 **Default backend during Phase 2:** `VITE_DATA_BACKEND=base44` (unchanged)
 

@@ -1,0 +1,40 @@
+create table if not exists "public"."lead_intelligence" (
+  "id" uuid primary key default gen_random_uuid(),
+  "created_date" timestamptz not null default now(),
+  "updated_date" timestamptz,
+  "legacy_base44_id" text,
+  "lead_profile_id" uuid,
+  "buyer_user_id" uuid,
+  "exhibitor_user_id" uuid,
+  "company_id" uuid,
+  "event_id" uuid,
+  "lead_score" numeric default 0,
+  "lead_temperature" text default 'cold',
+  "interest_categories" jsonb,
+  "product_interest" jsonb,
+  "meeting_probability" numeric default 0,
+  "conversion_probability" numeric default 0,
+  "rfi_probability" numeric default 0,
+  "last_activity" timestamptz,
+  "activity_count" numeric default 0,
+  "profile_completeness" numeric default 0,
+  "engagement_score" numeric default 0,
+  "recommendation_score" numeric default 0,
+  "qr_scans" numeric default 0,
+  "profile_views" numeric default 0,
+  "product_views" numeric default 0,
+  "catalog_downloads" numeric default 0,
+  "meeting_requests" numeric default 0,
+  "meetings_completed" numeric default 0,
+  "rfis_submitted" numeric default 0,
+  "crm_synced_salesforce" boolean default false,
+  "crm_synced_hubspot" boolean default false,
+  "salesforce_lead_id" text,
+  "hubspot_contact_id" text,
+  "last_crm_sync" timestamptz,
+  "recommended_action" text
+);
+
+create trigger "trg_lead_intelligence_updated_date"
+before update on "public"."lead_intelligence"
+for each row execute function "public"."set_updated_date"();

@@ -1,5 +1,8 @@
 # Base44 Dependency Map
 
+> **Superseded for active work by:** [`phase7-base44-dependency-audit.md`](./phase7-base44-dependency-audit.md) (2026-07-01)  
+> This document remains the original pre-Phase-2 SDK surface area reference.
+
 **Generated:** 2026-06-13  
 **SDK:** `@base44/sdk` ^0.8.32  
 **Vite plugin:** `@base44/vite-plugin` ^1.0.21  

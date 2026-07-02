@@ -2,9 +2,12 @@
 
 **Role:** Lead Migration Architect  
 **Generated:** 2026-06-13  
+**Updated:** 2026-07-01 (Phase 6 closed; Phase 7 redefined)  
 **Target state:** Base44 Independence → Supabase Backend → Vercel Deployment  
+**Strategy:** Schema-only migration — **no Base44 data import** (Data Migration Waiver 2026-07-01)  
 **Constraints:** Vite + React retained; all routes preserved; NFC / QR / OCR / offline sync preserved; no Next.js; no TypeScript migration
 
+**Active implementation roadmap:** [**phase7-complete-supabase-transition.md**](./phase7-complete-supabase-transition.md)  
 **Source documents:** [architecture-audit.md](./architecture-audit.md), [migration-readiness-report.md](./migration-readiness-report.md), [base44-dependency-map.md](./base44-dependency-map.md)
 
 ---
@@ -174,7 +177,7 @@ The fewest code changes are achieved by **not rewriting pages**. Instead:
 
 #### Supabase table mapping
 
-One Postgres table per entity, snake_case columns matching JSONC field names. Preserve `id` as `uuid` PK. Add `created_at`, `updated_at` (map from `created_date` / `updated_date` in import).
+One Postgres table per entity, snake_case columns matching JSONC field names. Preserve `id` as `uuid` PK. Use **`created_date` / `updated_date`** column names (matches Base44 and repo migrations). Add `legacy_base44_id` where remapping may be needed.
 
 #### `subscribe()` implementation
 
@@ -206,7 +209,7 @@ When `VITE_DATA_BACKEND=base44`, `makeEntity()` keeps current `base44.entities` 
 
 ## 3. Supabase Backend Blueprint (no app code — infra only)
 
-Executed in parallel with Phases 1–2; **migrations live in Supabase project**, not in this repo per current constraint.
+Executed in parallel with Phases 1–2. **Schema migrations now live in `supabase/migrations/`** (Phase 6C.1 — 39 entity tables; not yet applied to a Supabase project).
 
 | Workstream | Deliverable |
 |------------|-------------|
@@ -216,7 +219,7 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 | Storage | Buckets + policies per `storageClient` |
 | Edge Functions | `admin-auth`, `ai-invoke`, `ai-extract-document` |
 | Realtime | Enable on `connection`, `meeting` |
-| Data import | Base44 export → CSV/JSON → `id`-preserving upsert |
+| Data seeding | Clean demo data in Phase 7.5 (no Base44 import) |
 
 **Admin unification:** Create admin users in Supabase Auth with `app_metadata.role = 'admin'`. Retire `bb_admin_authed` session flag in Phase 5.
 
@@ -261,11 +264,11 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 | 3 | Supabase backend provision | 5–10 days | None (staging only) |
 | 4 | Wire clients to Supabase (staging) | 5–7 days | None |
 | 5 | Auth + admin unification | 3–5 days | Staging |
-| 6 | Data migration + dual-write validation | 3–7 days | Staging |
-| 7 | Production cutover + Base44 removal | 2–3 days | **Cutover** |
+| 6 | Data migration | **CLOSED (waived)** | None — demo data only |
+| 7 | Complete Supabase transition | 4–6 weeks | Staging → **Cutover** |
 | 8 | Vercel hardening + monitoring | 1–2 days | Post-cutover |
 
-**Total estimate:** 6–10 weeks with one senior engineer; parallelize Phase 3 with Phases 1–2.
+**Total estimate:** Phase 7 is 4–6 weeks with one senior engineer. See [`phase7-complete-supabase-transition.md`](./phase7-complete-supabase-transition.md).
 
 ---
 
@@ -472,68 +475,58 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 
 ---
 
-### Phase 6 — Data migration + validation
+### Phase 6 — Data migration — CLOSED (waived 2026-07-01)
 
-**Objective:** Import Base44 production data into Supabase with **ID preservation**; validate row counts and FK integrity.
+> **Data Migration Waiver:** Base44 contains only demonstration/test data. Export/import pipeline archived; not executed.
 
-| Metric | Value |
-|--------|-------|
-| **Files affected** | **0 app code** (scripts in `scripts/` optional, not migrations in app) |
-| **Risk** | **Critical** |
+**Canonical record:** [`phase6-master-execution-plan.md`](./phase6-master-execution-plan.md)
 
-**Actions:**
-- Export all 39 entities from Base44 (paginated API or platform export)
-- Transform `created_date` → `created_at` if needed
-- Upsert by `id`
-- Validate counts per entity vs Base44
-- Spot-check FKs: Connection → User ids exist
-- **No dual-write in app** — single cutover import reduces complexity (fewest code changes)
+| Sub-phase | Status |
+|-----------|--------|
+| 6C.1 Schema in repo | **Complete** |
+| 6C.2 Export tooling | **Complete (archived)** |
+| 6C.3 Infrastructure validation | **Complete** |
+| 6C.4 Data migration | **WAIVED** |
+| 6D Import | **NOT REQUIRED** |
 
-**Rollback:** Re-point Vercel to Base44 backend; Supabase data retained for retry.
-
-**Testing checklist:**
-- [ ] Row count matrix: Base44 count = Supabase count per entity (±0)
-- [ ] Random 50 connections: buyer/exhibitor ids resolve
-- [ ] File URLs: sample 20 `file_url` values resolve via `storage.getSignedUrl`
-- [ ] NFC profiles: `profile_url` paths still valid
-- [ ] Billing records: subscriptions link to users
-- [ ] Staging full smoke on **imported clone** before prod import
+**Do not execute:** Gates 1–3, export, UUID verification, manifest generation, import.
 
 ---
 
-### Phase 7 — Production cutover + Base44 removal
+### Phase 7 — Complete Supabase transition
 
-**Objective:** Flip production to Supabase; remove Base44 packages.
+> **Supersedes** the previous "production cutover + Base44 removal" section.  
+> **Canonical plan:** [`phase7-complete-supabase-transition.md`](./phase7-complete-supabase-transition.md)
 
-| Metric | Value |
-|--------|-------|
-| **Files affected** | **~8–15** |
-| **Risk** | **Critical** |
+**Objective:** Migrate application, schema, business logic, auth, and infrastructure to Supabase with a **clean database** (no Base44 record import).
 
-**Cutover sequence (low-downtime):**
-1. Maintenance window announcement (optional — SPA can hot-swap)
-2. Final Base44 export → Supabase prod import
+| Milestone | Goal | Est. |
+|-----------|------|------|
+| 7.1 | Provision Supabase production project | 1–2 days |
+| 7.2 | Apply all migrations (39 tables) | 1–2 days |
+| 7.3 | Base44 dependency audit | 1 day (complete) |
+| 7.4 | Refactor client layer to Supabase | 10–15 days |
+| 7.5 | Seed clean demo database | 2–3 days |
+| 7.6 | End-to-end verification | 3–5 days |
+| 7.7 | Production readiness review | 2–3 days |
+
+**Cutover sequence:**
+1. Vercel preview with `VITE_DATA_BACKEND=supabase` — full smoke suite (7.6)
+2. Production readiness sign-off (7.7)
 3. Vercel production: `VITE_DATA_BACKEND=supabase`, deploy
-4. Smoke test production
-5. Remove dead code:
-   - `src/api/base44Client.js`
-   - `src/lib/app-params.js` (or reduce to non-Base44 params)
-   - `@base44/sdk`, `@base44/vite-plugin` from `package.json`
-   - `base44/` folder retained as **schema reference** (not runtime)
-   - Base44 branches inside client modules
+4. Remove `@base44/sdk`, `@base44/vite-plugin`, `base44Client.js`
+5. Keep `base44/entities/` as schema reference
 
-**Rollback (emergency):**
-1. Vercel instant rollback to previous deployment (`VITE_DATA_BACKEND=base44`)
-2. Base44 still live if not decommissioned
-3. Communicate session invalidation (users re-login)
+**Rollback:** Vercel instant rollback; `VITE_DATA_BACKEND=base44` for 48h emergency window.
 
 **Testing checklist:**
-- [ ] Production smoke: Phase 0 full suite
-- [ ] Monitor 24h: auth errors, 4xx/5xx on Edge Functions
-- [ ] Offline sync from real mobile device on production
-- [ ] OCR + AI on production (cost/latency acceptable)
+- [ ] Phase 0 smoke suite on Vercel preview + Supabase seeded data
+- [ ] NFC, QR, OCR, offline sync pass
+- [ ] Admin RBAC via Supabase Auth only
 - [ ] `npm run build` with zero `@base44/*` dependencies
-- [ ] Bundle size comparison (expect smaller without Base44 SDK)
+- [ ] Production smoke after cutover; monitor 24h
+
+**Dependency audit:** [`phase7-base44-dependency-audit.md`](./phase7-base44-dependency-audit.md)
 
 ---
 
@@ -572,8 +565,8 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 | 3 | Medium | Staging-only Supabase |
 | 4 | High | Vercel preview + feature flags |
 | 5 | High | Legacy admin session flag fallback |
-| 6 | Critical | ID-preserving import + count validation |
-| 7 | Critical | Vercel instant rollback + keep Base44 warm 48h |
+| 6 | **Waived** | Schema delivered; no data import |
+| 7 | Critical | Phase 7.7 checklist + Vercel rollback |
 | 8 | Low | Monitoring |
 
 ---
@@ -603,7 +596,7 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 | 3 | 0 (Supabase) | 0 | 0 |
 | 4 | 0 | 6–10 | 0 |
 | 5 | 0 | 5–8 | 0 |
-| 6 | scripts optional | 0 | 0 |
+| 6 | scripts + Supabase migrations | 0 | 0 |
 | 7 | 0 | 8–15 | `base44Client.js`, deps |
 | 8 | 1 (`vercel.json`) | 2 | 0 |
 
@@ -620,6 +613,7 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 - [ ] Supabase RLS enforces tenant isolation without app-level checks
 - [ ] NFC, QR, OCR, offline sync pass production smoke suite
 - [ ] Admin access via Supabase Auth roles only
+- [ ] Clean demo data seeded in Supabase (Phase 7.5; no Base44 import)
 - [ ] `boothbridge-base44-final` tag preserved for historical reference
 
 ---
@@ -631,3 +625,6 @@ Executed in parallel with Phases 1–2; **migrations live in Supabase project**,
 - [Base44 Dependency Map](./base44-dependency-map.md)
 - [Route Map](./route-map.md)
 - [Entity Relationship Diagram](./entity-relationship-diagram.md)
+- [**Phase 7 — Complete Supabase Transition**](./phase7-complete-supabase-transition.md) — **active implementation roadmap**
+- [**Phase 7.3 — Base44 Dependency Audit**](./phase7-base44-dependency-audit.md)
+- [Phase 6 Master Execution Plan](./phase6-master-execution-plan.md) — closed; data waiver

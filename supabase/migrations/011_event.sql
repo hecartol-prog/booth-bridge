@@ -1,0 +1,43 @@
+create table if not exists "public"."event" (
+  "id" uuid primary key default gen_random_uuid(),
+  "created_date" timestamptz not null default now(),
+  "updated_date" timestamptz,
+  "legacy_base44_id" text,
+  "name" text,
+  "venue" text,
+  "city" text,
+  "country" text,
+  "start_date" date,
+  "end_date" date,
+  "organizer" text,
+  "description" text,
+  "logo_url" text,
+  "banner_url" text,
+  "status" text default 'upcoming',
+  "industry" text,
+  "industry_category" text,
+  "vertical" text,
+  "country_focus" jsonb,
+  "buyer_categories" jsonb,
+  "expected_attendance" numeric,
+  "expected_exhibitors" numeric,
+  "floorplan_url" text,
+  "organizer_contact" text,
+  "organizer_email" text,
+  "organizer_phone" text,
+  "registration_url" text,
+  "event_website" text,
+  "timezone" text,
+  "sponsor_packages" jsonb,
+  "event_status" text default 'planning',
+  "post_event_report_url" text,
+  "kpi_lead_count" numeric default 0,
+  "kpi_meeting_count" numeric default 0,
+  "kpi_revenue_generated" numeric default 0,
+  "actual_attendance" numeric default 0,
+  "actual_exhibitors" numeric default 0
+);
+
+create trigger "trg_event_updated_date"
+before update on "public"."event"
+for each row execute function "public"."set_updated_date"();

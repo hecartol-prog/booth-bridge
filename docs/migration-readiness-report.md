@@ -1,5 +1,7 @@
 # Migration Readiness Report
 
+> **Updated context (2026-07-01):** Phase 6 data migration waived. Active roadmap: [`phase7-complete-supabase-transition.md`](./phase7-complete-supabase-transition.md). Phase 2 mechanical refactor largely complete.
+
 **Generated:** 2026-06-13  
 **Target migration:** Base44 → independent stack (Supabase per `dbClient.js` comments)  
 **Repository tag:** `boothbridge-base44-final`  
@@ -12,7 +14,7 @@
 | Domain | Readiness | Notes |
 |--------|-----------|-------|
 | Data model documentation | **Good** | 39 JSONC schemas in `base44/entities/` |
-| Data access abstraction | **Partial** | `dbClient.js` covers 25/39 entities; ~70 files still use direct SDK |
+| Data access abstraction | **Partial** | `dbClient.js` covers 39/39 entities; ~9 files still reference `base44` (mostly client modules) |
 | Auth migration | **Poor** | Dual auth systems; heavy `base44.auth` coupling |
 | Storage migration | **Partial** | `assetPipeline.js` documents target paths |
 | Offline sync | **Good** | Self-contained IndexedDB queues; sync logic needs backend swap only |
@@ -96,9 +98,9 @@ RLS rules live in Base44 JSONC schemas, not in application code. Supabase RLS po
 
 **Severity: High**
 
-No migration scripts in repo. Base44 entity export procedure unknown. Client generates UUIDs via `generateUUID()` — compatible with Postgres UUID columns.
+No import scripts yet. **Export tooling exists** in `scripts/phase6/` with `phase6Export` backend function. Base44 entity export uses paginated service-role reads. Client generates UUIDs via `generateUUID()` — compatible with Postgres UUID columns; Gate 2 verification required before export.
 
-**Mitigation:** Base44 bulk export or API pagination; validate ID preservation for foreign key integrity.
+**Mitigation:** Follow [`phase6-master-execution-plan.md`](./phase6-master-execution-plan.md) gates 1–4.
 
 ---
 
@@ -206,7 +208,7 @@ All must be re-provisioned on new stack.
 
 | Item | Location | Impact |
 |------|----------|--------|
-| Incomplete dbClient adoption | 70 direct base44 imports | Migration blocker |
+| Incomplete dbClient adoption | ~9 residual base44 references | Finish Phase 2 mechanical refactor |
 | Placeholder integration OAuth | `IntegrationHub.jsx` Connect button | False "connected" UX possible |
 | Stripe installed but unused | `package.json`, BillingCenter label | Dead dependency |
 | Admin MFA/SSO placeholders | AdminLogin.jsx | Security gap |
@@ -315,11 +317,13 @@ Most `src/pages/*` contain valuable UX flows. Migration effort is primarily repl
 
 ## Recommended Migration Phases
 
+> **ARCHIVED (phase numbering):** The sequence below is the **June 2026 audit snapshot**. Macro phases 0–8 and Phase 6 data-track sub-phases (6C.1–6D) are defined in [`migration-execution-roadmap.md`](./migration-execution-roadmap.md) and [`phase6-master-execution-plan.md`](./phase6-master-execution-plan.md). Historical checklist preserved for context.
+
 ### Phase 0 — Preparation (current)
 - [x] Architecture documentation (this audit)
 - [x] Tag `boothbridge-base44-final`
-- [ ] Base44 data export procedure
-- [ ] Supabase project + schema from JSONC entities
+- [x] Base44 data export procedure — see `scripts/phase6/` (6C.2)
+- [x] Supabase schema from JSONC entities — see `supabase/migrations/` (6C.1; not applied)
 
 ### Phase 1 — Foundation
 - Extend `dbClient` to all 39 entities
@@ -390,3 +394,4 @@ Most `src/pages/*` contain valuable UX flows. Migration effort is primarily repl
 - [Route Map](./route-map.md)
 - [Entity Relationship Diagram](./entity-relationship-diagram.md)
 - [Base44 Dependency Map](./base44-dependency-map.md)
+- [**Phase 6 Master Execution Plan**](./phase6-master-execution-plan.md)

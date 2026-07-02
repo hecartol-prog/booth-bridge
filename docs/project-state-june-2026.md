@@ -1,7 +1,12 @@
-# BoothBridge Project State — June 2026
+# BoothBridge Project State — July 2026
+
+> **Current canonical references:**  
+> - Phase 6 closure: [`phase6-master-execution-plan.md`](./phase6-master-execution-plan.md)  
+> - Phase 7 roadmap: [`phase7-complete-supabase-transition.md`](./phase7-complete-supabase-transition.md)  
+> - Base44 audit: [`phase7-base44-dependency-audit.md`](./phase7-base44-dependency-audit.md)
 
 **Handoff document for Base44 → Supabase migration**  
-**Date:** June 2026  
+**Date:** Updated 2026-07-01 (Phase 6 closed; Phase 7 active)  
 **Repository:** `booth-bridge`  
 **Audience:** Engineers continuing migration work
 
@@ -15,11 +20,9 @@
 | **Base branch** | `main` (synced with `origin/main`) |
 | **Remote** | `origin/migration/base44-independence` exists |
 | **Latest commit** | `c91a472` — *Phase 1 foundation layer completed* |
-| **Working tree** | Clean for code; **3 docs untracked** (see §10) |
+| **Working tree** | Supabase migrations + Phase 6 export tooling (archived) + Phase 7 docs |
 | **Runtime backend** | Base44 (`VITE_DATA_BACKEND` defaults to `base44`) |
-| **App behavior** | Identical to pre-migration; no user-facing changes yet |
-
-Commits ahead of `main`: 2 (`dd301c3`, `c91a472` on migration branch).
+| **Migration strategy** | **Schema-only** — no Base44 data import |
 
 ---
 
@@ -27,12 +30,10 @@ Commits ahead of `main`: 2 (`dd301c3`, `c91a472` on migration branch).
 
 | Tag / point | Purpose | Rollback action |
 |-------------|---------|-----------------|
-| **`boothbridge-base44-final`** | Snapshot of app on Base44 before migration code (on `main`, pushed to origin) | Checkout tag or `main` for last known Base44-only app |
+| **`boothbridge-base44-final`** | Snapshot of app on Base44 before migration code | Checkout tag or `main` |
 | **`main`** | Production-aligned branch before Phase 1 code | `git checkout main` |
-| **`c91a472`** | Phase 1 complete — foundation clients + expanded `dbClient` | Reset branch to this commit if Phase 2 needs redo |
-| **Pre-migration app** | No Supabase wiring in pages; foundation modules exist but unused | Safe baseline for Phase 2 mechanical refactor |
-
-**Emergency production rollback (future):** Vercel redeploy previous build + `VITE_DATA_BACKEND=base44` until Supabase cutover is signed off.
+| **`c91a472`** | Phase 1 complete | Reset branch if foundation needs redo |
+| **Emergency production rollback** | Vercel redeploy + `VITE_DATA_BACKEND=base44` | Until Phase 7.7 cutover signed off |
 
 ---
 
@@ -40,59 +41,63 @@ Commits ahead of `main`: 2 (`dd301c3`, `c91a472` on migration branch).
 
 | Phase | Status | Deliverable |
 |-------|--------|-------------|
-| **Audit & planning** | Done (committed on migration branch) | `docs/architecture-audit.md`, `route-map.md`, `entity-relationship-diagram.md`, `base44-dependency-map.md`, `migration-readiness-report.md`, `migration-execution-roadmap.md` |
-| **Phase 0 — Baseline** | Done | Tag `boothbridge-base44-final`; smoke-test checklist in roadmap |
-| **Phase 1 — Foundation** | Done (`c91a472`) | `authClient.js`, `storageClient.js`, `aiClient.js`, `supabaseClient.js`, `backend.js`; `dbClient` expanded to 39 entities; `@supabase/supabase-js` installed; `docs/phase1-foundation-report.md` |
-
-**Not started:** Phase 2+ (no page import swaps, no Supabase schema, no auth/storage migration).
-
----
-
-## 4. Remaining Phases
-
-| Phase | Goal | Est. effort |
-|-------|------|-------------|
-| **2** | Mechanical refactor: pages/hooks → `db`, `auth`, `storage`, `ai` (still Base44) | ~3–5 days |
-| **3** | Supabase provision: schema, RLS, Storage, Edge Functions | ~5–10 days |
-| **4** | Wire client modules to Supabase on staging/Vercel preview | ~5–7 days |
-| **5** | Auth + admin unification (drop `bb_admin_authed` session) | ~3–5 days |
-| **6** | Base44 data import (ID-preserving) | ~3–7 days |
-| **7** | Production cutover; remove `@base44/sdk` | ~2–3 days |
-| **8** | Vercel hardening (`vercel.json`, monitoring) | ~1–2 days |
-
-Detail: `docs/migration-execution-roadmap.md`, `docs/phase2-impact-report.md`.
+| **Audit & planning** | Done | `docs/architecture-audit.md`, `route-map.md`, `entity-relationship-diagram.md`, `base44-dependency-map.md`, `migration-readiness-report.md`, `migration-execution-roadmap.md` |
+| **Phase 0 — Baseline** | Done | Tag `boothbridge-base44-final` |
+| **Phase 1 — Foundation** | Done (`c91a472`) | `authClient.js`, `storageClient.js`, `aiClient.js`, `supabaseClient.js`, `backend.js`; `dbClient` expanded to 39 entities |
+| **Phase 2 — Mechanical refactor** | **Largely complete** | Pages use `db`, `auth`, `storage`, `ai`; zero `base44Client` imports in pages/hooks |
+| **Phase 6 — Data track** | **CLOSED** | See §4 below |
 
 ---
 
-## 5. Architecture Decisions Already Approved
+## 4. Phase 6 — Official Closure
+
+**Data Migration Waiver (2026-07-01)**
+
+| Sub-phase | Status |
+|-----------|--------|
+| **6C.1** Supabase schema | **COMPLETE** — 39 entity tables in `supabase/migrations/` (43 files) |
+| **6C.2** Migration tooling | **COMPLETE** — `scripts/phase6/`, `phase6Export` (archived) |
+| **6C.3** Infrastructure validation | **COMPLETE** — tooling verified in repo |
+| **6C.4** Data migration | **WAIVED** — demo data only; no production records |
+| **6D** Import | **NOT REQUIRED** |
+
+**Reason:** The Base44 database contains only demonstration/test/sample data. No production business data requires preservation. The export/import pipeline is **archived and will not be executed**.
+
+**Archived (do not run):** export pipeline, UUID verification, JSON export, manifest generation, Gates 1–3, import planning. Files preserved with archive banners.
+
+**Canonical record:** [`phase6-master-execution-plan.md`](./phase6-master-execution-plan.md)
+
+---
+
+## 5. Active Phase — Phase 7
+
+**Phase 7 — Complete Supabase Transition** ([`phase7-complete-supabase-transition.md`](./phase7-complete-supabase-transition.md))
+
+| Milestone | Goal | Status |
+|-----------|------|--------|
+| **7.1** | Provision Supabase production project | Not started |
+| **7.2** | Apply all migrations (39 tables, indexes, FKs, triggers) | Not started |
+| **7.3** | Base44 dependency audit | **Complete** — [`phase7-base44-dependency-audit.md`](./phase7-base44-dependency-audit.md) |
+| **7.4** | Refactor client layer to Supabase | Not started |
+| **7.5** | Seed clean demo database (no Base44 records) | Not started |
+| **7.6** | End-to-end verification | Not started |
+| **7.7** | Production readiness review | Not started |
+
+**Estimated effort:** 4–6 weeks (one senior engineer).
+
+---
+
+## 6. Architecture Decisions (unchanged)
 
 1. **Stay on React 18 + Vite 6** — no Next.js, no TypeScript migration.
 2. **Preserve all routes, UI, NFC, QR, OCR, offline sync** — backend swap only behind client modules.
-3. **Four client modules + expanded `dbClient`** as the only migration seam (`auth`, `storage`, `ai`, `db`).
-4. **`VITE_DATA_BACKEND=base44|supabase`** env switch; default remains `base44` until cutover.
-5. **Dual auth today** (Base44 user auth + separate admin session) → unify on Supabase Auth in Phase 5.
-6. **dbClient legacy aliases** — keep `db.Event`, `db.RFI`, `db.SourcingProject`, etc. via Postgres views so pages need not rename entities.
-7. **RelationshipTimeline = event stream only** — not a second source of truth for Meeting, Quote, Opportunity, or CommercialProject (`future-erd-v2.md` §3.3).
-8. **Deploy target:** Vercel static `dist`; Supabase for Postgres, Auth, Storage, Realtime, Edge Functions.
-9. **QR/NFC URLs frozen** until explicit payload migration (`boothbridge:connect:{userId}:{role}`, `/nfc/:userId`).
-
----
-
-## 6. Future ERD Summary (v2)
-
-Long-term model in `docs/future-erd-v2.md` (v2.1):
-
-**Business contexts (8):** trade shows, Yiwu markets, wholesale markets, permanent showrooms, factory visits, business missions, distributor visits, supplier visits.
-
-**Physical hierarchy:** `Location → Booth → Company → Contact`
-
-**Operational lifecycle:** `VisitContext → Booth → Contact → Connection → Opportunity → Quote → CommercialProject` (+ Meeting, Catalog as branches).
-
-**Core + strategic entities:** Company, Booth, VisitContext, Contact, Connection, RelationshipTimeline (event log), Meeting, Catalog, Quote, CommercialProject, Location, OrganizationMembership, Opportunity.
-
-**Key merges from today:** Event→VisitContext, RFI→Quote, CatalogItem→Catalog, SourcingProject→CommercialProject, contact fragments→Contact, Activity/LeadInteraction→Timeline events.
-
-Earlier v1 narrative: `docs/future-data-model.md`.
+3. **Four client modules + expanded `dbClient`** as the migration seam.
+4. **`VITE_DATA_BACKEND=base44|supabase`** env switch until Phase 7.7 cutover.
+5. **Dual auth today** → unify on Supabase Auth in Phase 7.4.
+6. **dbClient legacy aliases** preserved via Postgres views where needed.
+7. **Deploy target:** Vercel static `dist`; Supabase for Postgres, Auth, Storage, Realtime, Edge Functions.
+8. **QR/NFC URLs frozen** until explicit payload migration.
+9. **Clean Supabase database** — seed new demo data in 7.5; no Base44 import.
 
 ---
 
@@ -101,64 +106,43 @@ Earlier v1 narrative: `docs/future-data-model.md`.
 | Layer | Today |
 |-------|--------|
 | **Platform** | Base44 (`@base44/sdk` 0.8.32, `@base44/vite-plugin`) |
-| **App ID** | `6a1efdb97246f738e8422e59` |
-| **Data access** | ~65 files still import `base44Client` directly; `dbClient` used in 5 files only |
-| **Auth** | `base44.auth` + `AuthContext`; admin via `adminAuth` function + `sessionStorage bb_admin_authed` |
-| **Storage / AI** | `base44.integrations.Core` (UploadFile, InvokeLLM, ExtractDataFromUploadedFile, CreateFileSignedUrl) |
-| **Entities** | 39 JSONC schemas in `base44/entities/` |
-| **Realtime** | `Connection.subscribe`, `Meeting.subscribe` (2 pages) |
-| **Offline** | IndexedDB queues + `useOfflineSync` → still calls `base44.entities` |
-| **Foundation clients** | Created in Phase 1 but **not imported by pages** |
+| **Data access** | Pages → `dbClient` → Base44 SDK (14 files in `src/` still touch Base44 at client layer) |
+| **Auth** | `authClient` → `base44.auth` + admin via `adminAuth` function |
+| **Storage / AI** | `storageClient` / `aiClient` → `base44.integrations.Core` |
+| **Entities** | 39 JSONC schemas in `base44/entities/` (reference) |
+| **Supabase schema** | Authored in repo; **not applied** to live project |
+| **RLS policies** | Not in migrations yet |
+| **Foundation clients** | Imported by all pages; Supabase branches are stubs |
 
 Build: `npm run build` passes with default Base44 backend.
 
 ---
 
-## 8. Supabase Migration Status
-
-| Area | Status |
-|------|--------|
-| **Supabase project** | Not provisioned in repo / docs |
-| **Postgres schema** | Not created — design in `future-erd-v2.md` |
-| **RLS policies** | Designed, not implemented |
-| **Storage buckets** | Paths documented in `assetPipeline.js` / ERD v2 |
-| **Edge Functions** | Planned: `admin-auth`, `ai-invoke`, `ai-extract-document` |
-| **Client SDK** | `@supabase/supabase-js` installed; `supabaseClient.js` lazy-init only when `VITE_DATA_BACKEND=supabase` |
-| **dbClient Supabase path** | Stub — throws until Phase 4 |
-| **Data export/import** | No scripts; ID-preserving import planned Phase 6 |
-| **Vercel** | Not configured for migration env vars yet |
-
----
-
-## 9. Known Risks
+## 8. Known Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| ~65 files still on direct `base44` imports | High | Phase 2 mechanical swap + grep gates |
-| `authClient` gaps (`setToken`, `resendOtp`, `resetPassword`) | High | Extend before Register/ResetPassword refactor |
-| Base44 integrations lock-in (OCR, AI, uploads) | Critical | `storageClient` + `aiClient` + Edge Functions in Phase 4 |
-| Dual admin auth | High | Phase 5 unified RBAC |
-| Timeline vs operational entity confusion | Medium | ERD v2 §3.3 — write operational row first, then event |
-| No automated test suite | Medium | Phase 0/2 manual smoke checklist |
-| Untracked docs may be lost if not committed | Low | Commit `future-erd-v2.md`, `phase2-impact-report.md`, `future-data-model.md` |
-| Setting `VITE_DATA_BACKEND=supabase` prematurely | Medium | Stubs throw; keep default `base44` |
+| Client module Supabase stubs throw | High | Phase 7.4 implementation before cutover |
+| RLS policy gaps | Critical | Translate from JSONC; test per role |
+| Base44 integrations lock-in (OCR, AI) | Critical | Edge Functions in 7.4 |
+| Dual admin auth | High | Admin unification in 7.4 |
+| No automated test suite | Medium | Phase 7.6 manual smoke suite |
+| Premature `VITE_DATA_BACKEND=supabase` | Medium | Keep default `base44` until 7.7 |
 
 ---
 
-## 10. Recommended Next Action
+## 9. Recommended Next Action
 
-**Immediate (1–2 hours)**
+**Phase 7.1 — Provision Supabase production project**
 
-1. Commit untracked docs: `future-data-model.md`, `future-erd-v2.md`, `phase2-impact-report.md`.
-2. Extend `authClient.js` with `setToken`, `resendOtp`, `resetPassword` (object signatures used by `Register.jsx` / `ResetPassword.jsx`).
+1. Create Supabase project and link via CLI.
+2. Configure Auth providers (email, Google, LinkedIn).
+3. Create Storage buckets.
+4. Document Vercel environment variables.
 
-**Next phase (Phase 2)**
+**Parallel:** Phase 7.2 — apply `supabase/migrations/` once project is linked.
 
-3. Execute mechanical import refactor per `docs/phase2-impact-report.md` Batch order: utilities/hooks → auth → admin pages → feature pages → NFC/QR/OCR last.
-4. Run grep gates: zero `base44` in `src/pages`, `src/lib`, `src/hooks`, `src/components`.
-5. Full Phase 0 smoke test on Base44 after Phase 2 completes.
-
-**Do not** set `VITE_DATA_BACKEND=supabase` or provision Supabase schema until Phase 2 regression passes.
+**Do not:** run Phase 6 exports, UUID verification, Gates 1–3, or data import. Those phases are permanently closed unless explicitly reopened.
 
 ---
 
@@ -166,16 +150,16 @@ Build: `npm run build` passes with default Base44 backend.
 
 | Document | Use |
 |----------|-----|
+| **`phase7-complete-supabase-transition.md`** | **Active implementation roadmap** |
+| **`phase7-base44-dependency-audit.md`** | Remaining Base44 inventory |
+| `phase6-master-execution-plan.md` | Phase 6 closure + data waiver |
+| `migration-execution-roadmap.md` | Macro phases 0–8 history |
 | `architecture-audit.md` | Current system snapshot |
-| `migration-execution-roadmap.md` | Phased plan with rollback/testing |
-| `phase1-foundation-report.md` | Phase 1 deliverables |
-| `phase2-impact-report.md` | Phase 2 file list and batches |
-| `future-erd-v2.md` | Target Supabase model (v2.1) |
-| `future-data-model.md` | Target model v1 |
-| `base44-dependency-map.md` | SDK surface area |
-| `route-map.md` | All routes and guards |
-| `migration-readiness-report.md` | Risks and reusable modules |
+| `base44-dependency-map.md` | Original SDK surface area |
+| `phase2-impact-report.md` | Mechanical refactor plan |
+| `future-erd-v2.md` | Target Supabase model |
+| `scripts/phase6/README.md` | Archived export tooling guide |
 
 ---
 
-*End of handoff — keep this file updated at each phase completion.*
+*End of handoff — update at each Phase 7 milestone.*
