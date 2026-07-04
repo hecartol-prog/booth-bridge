@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { invokeLLM } from "@/api/aiClient";
-import { uploadFile } from "@/api/storageClient";
+import { extractOcrScan } from "@/api/aiClient";
+import { uploadOcrScan } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,32 +38,11 @@ export default function OCRScanner() {
     setStep("processing");
     setLoading(true);
     try {
-      const { file_url } = await uploadFile(file);
+      const { file_url } = await uploadOcrScan(file, user?.id || "anonymous");
       setImageUrl(file_url);
-      const prompt = scanType === "business_card"
-        ? "Extract all contact information from this business card image. Return a JSON object with: first_name, last_name, full_name, position, company, department, email, phone, mobile, whatsapp, website, address, country, city, linkedin, confidence (0-100 number). Set fields to empty string if not found."
-        : "Extract all information from this trade show badge. Return a JSON object with: first_name, last_name, full_name, company, position, country, industry, badge_number, booth_number, event_name, confidence (0-100 number). Set fields to empty string if not found.";
-      const result = await invokeLLM({
-        prompt,
-        add_context_from_internet: false,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            first_name: { type: "string" }, last_name: { type: "string" },
-            full_name: { type: "string" }, position: { type: "string" },
-            company: { type: "string" }, department: { type: "string" },
-            email: { type: "string" }, phone: { type: "string" },
-            mobile: { type: "string" }, whatsapp: { type: "string" },
-            website: { type: "string" }, address: { type: "string" },
-            country: { type: "string" }, city: { type: "string" },
-            linkedin: { type: "string" }, badge_number: { type: "string" },
-            booth_number: { type: "string" }, event_name: { type: "string" },
-            industry: { type: "string" }, confidence: { type: "number" },
-          }
-        }
-      });
-      // Security: sanitize all OCR fields before populating the form
-      const sanitized = sanitizeOCRResult(result);
+      const response = await extractOcrScan({ scanType });
+      if (!response.success) throw new Error(response.error?.message || "OCR failed");
+      const sanitized = sanitizeOCRResult(response.result);
       setEditData({ ...sanitized });
       setConfidence(sanitized.confidence || 75);
       setFieldErrors({});

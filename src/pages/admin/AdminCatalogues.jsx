@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { uploadFile } from "@/api/storageClient";
+import { uploadCatalog, uploadMedia } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,7 +68,7 @@ export default function AdminCatalogues() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingFile(true);
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadCatalog(file, { userId: form.exhibitor_user_id || "admin" });
     setForm(f => ({ ...f, file_url }));
     setUploadingFile(false);
   };
@@ -77,7 +77,7 @@ export default function AdminCatalogues() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingThumb(true);
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadMedia(file, form.exhibitor_user_id || "admin");
     setForm(f => ({ ...f, thumbnail_url: file_url }));
     setUploadingThumb(false);
   };

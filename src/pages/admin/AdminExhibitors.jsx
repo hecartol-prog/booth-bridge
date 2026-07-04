@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { uploadFile } from "@/api/storageClient";
+import { uploadCompanyLogo } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +49,7 @@ export default function AdminExhibitors() {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadCompanyLogo(file, form.user_id || "admin");
     setForm(f => ({ ...f, logo_url: file_url }));
     setUploading(false);
   };

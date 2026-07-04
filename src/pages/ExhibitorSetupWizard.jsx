@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { uploadFile } from "@/api/storageClient";
+import { uploadCompanyLogo, uploadProductImage, uploadCatalog } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -150,7 +150,7 @@ export default function ExhibitorSetupWizard() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadCompanyLogo(file, user.id);
     setLogoUrl(file_url);
     setUploadingLogo(false);
   };
@@ -181,8 +181,7 @@ export default function ExhibitorSetupWizard() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingProductImage(true);
-    const { file_url } = await uploadFile(file);
-    setProductImageUrl(file_url);
+    const { file_url } = await uploadProductImage(file, user.id);
     setUploadingProductImage(false);
   };
 
@@ -200,10 +199,10 @@ export default function ExhibitorSetupWizard() {
     setAddingProduct(false);
   };
 
-  const uploadCatalog = async (e) => {
+  const handleCatalogUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadCatalog(file, { userId: user.id, companyId: profile?.id });
     const isVideo = file.type.startsWith("video/");
     await db.CatalogItem.create({
       exhibitor_user_id: user.id,
@@ -352,7 +351,7 @@ export default function ExhibitorSetupWizard() {
                   <p className="font-medium text-sm">Upload PDF, Brochure, or Video</p>
                   <p className="text-xs text-muted-foreground mt-1">PDF, images, or video files</p>
                 </div>
-                <input type="file" accept=".pdf,image/*,video/*" className="hidden" onChange={uploadCatalog} />
+                <input type="file" accept=".pdf,image/*,video/*" className="hidden" onChange={handleCatalogUpload} />
               </label>
             </div>
           )}

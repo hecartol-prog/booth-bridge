@@ -1,8 +1,8 @@
 /**
  * dbClient — centralized data access layer.
  *
- * TODAY:  All operations route through base44 SDK when VITE_DATA_BACKEND=base44 (default).
- * FUTURE: Swap internals to Supabase when VITE_DATA_BACKEND=supabase (Phase 4+).
+ * TODAY:  Routes through Base44 when VITE_DATA_BACKEND=base44 (default).
+ *         Routes through Supabase when VITE_DATA_BACKEND=supabase (Phase 7.4A).
  *
  * Usage:
  *   import { db } from "@/utils/dbClient";
@@ -12,20 +12,12 @@
 
 import { base44 } from "@/api/base44Client";
 import { isBase44 } from "@/config/backend";
+import { makeSupabaseEntity } from "@/utils/supabaseEntity";
+import { generateUUID as createUUID, parseSort as parseSortQuery } from "@/utils/supabaseQuery";
 
 // ── UUID helper ────────────────────────────────────────────────────────────
-// Generates RFC-4122 v4 UUIDs client-side so IDs are portable and collision-
-// free when migrating to Postgres / Supabase.
 export function generateUUID() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  // Fallback for older environments
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+  return createUUID();
 }
 
 // ── Metadata serialiser ────────────────────────────────────────────────────
@@ -41,14 +33,9 @@ export function deserializeMetadata(str) {
   try { return JSON.parse(str); } catch { return {}; }
 }
 
-// ── Sort parser (Base44 "-field" convention → Supabase order in Phase 4) ───
+// ── Sort parser (Base44 "-field" / "+field" → Supabase order) ─────────────
 export function parseSort(sort = "-created_date") {
-  if (!sort || typeof sort !== "string") {
-    return { column: "created_date", ascending: false };
-  }
-  const ascending = !sort.startsWith("-");
-  const column = ascending ? sort : sort.slice(1);
-  return { column, ascending };
+  return parseSortQuery(sort);
 }
 
 // ── Entity registry (all 39 Base44 entities) ───────────────────────────────
@@ -101,10 +88,16 @@ export const ALL_ENTITY_NAMES = Object.keys(ENTITY_TABLE_MAP);
 function makeBase44Entity(entityName) {
   const entity = base44.entities[entityName];
   return {
-    async list(sort = "-created_date", limit = 200) {
+    async list(sort = "-created_date", limit = 200, pagination) {
+      if (pagination != null) {
+        return entity.list(sort, limit, pagination);
+      }
       return entity.list(sort, limit);
     },
-    async filter(query, sort = "-created_date", limit = 200) {
+    async filter(query, sort = "-created_date", limit = 200, pagination) {
+      if (pagination != null) {
+        return entity.filter(query, sort, limit, pagination);
+      }
       return entity.filter(query, sort, limit);
     },
     async get(id) {
@@ -120,6 +113,13 @@ function makeBase44Entity(entityName) {
     async delete(id) {
       return entity.delete(id);
     },
+    async count(query) {
+      if (typeof entity.count === "function") {
+        return entity.count(query);
+      }
+      const rows = await entity.filter(query ?? {});
+      return rows.length;
+    },
     subscribe(callback) {
       if (typeof entity.subscribe === "function") {
         return entity.subscribe(callback);
@@ -129,28 +129,10 @@ function makeBase44Entity(entityName) {
   };
 }
 
-// ── Supabase entity stub (Phase 4 implementation) ──────────────────────────
-function makeSupabaseEntityStub(entityName) {
-  const tableName = ENTITY_TABLE_MAP[entityName];
-  const notReady = () => {
-    throw new Error(
-      `[dbClient] Supabase queries for "${entityName}" (${tableName}) activate in Phase 4. Set VITE_DATA_BACKEND=base44.`
-    );
-  };
-  return {
-    list: notReady,
-    filter: notReady,
-    get: notReady,
-    create: notReady,
-    update: notReady,
-    delete: notReady,
-    subscribe: () => () => {},
-  };
-}
-
 function makeEntity(entityName) {
   if (isBase44()) return makeBase44Entity(entityName);
-  return makeSupabaseEntityStub(entityName);
+  const tableName = ENTITY_TABLE_MAP[entityName];
+  return makeSupabaseEntity(entityName, tableName);
 }
 
 // ── Named entity clients (39 entities) ─────────────────────────────────────

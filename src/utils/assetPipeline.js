@@ -1,36 +1,66 @@
 /**
  * assetPipeline — deterministic object storage path schema + signed URL gateway.
  *
- * Folder structure enforced:
- *   boothbridge-assets/
- *   ├── events/[event_id]/branding/      ← banners, maps
- *   └── companies/[company_id]/catalogs/ ← PDFs, pricing, tech sheets
- *
- * TODAY:  Uses base44 UploadFile integration + CreateFileSignedUrl.
- * FUTURE: Swap upload/signedUrl internals to use Supabase Storage SDK.
+ * All uploads route through storageClient with canonical bucket mapping.
+ * Pages use these helpers — never backend-specific storage APIs.
  */
 
 import { storage } from "@/api/storageClient";
+import {
+  BUCKETS,
+  eventBrandingPath,
+  companyCatalogPath,
+} from "@/config/storageBuckets";
 
-// ── Path builders ──────────────────────────────────────────────────────────
+export { eventBrandingPath, companyCatalogPath, BUCKETS };
 
-export function eventBrandingPath(eventId, filename) {
-  return `events/${eventId}/branding/${filename}`;
+// ── Destination-aware upload helpers ─────────────────────────────────────────
+
+async function uploadWithDestination(destination, file, ctx = {}) {
+  const { file_url, file_path, bucket } = await storage.upload(file, {
+    destination,
+    ...ctx,
+  });
+  return { file_url, file_path, bucket };
 }
 
-export function companyCatalogPath(companyId, filename) {
-  return `companies/${companyId}/catalogs/${filename}`;
+/** OCR / badge scan images → boothbridge-ocr */
+export function uploadOcrScan(file, userId) {
+  return uploadWithDestination("ocr", file, { userId });
 }
 
-// ── Upload helpers ─────────────────────────────────────────────────────────
+/** Admin media library → boothbridge-media */
+export function uploadMedia(file, userId) {
+  return uploadWithDestination("media", file, { userId });
+}
+
+/** Company / exhibitor logos → boothbridge-media */
+export function uploadCompanyLogo(file, userId) {
+  return uploadWithDestination("logo", file, { userId });
+}
+
+/** Product images → boothbridge-media */
+export function uploadProductImage(file, userId) {
+  return uploadWithDestination("product", file, { userId });
+}
+
+/** Catalog PDFs / documents → boothbridge-assets */
+export function uploadCatalog(file, { userId, companyId } = {}) {
+  return uploadWithDestination("catalog", file, { userId, companyId });
+}
+
+/** Event banners / maps → boothbridge-assets */
+export function uploadEventBranding(file, { eventId, userId } = {}) {
+  return uploadWithDestination("event_branding", file, { eventId, userId });
+}
 
 /**
- * Upload a file and return { file_url, file_path }.
+ * Upload a file and return { file_url }.
  * The returned file_url is a private URI — use getSignedUrl() before displaying.
  */
-export async function uploadAsset(file) {
-  const result = await storage.uploadFile(file);
-  return { file_url: result.file_url };
+export async function uploadAsset(file, options = {}) {
+  const result = await storage.upload(file, options);
+  return { file_url: result.file_url, file_path: result.file_path };
 }
 
 /**
@@ -38,13 +68,18 @@ export async function uploadAsset(file) {
  * Never expose the raw file_url directly in UI — always call this first.
  *
  * @param {string} fileUri  The private file URI stored in the entity.
- * @returns {Promise<string>}  A time-bound URL safe for browser download.
+ * @returns {Promise<string|null>}  A time-bound URL safe for browser download.
  */
 export async function getSignedUrl(fileUri, expiresInSeconds = 900) {
   if (!fileUri) return null;
-  // If it's already a public HTTP URL (legacy data), return as-is
-  if (fileUri.startsWith("http")) return fileUri;
-  return await storage.getSignedUrl(fileUri, { expiresIn: expiresInSeconds });
+  return storage.getSignedUrl(fileUri, { expiresIn: expiresInSeconds });
+}
+
+/**
+ * Resolve a stored file reference to a displayable URL (signed when private).
+ */
+export async function resolveDisplayUrl(fileUri, expiresInSeconds = 900) {
+  return getSignedUrl(fileUri, expiresInSeconds);
 }
 
 /**

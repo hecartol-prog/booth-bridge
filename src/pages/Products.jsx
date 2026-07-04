@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { uploadFile } from "@/api/storageClient";
+import { uploadProductImage } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -51,7 +51,7 @@ export default function Products() {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadProductImage(file, user.id);
     setImageUrl(file_url);
     setUploading(false);
   };

@@ -1,6 +1,7 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { auth } from '@/api/authClient';
 import { appParams } from '@/lib/app-params';
+import { isSupabase } from '@/config/backend';
 
 const AuthContext = createContext();
 
@@ -11,96 +12,24 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [appPublicSettings, setAppPublicSettings] = useState(null);
 
-  useEffect(() => {
-    checkAppState();
-  }, []);
-
-  const checkAppState = async () => {
+  const checkUserAuth = useCallback(async () => {
     try {
-      setIsLoadingPublicSettings(true);
-      setAuthError(null);
-      
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
-      try {
-        const publicSettings = await auth.checkAppReady();
-        setAppPublicSettings(publicSettings);
-        
-        // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-          setAuthChecked(true);
-        }
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            // Treat any other 403 reason as auth_required so user gets redirected to login
-            setAuthError({
-              type: 'auth_required',
-              message: appError.message
-            });
-          }
-        } else {
-          // Non-403 errors (network issues, etc): treat as auth_required so login page shows
-          setAuthError({
-            type: 'auth_required',
-            message: appError.message || 'Failed to load app'
-          });
-          setIsLoadingPublicSettings(false);
-          setIsLoadingAuth(false);
-          setAuthChecked(true);
-          return;
-        }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
-    }
-  };
-
-  const checkUserAuth = async () => {
-    try {
-      // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await auth.getCurrentUser();
       setUser(currentUser);
-      setIsAuthenticated(true);
+      setIsAuthenticated(!!currentUser);
       setIsLoadingAuth(false);
       setAuthChecked(true);
+      setAuthError(null);
     } catch (error) {
       console.error('User auth check failed:', error);
+      setUser(null);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
-      
-      // If user auth fails, it might be an expired token
+
       if (error.status === 401 || error.status === 403) {
         setAuthError({
           type: 'auth_required',
@@ -108,30 +37,116 @@ export const AuthProvider = ({ children }) => {
         });
       }
     }
-  };
+  }, []);
+
+  const checkAppState = useCallback(async () => {
+    try {
+      setIsLoadingPublicSettings(true);
+      setAuthError(null);
+
+      const publicSettings = await auth.checkAppReady();
+      setAppPublicSettings(publicSettings);
+      setIsLoadingPublicSettings(false);
+
+      if (isSupabase()) {
+        const authed = await auth.isAuthenticated();
+        if (authed) {
+          await checkUserAuth();
+        } else {
+          setIsLoadingAuth(false);
+          setIsAuthenticated(false);
+          setAuthChecked(true);
+        }
+        return;
+      }
+
+      // Base44: token-gated user check
+      if (appParams.token) {
+        await checkUserAuth();
+      } else {
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+      }
+    } catch (appError) {
+      console.error('App state check failed:', appError);
+
+      if (isSupabase()) {
+        setAuthError({
+          type: 'unknown',
+          message: appError.message || 'Failed to initialize auth'
+        });
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
+
+      if (appError.status === 403 && appError.data?.extra_data?.reason) {
+        const reason = appError.data.extra_data.reason;
+        if (reason === 'auth_required') {
+          setAuthError({ type: 'auth_required', message: 'Authentication required' });
+        } else if (reason === 'user_not_registered') {
+          setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+        } else {
+          setAuthError({ type: 'auth_required', message: appError.message });
+        }
+      } else {
+        setAuthError({
+          type: 'auth_required',
+          message: appError.message || 'Failed to load app'
+        });
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
+      setIsLoadingPublicSettings(false);
+      setIsLoadingAuth(false);
+    }
+  }, [checkUserAuth]);
+
+  useEffect(() => {
+    checkAppState();
+  }, [checkAppState]);
+
+  // Supabase: keep React state in sync with auth session changes
+  useEffect(() => {
+    if (!isSupabase()) return undefined;
+
+    const unsubscribe = auth.onAuthStateChange(async (session) => {
+      if (session) {
+        await checkUserAuth();
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        setIsLoadingAuth(false);
+      }
+    });
+
+    return unsubscribe;
+  }, [checkUserAuth]);
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    
+
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
       auth.logout(window.location.href);
     } else {
-      // Just remove the token without redirect
       auth.logout();
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
     auth.redirectToLogin(window.location.href);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
       isLoadingAuth,
       isLoadingPublicSettings,
       authError,

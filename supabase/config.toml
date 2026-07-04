@@ -371,6 +371,36 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+[functions.admin-auth]
+verify_jwt = false
+
+[functions.ai-generate]
+verify_jwt = true
+
+[functions.ai-chat]
+verify_jwt = true
+
+[functions.ai-document]
+verify_jwt = true
+
+[functions.ai-business-card]
+verify_jwt = true
+
+[functions.ai-summary]
+verify_jwt = true
+
+[functions.ai-classify]
+verify_jwt = true
+
+[functions.ai-match]
+verify_jwt = true
+
+[functions.ai-recommend]
+verify_jwt = true
+
+[functions.ai-health]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { uploadFile } from "@/api/storageClient";
+import { uploadMedia } from "@/utils/assetPipeline";
+import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ const TYPE_FILTERS = {
 };
 
 export default function AdminMedia() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const fileRef = useRef();
@@ -41,7 +43,7 @@ export default function AdminMedia() {
   const handleUpload = async (files) => {
     setUploading(true);
     for (const file of files) {
-      const { file_url } = await uploadFile(file);
+      const { file_url } = await uploadMedia(file, user?.id || "admin");
       await db.Media.create({
         file_url,
         file_name: file.name,

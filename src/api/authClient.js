@@ -1,20 +1,18 @@
 /**
- * authClient — authentication abstraction (Base44 today, Supabase in Phase 5).
+ * authClient — authentication abstraction (Phase 7.4B).
  *
- * Pages should import this module in Phase 2 instead of base44.auth directly.
- * Phase 1: implemented but not wired into AuthContext or pages.
+ * Routes through Base44 when VITE_DATA_BACKEND=base44 (default).
+ * Routes through Supabase when VITE_DATA_BACKEND=supabase.
+ *
+ * Pages and AuthContext import this module only — never base44.auth directly.
  */
 
 import { base44 } from "@/api/base44Client";
 import { appParams } from "@/lib/app-params";
 import { createAxiosClient } from "@base44/sdk/dist/utils/axios-client";
 import { isBase44 } from "@/config/backend";
-
-function supabaseNotReady(method) {
-  throw new Error(
-    `[authClient] ${method} is not available until Phase 5. Use VITE_DATA_BACKEND=base44.`
-  );
-}
+import { getSupabaseClient } from "@/api/supabaseClient";
+import * as supabaseAuth from "@/api/supabaseAuth";
 
 // ── Base44 implementations ─────────────────────────────────────────────────
 
@@ -32,84 +30,79 @@ async function base44CheckAppReady() {
   return appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
 }
 
-// ── Public API ─────────────────────────────────────────────────────────────
+async function base44IsAuthenticated() {
+  try {
+    await base44.auth.me();
+    return true;
+  } catch {
+    return !!appParams.token;
+  }
+}
 
-export async function getCurrentUser() {
-  if (isBase44()) return base44GetCurrentUser();
-  supabaseNotReady("getCurrentUser");
+async function base44GetSession() {
+  return appParams.token ? { access_token: appParams.token } : null;
+}
+
+async function base44GetAccessToken() {
+  return appParams.token || null;
+}
+
+async function base44Refresh() {
+  if (typeof base44.auth.refresh === "function") {
+    return base44.auth.refresh();
+  }
+  return base44GetSession();
+}
+
+// ── Canonical public API (Phase 7.4B) ────────────────────────────────────────
+
+/** @alias loginWithEmailPassword */
+export async function login(email, password) {
+  return loginWithEmailPassword(email, password);
 }
 
 export async function loginWithEmailPassword(email, password) {
   if (isBase44()) return base44.auth.loginViaEmailPassword(email, password);
-  supabaseNotReady("loginWithEmailPassword");
+  return supabaseAuth.supabaseLogin(email, password);
 }
 
-export function loginWithProvider(provider, redirectPath = "/") {
-  if (isBase44()) return base44.auth.loginWithProvider(provider, redirectPath);
-  supabaseNotReady("loginWithProvider");
-}
-
-export async function register({ email, password }) {
-  if (isBase44()) return base44.auth.register({ email, password });
-  supabaseNotReady("register");
-}
-
-export async function verifyOtp(emailOrPayload, token) {
+export function logout(redirectUrl) {
   if (isBase44()) {
-    const isObjectPayload =
-      emailOrPayload !== null &&
-      typeof emailOrPayload === "object" &&
-      !Array.isArray(emailOrPayload);
-
-    if (typeof base44.auth.verifyOtp === "function") {
-      if (isObjectPayload) {
-        return base44.auth.verifyOtp(emailOrPayload);
-      }
-      return base44.auth.verifyOtp(emailOrPayload, token);
-    }
-    if (typeof base44.auth.confirmSignUp === "function") {
-      const email = isObjectPayload ? emailOrPayload.email : emailOrPayload;
-      const otpCode = isObjectPayload ? emailOrPayload.otpCode : token;
-      return base44.auth.confirmSignUp(email, otpCode);
-    }
-    throw new Error("OTP verification not supported by current Base44 SDK");
+    if (redirectUrl) return base44.auth.logout(redirectUrl);
+    return base44.auth.logout();
   }
-  supabaseNotReady("verifyOtp");
-}
-
-export function setToken(access_token) {
-  if (isBase44()) {
-    if (typeof base44.auth.setToken === "function") {
-      return base44.auth.setToken(access_token);
+  supabaseAuth.supabaseLogout().then(() => {
+    if (redirectUrl && typeof window !== "undefined") {
+      window.location.href = redirectUrl;
     }
-    throw new Error("setToken not supported by current Base44 SDK");
+  });
+}
+
+export async function register(payload) {
+  if (isBase44()) return base44.auth.register(payload);
+  return supabaseAuth.supabaseRegister(payload);
+}
+
+/**
+ * Request password-reset email (string) or complete reset (object with token).
+ * @param {string|{ resetToken?: string, newPassword: string }} emailOrPayload
+ * @param {string} [newPassword]
+ */
+export async function resetPassword(emailOrPayload, newPassword) {
+  if (typeof emailOrPayload === "string") {
+    return requestPasswordReset(emailOrPayload);
   }
-  supabaseNotReady("setToken");
-}
-
-export async function resendOtp(email) {
-  if (isBase44()) {
-    if (typeof base44.auth.resendOtp === "function") {
-      return base44.auth.resendOtp(email);
-    }
-    throw new Error("resendOtp not supported by current Base44 SDK");
-  }
-  supabaseNotReady("resendOtp");
-}
-
-export async function requestPasswordReset(email) {
-  if (isBase44()) return base44.auth.resetPasswordRequest(email);
-  supabaseNotReady("requestPasswordReset");
-}
-
-export async function resetPassword({ resetToken, newPassword }) {
+  const payload =
+    emailOrPayload && typeof emailOrPayload === "object"
+      ? emailOrPayload
+      : { resetToken: emailOrPayload, newPassword };
   if (isBase44()) {
     if (typeof base44.auth.resetPassword === "function") {
-      return base44.auth.resetPassword({ resetToken, newPassword });
+      return base44.auth.resetPassword(payload);
     }
     throw new Error("resetPassword not supported by current Base44 SDK");
   }
-  supabaseNotReady("resetPassword");
+  return supabaseAuth.supabaseCompletePasswordReset(payload);
 }
 
 export async function updatePassword(newPassword) {
@@ -119,25 +112,27 @@ export async function updatePassword(newPassword) {
     }
     throw new Error("Password update not supported by current Base44 SDK");
   }
-  supabaseNotReady("updatePassword");
+  return supabaseAuth.supabaseUpdatePassword(newPassword);
 }
 
-export async function updateUserMetadata(fields) {
-  if (isBase44()) return base44.auth.updateMe(fields);
-  supabaseNotReady("updateUserMetadata");
+/** @alias getCurrentUser */
+export async function currentUser() {
+  return getCurrentUser();
 }
 
-export function logout(redirectUrl) {
-  if (isBase44()) {
-    if (redirectUrl) return base44.auth.logout(redirectUrl);
-    return base44.auth.logout();
-  }
-  supabaseNotReady("logout");
+export async function getCurrentUser() {
+  if (isBase44()) return base44GetCurrentUser();
+  return supabaseAuth.supabaseGetCurrentUser();
 }
 
-export function redirectToLogin(returnUrl) {
-  if (isBase44()) return base44.auth.redirectToLogin(returnUrl);
-  supabaseNotReady("redirectToLogin");
+export async function currentSession() {
+  if (isBase44()) return base44GetSession();
+  return supabaseAuth.supabaseGetSession();
+}
+
+export async function refresh() {
+  if (isBase44()) return base44Refresh();
+  return supabaseAuth.supabaseRefresh();
 }
 
 export function onAuthStateChange(callback) {
@@ -147,46 +142,152 @@ export function onAuthStateChange(callback) {
     }
     return () => {};
   }
-  supabaseNotReady("onAuthStateChange");
+  return supabaseAuth.supabaseOnAuthStateChange(callback);
+}
+
+export function signInWithGoogle(redirectPath = "/") {
+  return signInWithProvider("google", redirectPath);
+}
+
+export function signInWithLinkedIn(redirectPath = "/") {
+  return signInWithProvider("linkedin", redirectPath);
+}
+
+export function loginWithProvider(provider, redirectPathAfter = "/") {
+  if (isBase44()) return base44.auth.loginWithProvider(provider, redirectPathAfter);
+  return supabaseAuth.supabaseSignInWithOAuth(provider, redirectPathAfter);
+}
+
+export async function isAuthenticated() {
+  if (isBase44()) return base44IsAuthenticated();
+  return supabaseAuth.supabaseIsAuthenticated();
+}
+
+export async function isAdmin() {
+  if (isBase44()) return isAdminSession();
+  return supabaseAuth.supabaseIsAdmin();
+}
+
+export async function getAccessToken() {
+  if (isBase44()) return base44GetAccessToken();
+  return supabaseAuth.supabaseGetAccessToken();
+}
+
+// ── Extended API (backward compatible) ─────────────────────────────────────
+
+export async function verifyOtp(emailOrPayload, token) {
+  if (isBase44()) {
+    const isObjectPayload =
+      emailOrPayload !== null &&
+      typeof emailOrPayload === "object" &&
+      !Array.isArray(emailOrPayload);
+
+    if (typeof base44.auth.verifyOtp === "function") {
+      if (isObjectPayload) return base44.auth.verifyOtp(emailOrPayload);
+      return base44.auth.verifyOtp(emailOrPayload, token);
+    }
+    if (typeof base44.auth.confirmSignUp === "function") {
+      const email = isObjectPayload ? emailOrPayload.email : emailOrPayload;
+      const otpCode = isObjectPayload ? emailOrPayload.otpCode : token;
+      return base44.auth.confirmSignUp(email, otpCode);
+    }
+    throw new Error("OTP verification not supported by current Base44 SDK");
+  }
+  return supabaseAuth.supabaseVerifyOtp(emailOrPayload, token);
+}
+
+export async function setToken(access_token) {
+  if (isBase44()) {
+    if (typeof base44.auth.setToken === "function") {
+      return base44.auth.setToken(access_token);
+    }
+    throw new Error("setToken not supported by current Base44 SDK");
+  }
+  if (!access_token) return;
+  const { error } = await getSupabaseClient().auth.setSession({
+    access_token,
+    refresh_token: "",
+  });
+  if (error) throw error;
+}
+
+export async function resendOtp(email) {
+  if (isBase44()) {
+    if (typeof base44.auth.resendOtp === "function") {
+      return base44.auth.resendOtp(email);
+    }
+    throw new Error("resendOtp not supported by current Base44 SDK");
+  }
+  return supabaseAuth.supabaseResendOtp(email);
+}
+
+export async function requestPasswordReset(email) {
+  if (isBase44()) return base44.auth.resetPasswordRequest(email);
+  return supabaseAuth.supabaseRequestPasswordReset(email);
+}
+
+export async function updateUserMetadata(fields) {
+  if (isBase44()) return base44.auth.updateMe(fields);
+  return supabaseAuth.supabaseUpdateUserMetadata(fields);
+}
+
+export function redirectToLogin(returnUrl) {
+  if (isBase44()) return base44.auth.redirectToLogin(returnUrl);
+  return supabaseAuth.supabaseRedirectToLogin(returnUrl);
 }
 
 export async function checkAppReady() {
   if (isBase44()) return base44CheckAppReady();
-  supabaseNotReady("checkAppReady");
+  return supabaseAuth.supabaseCheckAppReady();
 }
 
-/** @returns {Promise<{ data?: { success?: boolean } }>} — same shape as functions.invoke("adminAuth") */
+/** @returns {Promise<{ data?: { success?: boolean } }>} */
 export async function adminLogin(email, password) {
   if (isBase44()) {
     return base44.functions.invoke("adminAuth", { email, password });
   }
-  supabaseNotReady("adminLogin");
+  return supabaseAuth.supabaseAdminLogin(email, password);
 }
 
 export function isAdminSession() {
   if (isBase44()) {
     return sessionStorage.getItem("bb_admin_authed") === "true";
   }
-  supabaseNotReady("isAdminSession");
+  return supabaseAuth.supabaseIsAdminSession();
 }
 
-/** Default export object for convenient destructuring in Phase 2 */
+export function clearAdminSession() {
+  sessionStorage.removeItem("bb_admin_authed");
+}
+
+// ── Default export ─────────────────────────────────────────────────────────
+
 export const auth = {
+  login,
+  logout,
+  register,
+  resetPassword,
+  updatePassword,
+  currentUser,
+  currentSession,
+  refresh,
+  onAuthStateChange,
+  signInWithGoogle,
+  signInWithLinkedIn,
+  isAuthenticated,
+  isAdmin,
+  getAccessToken,
   getCurrentUser,
   loginWithEmailPassword,
   loginWithProvider,
-  register,
   verifyOtp,
   setToken,
   resendOtp,
   requestPasswordReset,
-  resetPassword,
-  updatePassword,
   updateUserMetadata,
-  logout,
   redirectToLogin,
-  onAuthStateChange,
   checkAppReady,
   adminLogin,
   isAdminSession,
+  clearAdminSession,
 };

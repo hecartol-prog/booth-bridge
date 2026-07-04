@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { auth } from "@/api/authClient";
-import { extractFromUploadedFile } from "@/api/aiClient";
-import { uploadFile } from "@/api/storageClient";
+import { extractDocument } from "@/api/aiClient";
+import { uploadCompanyLogo, uploadOcrScan } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,28 +56,6 @@ const INDUSTRIES = [
   "Other",
 ];
 
-const CARD_SCHEMA = {
-  type: "object",
-  properties: {
-    name: { type: "string" },
-    title: { type: "string" },
-    company: { type: "string" },
-    email: { type: "string" },
-    phone: { type: "string", description: "Office or main phone number" },
-    mobile: { type: "string", description: "Mobile or cell phone number" },
-    website: { type: "string" },
-    linkedin: { type: "string" },
-    industry: { type: "string" },
-    company_address: { type: "string", description: "Full company address" },
-    country: { type: "string", description: "Country of the company" },
-    products_of_interest: {
-      type: "array",
-      items: { type: "string" },
-      description: "Products, services, or categories the person handles or is interested in",
-    },
-  },
-};
-
 export default function Onboarding() {
   const { t } = useI18n();
   const [step, setStep] = useState(1);
@@ -113,7 +91,8 @@ export default function Onboarding() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await uploadFile(file);
+    const me = await auth.getCurrentUser();
+    const { file_url } = await uploadCompanyLogo(file, me?.id || "onboarding");
     setLogo(file_url);
     setUploadingLogo(false);
   };
@@ -131,14 +110,12 @@ export default function Onboarding() {
 
     try {
       // Upload then extract
-      const { file_url } = await uploadFile(file);
-      const result = await extractFromUploadedFile({
-        file_url,
-        json_schema: CARD_SCHEMA,
-      });
+      const me = await auth.getCurrentUser();
+      const { file_url } = await uploadOcrScan(file, me?.id || "onboarding");
+      const response = await extractDocument({ file_url });
 
-      if (result.status === "success" && result.output) {
-        const data = Array.isArray(result.output) ? result.output[0] : result.output;
+      if (response.success && response.result) {
+        const data = Array.isArray(response.result) ? response.result[0] : response.result;
         if (data.title) setJobTitle(data.title);
         if (data.company) setBuyerCompany(data.company);
         if (data.email) setEmail(data.email);

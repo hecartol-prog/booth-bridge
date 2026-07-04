@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { uploadFile } from "@/api/storageClient";
+import { uploadCatalog } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -93,7 +93,7 @@ export default function CatalogLibrary() {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await uploadFile(file);
+    const { file_url } = await uploadCatalog(file, { userId: user.id, companyId: profile?.id });
     setFileUrl(file_url);
     setUploading(false);
   };

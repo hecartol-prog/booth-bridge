@@ -1,0 +1,52 @@
+[
+  {
+    "name": "admin-auth",
+    "verify_jwt": false,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-health",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-generate",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-chat",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-document",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-business-card",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-summary",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-classify",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-match",
+    "verify_jwt": true,
+    "fileCount": 6
+  },
+  {
+    "name": "ai-recommend",
+    "verify_jwt": true,
+    "fileCount": 6
+  }
+]
