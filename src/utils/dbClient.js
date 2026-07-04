@@ -84,6 +84,12 @@ export const ENTITY_TABLE_MAP = {
 
 export const ALL_ENTITY_NAMES = Object.keys(ENTITY_TABLE_MAP);
 
+const ENTITY_OPTIONS = {
+  // Notification rows are recipient-readable only under RLS, so inserts must not
+  // require the sender to read the new row back immediately.
+  Notification: { selectAfterInsert: false },
+};
+
 // ── Base44 entity proxy ────────────────────────────────────────────────────
 function makeBase44Entity(entityName) {
   const entity = base44.entities[entityName];
@@ -132,7 +138,7 @@ function makeBase44Entity(entityName) {
 function makeEntity(entityName) {
   if (isBase44()) return makeBase44Entity(entityName);
   const tableName = ENTITY_TABLE_MAP[entityName];
-  return makeSupabaseEntity(entityName, tableName);
+  return makeSupabaseEntity(entityName, tableName, ENTITY_OPTIONS[entityName]);
 }
 
 // ── Named entity clients (39 entities) ─────────────────────────────────────

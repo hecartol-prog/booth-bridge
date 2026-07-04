@@ -66,9 +66,11 @@ function prepareWritePayload(payload) {
 /**
  * @param {string} entityName PascalCase entity name
  * @param {string} tableName Postgres table name
+ * @param {{ selectAfterInsert?: boolean }} [options]
  */
-export function makeSupabaseEntity(entityName, tableName) {
+export function makeSupabaseEntity(entityName, tableName, options = {}) {
   const from = () => getSupabaseClient().from(tableName);
+  const selectAfterInsert = options.selectAfterInsert !== false;
 
   return {
     async list(sort = "-created_date", limit = 200, pagination) {
@@ -100,6 +102,12 @@ export function makeSupabaseEntity(entityName, tableName) {
 
     async create(payload) {
       const record = prepareWritePayload(payload);
+      if (!selectAfterInsert) {
+        const { error } = await from().insert(record);
+        assertNoError(error, `create ${entityName}`);
+        return record;
+      }
+
       const { data, error } = await from().insert(record).select("*").single();
       assertNoError(error, `create ${entityName}`);
       return data;
