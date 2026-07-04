@@ -33,8 +33,9 @@ Client wiring: `src/api/supabaseAi.js`, `src/api/supabaseAuth.js` (admin uses cl
 | `cors.ts` | OPTIONS preflight + CORS headers |
 | `auth.ts` | JWT validation via `createClient()` + `getUser()` |
 | `envelope.ts` | Standard `{ success, result, error, provider, model, latency, usage, metadata }` |
-| `provider.ts` | OpenAI / OpenRouter abstraction (env-driven) |
+| `aiGateway.ts` | OpenRouter-first provider routing, failover, and health probing |
 | `handler.ts` | Common AI request pipeline |
+| `provider.ts` | Backward-compatible re-export of `aiGateway.ts` |
 
 ---
 
@@ -62,8 +63,8 @@ Prompts are composed client-side and passed in `prompt`. Schemas are passed from
   "success": true,
   "result": {},
   "error": null,
-  "provider": "openai",
-  "model": "gpt-4o",
+  "provider": "deepseek",
+  "model": "deepseek/deepseek-chat",
   "latency": 842,
   "usage": { "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0 },
   "metadata": {}
@@ -81,10 +82,10 @@ Prompts are composed client-side and passed in `prompt`. Schemas are passed from
 |----------|----------|---------|
 | `SUPABASE_URL` | **Yes** | Supabase project URL (auto-injected in hosted runtime) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | JWT validation via `auth.getUser()` |
-| `OPENAI_API_KEY` | When `AI_PROVIDER=openai` | OpenAI API key |
-| `OPENROUTER_API_KEY` | When `AI_PROVIDER=openrouter` | OpenRouter API key |
-| `AI_PROVIDER` | No (default `openai`) | `openai` or `openrouter` |
-| `AI_MODEL` | No | Override default model (`gpt-4o` / `openai/gpt-4o`) |
+| `OPENROUTER_API_KEY` | Yes for OpenRouter-first routing | Primary OpenRouter API key |
+| `AI_PROVIDER` | No (default `openrouter`) | `openrouter` (default) or legacy `openai` |
+| `AI_MODEL` | No | Override the first-priority OpenRouter model (DeepSeek) |
+| `OPENAI_API_KEY` | Optional | Direct OpenAI compatibility fallback after the OpenRouter route chain |
 | `ADMIN_EMAIL` | Optional | Legacy admin login (env credential mode) |
 | `ADMIN_PASSWORD` | Optional | Legacy admin login (env credential mode) |
 | `OPENROUTER_HTTP_REFERER` | Optional | OpenRouter attribution header |
@@ -92,8 +93,19 @@ Prompts are composed client-side and passed in `prompt`. Schemas are passed from
 
 Set secrets:
 
+OpenRouter-first routing order:
+
+1. `deepseek`
+2. `qwen`
+3. `zhipu`
+4. `moonshot`
+5. `openai`
+6. `claude`
+7. `gemini`
+8. direct `openai` fallback when `OPENAI_API_KEY` is present
+
 ```bash
-supabase secrets set OPENAI_API_KEY=sk-... SUPABASE_SERVICE_ROLE_KEY=...
+supabase secrets set OPENROUTER_API_KEY=or-... OPENAI_API_KEY=sk-... SUPABASE_SERVICE_ROLE_KEY=... AI_PROVIDER=openrouter
 ```
 
 ---

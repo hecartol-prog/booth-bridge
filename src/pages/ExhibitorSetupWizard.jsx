@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { uploadCompanyLogo, uploadProductImage, uploadCatalog } from "@/utils/assetPipeline";
+import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,6 +80,7 @@ export default function ExhibitorSetupWizard() {
   const [website, setWebsite] = useState("");
   const [phone, setPhone] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Step 2 – Products
@@ -86,6 +88,7 @@ export default function ExhibitorSetupWizard() {
   const [productDesc, setProductDesc] = useState("");
   const [productMoq, setProductMoq] = useState("");
   const [productImageUrl, setProductImageUrl] = useState("");
+  const [productImagePreviewUrl, setProductImagePreviewUrl] = useState("");
   const [uploadingProductImage, setUploadingProductImage] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
 
@@ -128,6 +131,7 @@ export default function ExhibitorSetupWizard() {
       setWebsite(profile.website || "");
       setPhone(profile.phone || "");
       setLogoUrl(profile.logo_url || "");
+      setLogoPreviewUrl(profile.logo_url || "");
       setBoothNumber(profile.booth_number || "");
       setEventName(profile.event_name || "");
     }
@@ -152,6 +156,7 @@ export default function ExhibitorSetupWizard() {
     setUploadingLogo(true);
     const { file_url } = await uploadCompanyLogo(file, user.id);
     setLogoUrl(file_url);
+    setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploadingLogo(false);
   };
 
@@ -182,6 +187,8 @@ export default function ExhibitorSetupWizard() {
     if (!file) return;
     setUploadingProductImage(true);
     const { file_url } = await uploadProductImage(file, user.id);
+    setProductImageUrl(file_url);
+    setProductImagePreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploadingProductImage(false);
   };
 
@@ -194,7 +201,7 @@ export default function ExhibitorSetupWizard() {
       description: productDesc,
       image_url: productImageUrl,
     });
-    setProductName(""); setProductDesc(""); setProductMoq(""); setProductImageUrl("");
+    setProductName(""); setProductDesc(""); setProductMoq(""); setProductImageUrl(""); setProductImagePreviewUrl("");
     refetchProducts();
     setAddingProduct(false);
   };
@@ -241,8 +248,8 @@ export default function ExhibitorSetupWizard() {
                 <Label>Company Logo</Label>
                 {logoUrl ? (
                   <div className="relative w-20 h-20 mt-2">
-                    <img src={logoUrl} className="w-20 h-20 rounded-lg object-cover border" alt="Logo" />
-                    <button onClick={() => setLogoUrl("")} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                    <img src={logoPreviewUrl || logoUrl} className="w-20 h-20 rounded-lg object-cover border" alt="Logo" />
+                    <button onClick={() => { setLogoUrl(""); setLogoPreviewUrl(""); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -307,8 +314,8 @@ export default function ExhibitorSetupWizard() {
                 {/* Product image upload */}
                 {productImageUrl ? (
                   <div className="relative w-20 h-20">
-                    <img src={productImageUrl} className="w-20 h-20 rounded-lg object-cover border" alt="Product" />
-                    <button onClick={() => setProductImageUrl("")} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                    <img src={productImagePreviewUrl || productImageUrl} className="w-20 h-20 rounded-lg object-cover border" alt="Product" />
+                    <button onClick={() => { setProductImageUrl(""); setProductImagePreviewUrl(""); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
                       <X className="w-3 h-3" />
                     </button>
                   </div>

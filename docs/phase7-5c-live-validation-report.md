@@ -226,7 +226,7 @@ Local repository still contains 10 function entrypoints:
 ### Important finding
 The prior deployment report in `docs/phase7-4f-deployment-report.md` documents deployment to:
 
-- `ebaquannrgbgjihbjfdc`
+- `jjqhmvfzqpohvukoxeoe`
 
 That is **not** the canonical project for this phase.
 

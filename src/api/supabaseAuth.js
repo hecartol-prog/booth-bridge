@@ -31,12 +31,12 @@ export async function mergeAppUser(authUser) {
 
   const meta = authUser.user_metadata || {};
   const appMeta = authUser.app_metadata || {};
-  const roleFromMeta = appMeta.role || meta.role;
+  const roleFromClaims = (appMeta.role || "").toString().toLowerCase();
 
   return {
     id: authUser.id,
     email: authUser.email,
-    role: roleFromMeta || meta.role || appRow?.user_role || "user",
+    role: roleFromClaims || "user",
     user_role: appRow?.user_role || meta.user_role || null,
     onboarded: appRow?.onboarded ?? meta.onboarded ?? false,
     profile_id: appRow?.profile_id ?? meta.profile_id ?? null,
@@ -46,7 +46,7 @@ export async function mergeAppUser(authUser) {
 
 export function isAdminRole(user) {
   if (!user) return false;
-  const role = (user.role || user.user_role || "").toLowerCase();
+  const role = (user.role || "").toLowerCase();
   return ADMIN_ROLES.has(role);
 }
 
@@ -168,16 +168,20 @@ export async function supabaseUpdateUserMetadata(fields) {
   if (userError) throw userError;
   if (!userData.user) throw new Error("Not authenticated");
 
-  const metaPatch = { ...fields };
+  const metaPatch = {};
   if (fields.user_role !== undefined) metaPatch.user_role = fields.user_role;
   if (fields.onboarded !== undefined) metaPatch.onboarded = fields.onboarded;
   if (fields.profile_id !== undefined) metaPatch.profile_id = fields.profile_id;
 
-  const { data, error } = await supabase.auth.updateUser({ data: metaPatch });
-  if (error) throw error;
+  let updatedUser = userData.user;
+  if (Object.keys(metaPatch).length > 0) {
+    const { data, error } = await supabase.auth.updateUser({ data: metaPatch });
+    if (error) throw error;
+    updatedUser = data.user;
+  }
 
   await syncAppUserRow(userData.user.id, fields);
-  return mergeAppUser(data.user);
+  return mergeAppUser(updatedUser);
 }
 
 export async function supabaseLogout() {
@@ -237,17 +241,14 @@ export async function supabaseAdminLogin(email, password) {
     return { data: { success: false } };
   }
 
-  sessionStorage.setItem("bb_admin_authed", "true");
   return { data: { success: true } };
 }
 
 export function supabaseIsAdminSession() {
-  if (sessionStorage.getItem("bb_admin_authed") === "true") return true;
   return false;
 }
 
 export async function supabaseIsAdmin() {
-  if (supabaseIsAdminSession()) return true;
   try {
     const user = await supabaseGetCurrentUser();
     return isAdminRole(user);

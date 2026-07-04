@@ -23,6 +23,7 @@ export default function Connections() {
   const [noteText, setNoteText] = useState("");
 
   const isExhibitor = user?.user_role === "exhibitor";
+  const appRole = user?.user_role || null;
 
   // Real-time subscription — invalidate on any Connection change so the list
   // updates instantly without a manual refresh when a new scan arrives.
@@ -112,6 +113,7 @@ export default function Connections() {
 
   const pending = connections.filter(c => c.status === "pending");
   const accepted = connections.filter(c => c.status === "accepted");
+  const declined = connections.filter(c => c.status === "declined");
   const filtered = (list) => list.filter(c => {
     const name = isExhibitor ? c.buyer_name : c.exhibitor_name;
     const company = isExhibitor ? c.buyer_company : c.exhibitor_company;
@@ -148,6 +150,9 @@ export default function Connections() {
           <TabsTrigger value="pending">
             Pending ({pending.length})
           </TabsTrigger>
+          <TabsTrigger value="declined">
+            Declined ({declined.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending">
@@ -173,7 +178,7 @@ export default function Connections() {
                         </p>
                       </div>
                     </div>
-                    {conn.initiated_by !== user.role && (
+                    {conn.initiated_by !== appRole && (
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => handleAccept(conn)}>
                           <Check className="w-4 h-4 mr-1" /> Accept
@@ -183,7 +188,7 @@ export default function Connections() {
                         </Button>
                       </div>
                     )}
-                    {conn.initiated_by === user.role && (
+                    {conn.initiated_by === appRole && (
                       <Badge variant="outline" className="text-xs">
                         <Clock className="w-3 h-3 mr-1" /> Waiting
                       </Badge>
@@ -254,6 +259,39 @@ export default function Connections() {
                   </Card>
                 );
               })}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="declined">
+          {isLoading ? (
+            <div className="text-center py-12 text-muted-foreground">Loading...</div>
+          ) : filtered(declined).length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">No declined requests</div>
+          ) : (
+            <div className="space-y-3">
+              {filtered(declined).map(conn => (
+                <Card key={conn.id} className="p-4 opacity-70">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Users className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {isExhibitor ? conn.buyer_name : conn.exhibitor_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {isExhibitor ? conn.buyer_company : `${conn.exhibitor_company} · Booth ${conn.booth_number}`}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs text-red-600 border-red-200">
+                      Declined
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
         </TabsContent>

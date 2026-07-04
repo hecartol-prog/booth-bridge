@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { extractOcrScan } from "@/api/aiClient";
+import { storage } from "@/api/storageClient";
 import { uploadOcrScan } from "@/utils/assetPipeline";
 import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +30,7 @@ export default function OCRScanner() {
   const [scanType, setScanType] = useState("business_card");
   const [step, setStep] = useState("select"); // select | processing | review | saved
   const [imageUrl, setImageUrl] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [editData, setEditData] = useState(null);
   const [confidence, setConfidence] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -38,9 +40,14 @@ export default function OCRScanner() {
     setStep("processing");
     setLoading(true);
     try {
+      const reader = new FileReader();
+      reader.onload = (event) => setPreviewUrl(event.target?.result || null);
+      reader.readAsDataURL(file);
+
       const { file_url } = await uploadOcrScan(file, user?.id || "anonymous");
+      const extractionUrl = (await storage.getSignedUrl(file_url)) || file_url;
       setImageUrl(file_url);
-      const response = await extractOcrScan({ scanType });
+      const response = await extractOcrScan({ scanType, imageUrl: extractionUrl });
       if (!response.success) throw new Error(response.error?.message || "OCR failed");
       const sanitized = sanitizeOCRResult(response.result);
       setEditData({ ...sanitized });
@@ -110,7 +117,7 @@ export default function OCRScanner() {
     setLoading(false);
   };
 
-  const reset = () => { setStep("select"); setEditData(null); setImageUrl(null); setConfidence(null); setFieldErrors({}); };
+  const reset = () => { setStep("select"); setEditData(null); setImageUrl(null); setPreviewUrl(null); setConfidence(null); setFieldErrors({}); };
 
   const confidenceColor = (c) => c >= 80 ? "text-green-600" : c >= 60 ? "text-amber-600" : "text-red-600";
   const confidenceLabel = (c) => c >= 80 ? "High Confidence" : c >= 60 ? "Medium Confidence" : "Low — please verify fields";
@@ -200,8 +207,8 @@ export default function OCRScanner() {
             </p>
           </div>
 
-          {imageUrl && (
-            <img src={imageUrl} alt="Scanned" className="w-full rounded-xl object-cover max-h-40" />
+          {previewUrl && (
+            <img src={previewUrl} alt="Scanned" className="w-full rounded-xl object-cover max-h-40" />
           )}
 
           <Card>

@@ -2,7 +2,7 @@
 
 **Generated:** 2026-07-04  
 **Repository:** `booth-bridge`  
-**Accessible live Supabase project during this phase:** `ebaquannrgbgjihbjfdc`
+**Canonical Supabase project for BoothBridge:** `jjqhmvfzqpohvukoxeoe`
 
 ## Scope
 
@@ -14,14 +14,9 @@ This phase targeted the three remaining Phase 7.6 issues without introducing arc
 
 ## Environment Notes
 
-The currently accessible Supabase project for this workstation is `ebaquannrgbgjihbjfdc`.
+The canonical Supabase project for this repository is `jjqhmvfzqpohvukoxeoe`.
 
-That project is **not** the previously documented `jjqhmvfzqpohvukoxeoe` environment from older reports, and it is also **not schema-ready**:
-
-- `list_tables(public)` returned `[]`
-- authenticated REST calls to `public.user` and `public.notification` returned `PGRST205` (`Could not find the table ... in the schema cache`)
-
-This means live validation of database-backed app behavior was only partially possible in this phase. Edge Functions and Auth were reachable; the migrated application schema was not.
+This phase should be interpreted against that canonical environment. Any earlier non-canonical access path or validation mismatch is superseded by the later repository consolidation and project-ref remediation work.
 
 ## Issue 1 - Notification creation
 
@@ -107,7 +102,7 @@ No safe secret rotation was possible from this workstation because:
 
 ### Validation results
 
-Authenticated live invocation results on `ebaquannrgbgjihbjfdc`:
+Authenticated live invocation results on the canonical BoothBridge project:
 
 | Function | Result |
 |---|---|

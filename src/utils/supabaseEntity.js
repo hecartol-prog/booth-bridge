@@ -3,6 +3,7 @@
  */
 
 import { getSupabaseClient } from "@/api/supabaseClient";
+import { storage } from "@/api/storageClient";
 import { generateUUID } from "@/utils/supabaseQuery";
 import {
   applyFilters,
@@ -13,6 +14,60 @@ import {
 
 /** Active realtime channels keyed by table — one multiplexed channel per table */
 const realtimeChannels = new Map();
+const assetUrlCache = new Map();
+const ASSET_URL_TTL_MS = 10 * 60 * 1000;
+const ASSET_FIELDS = new Set([
+  "file_url",
+  "logo_url",
+  "image_url",
+  "thumbnail_url",
+  "banner_url",
+  "product_image_url",
+  "raw_image_url",
+]);
+
+async function resolveAssetUrl(fileRef) {
+  if (!fileRef || typeof fileRef !== "string") return fileRef;
+
+  const cached = assetUrlCache.get(fileRef);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.url;
+  }
+
+  try {
+    const signedUrl = await storage.getSignedUrl(fileRef, { expiresIn: 900 });
+    const resolved = signedUrl || fileRef;
+    assetUrlCache.set(fileRef, {
+      url: resolved,
+      expiresAt: Date.now() + ASSET_URL_TTL_MS,
+    });
+    return resolved;
+  } catch {
+    return fileRef;
+  }
+}
+
+async function resolveAssetFields(record) {
+  if (!record || typeof record !== "object") return record;
+
+  const entries = await Promise.all(
+    Object.entries(record).map(async ([key, value]) => {
+      if (!ASSET_FIELDS.has(key) || typeof value !== "string") {
+        return [key, value];
+      }
+      return [key, await resolveAssetUrl(value)];
+    }),
+  );
+
+  return Object.fromEntries(entries);
+}
+
+async function resolveAssetPayload(payload) {
+  if (Array.isArray(payload)) {
+    return Promise.all(payload.map(resolveAssetFields));
+  }
+  return resolveAssetFields(payload);
+}
 
 function getTableChannel(tableName) {
   const supabase = getSupabaseClient();
@@ -82,7 +137,7 @@ export function makeSupabaseEntity(entityName, tableName, options = {}) {
         offset
       );
       assertNoError(error, `list ${entityName}`);
-      return data ?? [];
+      return resolveAssetPayload(data ?? []);
     },
 
     async filter(query, sort = "-created_date", limit = 200, pagination) {
@@ -91,13 +146,13 @@ export function makeSupabaseEntity(entityName, tableName, options = {}) {
       builder = applySortAndLimit(builder, sort, lim, offset);
       const { data, error } = await builder;
       assertNoError(error, `filter ${entityName}`);
-      return data ?? [];
+      return resolveAssetPayload(data ?? []);
     },
 
     async get(id) {
       const { data, error } = await from().select("*").eq("id", id).maybeSingle();
       assertNoError(error, `get ${entityName}`);
-      return data ?? null;
+      return resolveAssetPayload(data ?? null);
     },
 
     async create(payload) {
@@ -110,7 +165,7 @@ export function makeSupabaseEntity(entityName, tableName, options = {}) {
 
       const { data, error } = await from().insert(record).select("*").single();
       assertNoError(error, `create ${entityName}`);
-      return data;
+      return resolveAssetPayload(data);
     },
 
     async update(id, payload) {
@@ -120,7 +175,7 @@ export function makeSupabaseEntity(entityName, tableName, options = {}) {
         .select("*")
         .single();
       assertNoError(error, `update ${entityName}`);
-      return data;
+      return resolveAssetPayload(data);
     },
 
     async delete(id) {

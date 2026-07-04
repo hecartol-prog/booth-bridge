@@ -299,7 +299,7 @@ async function main() {
       email: credentials.admin.email,
       password: credentials.admin.password,
       appMetadata: { role: "admin" },
-      userMetadata: { user_role: "admin", onboarded: true },
+      userMetadata: { user_role: "exhibitor", onboarded: true },
     });
     resetUser = await createUser({
       email: credentials.reset.email,
@@ -329,7 +329,7 @@ async function main() {
       onboarded: true,
     });
     await ensurePublicUserRow(adminUser.id, {
-      user_role: "admin",
+      user_role: "exhibitor",
       onboarded: true,
     });
     await ensurePublicUserRow(resetUser.id, {

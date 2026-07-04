@@ -1,7 +1,16 @@
 import { handleCors, jsonResponse } from "../_shared/cors.ts";
 import { errorEnvelope, successEnvelope } from "../_shared/envelope.ts";
 import { validateJwt } from "../_shared/auth.ts";
-import { getActiveProviderName, getDefaultModel, probeProvider } from "../_shared/provider.ts";
+import {
+  getActiveGatewayName,
+  getActiveProviderName,
+  getDefaultModel,
+  getFallbackProviderName,
+  getGatewayVersion,
+  getRequestTimeoutMs,
+  getRoutingPlan,
+  probeProvider,
+} from "../_shared/aiGateway.ts";
 
 Deno.serve(async (req) => {
   const cors = handleCors(req);
@@ -24,19 +33,33 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({})) as { ping?: boolean };
     const probe = body.ping ? await probeProvider() : null;
+    const selectedProvider = getActiveProviderName();
+    const activeModel = getDefaultModel();
+    const fallbackProvider = getFallbackProviderName();
+    const gateway = getActiveGatewayName();
+    const latency = Date.now() - started;
 
     return jsonResponse(
       successEnvelope({
         result: {
           status: probe?.ok === false ? "degraded" : "ok",
           backend: "supabase",
-          provider: getActiveProviderName(),
-          model: getDefaultModel(),
+          gateway,
+          provider: selectedProvider,
+          model: activeModel,
+          selectedProvider,
+          activeModel,
+          fallbackProvider,
+          gatewayVersion: getGatewayVersion(),
+          requestTimeoutMs: getRequestTimeoutMs(),
+          latency,
+          providerHealth: probe?.providers ?? [],
+          routing: getRoutingPlan(),
           probe,
         },
-        provider: getActiveProviderName(),
-        model: getDefaultModel(),
-        latency: Date.now() - started,
+        provider: selectedProvider,
+        model: activeModel,
+        latency,
         metadata: { ping: Boolean(body.ping) },
       }),
     );

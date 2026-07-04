@@ -3,9 +3,14 @@ import { validateJwt } from "./auth.ts";
 import { errorEnvelope, successEnvelope } from "./envelope.ts";
 import {
   complete,
+  getActiveGatewayName,
+  getActiveProviderName,
+  getDefaultModel,
+  getGatewayVersion,
+  getRequestTimeoutMs,
   type CompletionRequest,
   type CompletionResult,
-} from "./provider.ts";
+} from "./aiGateway.ts";
 
 export type AiHandlerOptions = {
   requireAuth?: boolean;
@@ -67,7 +72,14 @@ export async function handleAiRequest(
       model: completion.model,
       latency: Date.now() - started,
       usage: completion.usage,
-      metadata: { function: "ai" },
+      metadata: {
+        function: "ai",
+        gateway: completion.gateway,
+        fallbackProvider: completion.fallbackProvider,
+        attempts: completion.attempts,
+        gatewayVersion: getGatewayVersion(),
+        requestTimeoutMs: getRequestTimeoutMs(),
+      },
     });
 
     if (options.documentLegacyShape) {
@@ -84,21 +96,60 @@ export async function handleAiRequest(
     return jsonResponse(envelope);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const retryable = Boolean((error as Error & { retryable?: boolean }).retryable);
-    const code = message.includes("429")
+    const gatewayError = error as Error & {
+      retryable?: boolean;
+      code?: string;
+      provider?: string | null;
+      gateway?: string | null;
+      model?: string | null;
+      status?: number;
+      attempts?: unknown;
+    };
+    const retryable = Boolean(gatewayError.retryable);
+    const code = gatewayError.code || (message.includes("429")
       ? "AI_RATE_LIMIT"
       : message.includes("401") || message.includes("403")
       ? "AI_AUTHENTICATION"
-      : "AI_PROVIDER_ERROR";
+      : "AI_PROVIDER_ERROR");
+    const status = gatewayError.status ||
+      (code === "AI_RATE_LIMIT"
+        ? 429
+        : code === "AI_AUTHENTICATION"
+        ? 401
+        : code === "AI_TIMEOUT"
+        ? 504
+        : code === "AI_PROVIDER_UNAVAILABLE"
+        ? 503
+        : 500);
+
+    console.error(JSON.stringify({
+      ts: new Date().toISOString(),
+      scope: "ai_handler",
+      event: "request_failed",
+      code,
+      status,
+      retryable,
+      provider: gatewayError.provider || getActiveProviderName() || null,
+      gateway: gatewayError.gateway || getActiveGatewayName() || null,
+      model: gatewayError.model || getDefaultModel() || null,
+      latency_ms: Date.now() - started,
+      attempt_count: Array.isArray(gatewayError.attempts) ? gatewayError.attempts.length : 0,
+    }));
 
     return jsonResponse(
       errorEnvelope(message, {
         code,
         retryable,
         latency: Date.now() - started,
-        provider: Deno.env.get("AI_PROVIDER") || "openai",
+        provider: gatewayError.provider || getActiveProviderName() || getActiveGatewayName(),
+        model: gatewayError.model || getDefaultModel(),
+        details: gatewayError.attempts,
+        metadata: {
+          gateway: gatewayError.gateway || getActiveGatewayName(),
+          attempts: gatewayError.attempts || [],
+        },
       }),
-      code === "AI_RATE_LIMIT" ? 429 : 500,
+      status,
     );
   }
 }

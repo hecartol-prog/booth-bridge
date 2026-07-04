@@ -55,20 +55,20 @@ const buyerNav = [
 ];
 
 const IMPERSONATE_KEY = "bb_impersonate_as_user";
+const IMPERSONATE_ROLE_KEY = "bb_impersonate_role";
 
 function AdminRoleSwitcher({ user }) {
   const isImpersonating = localStorage.getItem(IMPERSONATE_KEY) === "true";
-  const activeRole = user?.user_role || "exhibitor";
 
   const switchToUserMode = async (userRole) => {
     localStorage.setItem(IMPERSONATE_KEY, "true");
-    await auth.updateUserMetadata({ user_role: userRole, role: "user" });
+    localStorage.setItem(IMPERSONATE_ROLE_KEY, userRole);
     window.location.href = "/";
   };
 
   const switchToAdminMode = async () => {
     localStorage.removeItem(IMPERSONATE_KEY);
-    await auth.updateUserMetadata({ role: "admin" });
+    localStorage.removeItem(IMPERSONATE_ROLE_KEY);
     window.location.href = "/admin";
   };
 
@@ -172,8 +172,12 @@ export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isAdminRole = (user?.role || "").toLowerCase() === "admin";
+  const previewRole = localStorage.getItem(IMPERSONATE_ROLE_KEY);
+  const navRole = isAdminRole && localStorage.getItem(IMPERSONATE_KEY) === "true"
+    ? previewRole || "exhibitor"
+    : user?.user_role;
   // Admin defaults to exhibitor nav unless explicitly switched to buyer
-  const navItems = user?.user_role === "buyer" ? buyerNav : exhibitorNav;
+  const navItems = navRole === "buyer" ? buyerNav : exhibitorNav;
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["unread-notifications", user?.id],

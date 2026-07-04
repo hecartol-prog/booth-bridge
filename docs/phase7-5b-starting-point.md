@@ -60,7 +60,7 @@
 | # | Blocker | Impact |
 |---|---------|--------|
 | 1 | **Uncommitted repository** | No reproducible checkpoint tag; team cannot branch from known SHA |
-| 2 | **Edge Functions on wrong project** | 7.4F deployed to `ebaquannrgbgjihbjfdc`; canonical `jjqhmvfzqpohvukoxeoe` returns 404 for `ai-health` |
+| 2 | **Edge Functions need canonical alignment** | 7.4F deployment assets must target `jjqhmvfzqpohvukoxeoe`, which is the only canonical BoothBridge project |
 | 3 | **No storage buckets** | Upload flows fail on Supabase path |
 | 4 | **No RLS** | 39 tables exposed via anon REST key |
 | 5 | **OAuth unconfigured** | Google/LinkedIn login fails on Supabase path |
@@ -122,16 +122,15 @@ supabase link --project-ref jjqhmvfzqpohvukoxeoe
 supabase functions deploy admin-auth ai-generate ai-chat ai-document ai-business-card ai-summary ai-classify ai-match ai-recommend ai-health --project-ref jjqhmvfzqpohvukoxeoe
 ```
 
-> **Do not** deploy to `ebaquannrgbgjihbjfdc`. That project is **not** the canonical target.
+> Deploy only to `jjqhmvfzqpohvukoxeoe`, the canonical BoothBridge target.
 
 ---
 
-## Canonical vs non-canonical projects
+## Canonical project
 
 | Ref | Name | Role |
 |-----|------|------|
 | **`jjqhmvfzqpohvukoxeoe`** | Booth Bridge App | **Canonical** — all future work |
-| `ebaquannrgbgjihbjfdc` | (Phase 7.1C experiment) | **Deprecated for BoothBridge** — 7.4F functions deployed here by mistake; do not use unless explicitly instructed |
 
 ---
 
@@ -139,5 +138,5 @@ supabase functions deploy admin-auth ai-generate ai-chat ai-document ai-business
 
 - [Repository status](./phase7-5a-repository-status.md)
 - [Remaining roadmap](./phase7-remaining-migration-roadmap.md)
-- [Phase 7.4F deployment report](./phase7-4f-deployment-report.md) (note project drift)
+- [Phase 7.4F deployment report](./phase7-4f-deployment-report.md)
 - [Phase 7 complete transition](./phase7-complete-supabase-transition.md)

@@ -90,7 +90,6 @@ export default function AdminLogin() {
 
       // Success
       clearAttempts();
-      sessionStorage.setItem("bb_admin_authed", "true");
       logAdminAccess({ email, action: "login", status: "success" });
       window.location.href = "/admin";
     } catch (err) {

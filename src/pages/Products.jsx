@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { uploadProductImage } from "@/utils/assetPipeline";
+import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -18,6 +19,7 @@ export default function Products() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
@@ -39,6 +41,7 @@ export default function Products() {
       setTitle("");
       setDescription("");
       setImageUrl("");
+      setImagePreviewUrl("");
     },
   });
 
@@ -53,6 +56,7 @@ export default function Products() {
     setUploading(true);
     const { file_url } = await uploadProductImage(file, user.id);
     setImageUrl(file_url);
+    setImagePreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploading(false);
   };
 
@@ -110,7 +114,7 @@ export default function Products() {
             <div>
               <Label>Photo</Label>
               {imageUrl ? (
-                <img src={imageUrl} className="w-full h-48 object-cover rounded-lg mt-2" alt="Product" />
+                <img src={imagePreviewUrl || imageUrl} className="w-full h-48 object-cover rounded-lg mt-2" alt="Product" />
               ) : (
                 <label className="flex flex-col items-center gap-2 mt-2 p-8 border border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors">
                   <Upload className="w-6 h-6 text-muted-foreground" />

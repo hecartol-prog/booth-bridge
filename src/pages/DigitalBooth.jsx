@@ -21,6 +21,7 @@ import { enqueueVisitorAction, VISITOR_ACTIONS, getPendingVisitorCount } from "@
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 import { db, addSupplierToProject } from "@/utils/dbClient";
+import { storage } from "@/api/storageClient";
 
 const catalogTypeLabels = {
   company_profile: "Company Profile",
@@ -58,6 +59,9 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const [rfiMessage, setRfiMessage] = useState("");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [catalogUrls, setCatalogUrls] = useState({});
+  const [productImageUrls, setProductImageUrls] = useState({});
 
   const isBuyer = user?.user_role !== "exhibitor";
   const BOOTH_CACHE_KEY = `booth:${exhibitorUserId}`;
@@ -81,7 +85,56 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     setPendingCount(await getPendingVisitorCount());
   }, []);
 
+  const resolveAssetUrl = useCallback(async (fileRef) => {
+    if (!fileRef) return null;
+    try {
+      return (await storage.getSignedUrl(fileRef, { expiresIn: 900 })) || fileRef;
+    } catch {
+      return fileRef;
+    }
+  }, []);
+
   useEffect(() => { refreshPending(); }, [refreshPending]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLogo = async () => {
+      const resolved = await resolveAssetUrl(profile?.logo_url);
+      if (active) setLogoUrl(resolved);
+    };
+
+    loadLogo();
+    return () => { active = false; };
+  }, [profile?.logo_url, resolveAssetUrl]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCatalogUrls = async () => {
+      const entries = await Promise.all(
+        catalogs.map(async (catalog) => [catalog.id, await resolveAssetUrl(catalog.file_url)]),
+      );
+      if (active) setCatalogUrls(Object.fromEntries(entries));
+    };
+
+    loadCatalogUrls();
+    return () => { active = false; };
+  }, [catalogs, resolveAssetUrl]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProductUrls = async () => {
+      const entries = await Promise.all(
+        products.map(async (product) => [product.id, await resolveAssetUrl(product.image_url)]),
+      );
+      if (active) setProductImageUrls(Object.fromEntries(entries));
+    };
+
+    loadProductUrls();
+    return () => { active = false; };
+  }, [products, resolveAssetUrl]);
 
   useOfflineSync({
     onSyncComplete: (n) => {
@@ -262,7 +315,13 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   // ── Catalog download ─────────────────────────────────────────────────────
 
   const handleDownload = async (catalog) => {
-    window.open(catalog.file_url, "_blank");
+    const href =
+      catalogUrls[catalog.id] ||
+      (await resolveAssetUrl(catalog.file_url)) ||
+      catalog.file_url;
+    if (href) {
+      window.open(href, "_blank");
+    }
     if (!isOnline) {
       await enqueueVisitorAction({
         actionType: VISITOR_ACTIONS.DOWNLOAD_CATALOG,
@@ -321,7 +380,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       <div className="bg-primary px-6 pt-6 pb-8">
         <div className="flex items-center gap-4">
           {profile.logo_url ? (
-            <img src={profile.logo_url} className="w-16 h-16 rounded-2xl object-cover bg-white" alt={profile.company_name} />
+            <img src={logoUrl || profile.logo_url} className="w-16 h-16 rounded-2xl object-cover bg-white" alt={profile.company_name} />
           ) : (
             <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
               <Building2 className="w-8 h-8 text-white" />
@@ -507,6 +566,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
                   <SaveProductCard
                     key={product.id}
                     product={product}
+                    resolvedImageUrl={productImageUrls[product.id] || product.image_url}
                     user={user}
                     exhibitorUserId={exhibitorUserId}
                     profile={profile}
@@ -624,7 +684,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
 // ── SaveProductCard ──────────────────────────────────────────────────────────
 
-function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, isOnline, queryClient, toast, onOfflineSave }) {
+function SaveProductCard({ product, resolvedImageUrl, user, exhibitorUserId, profile, isBuyer, isOnline, queryClient, toast, onOfflineSave }) {
   const { data: isSaved } = useQuery({
     queryKey: ["saved-product-check", user?.id, product.id],
     queryFn: async () => {
@@ -674,8 +734,8 @@ function SaveProductCard({ product, user, exhibitorUserId, profile, isBuyer, isO
 
   return (
     <div className="rounded-lg overflow-hidden border bg-card group relative">
-      {product.image_url ? (
-        <img src={product.image_url} alt={product.title} className="w-full aspect-square object-cover" />
+      {resolvedImageUrl ? (
+        <img src={resolvedImageUrl} alt={product.title} className="w-full aspect-square object-cover" />
       ) : (
         <div className="w-full aspect-square bg-muted flex items-center justify-center">
           <Image className="w-6 h-6 text-muted-foreground" />

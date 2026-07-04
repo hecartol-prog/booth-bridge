@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { uploadCompanyLogo } from "@/utils/assetPipeline";
+import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ export default function AdminExhibitors() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -42,6 +44,7 @@ export default function AdminExhibitors() {
 
   const handleEdit = (ex) => {
     setForm({ ...ex });
+    setLogoPreviewUrl(ex.logo_url || "");
     setEditing(ex);
   };
 
@@ -51,6 +54,7 @@ export default function AdminExhibitors() {
     setUploading(true);
     const { file_url } = await uploadCompanyLogo(file, form.user_id || "admin");
     setForm(f => ({ ...f, logo_url: file_url }));
+    setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploading(false);
   };
 
@@ -163,7 +167,7 @@ export default function AdminExhibitors() {
             <div>
               <Label>Logo</Label>
               <div className="flex items-center gap-3 mt-1">
-                {form.logo_url && <img src={form.logo_url} className="w-12 h-12 rounded object-cover border" alt="logo" />}
+                {form.logo_url && <img src={logoPreviewUrl || form.logo_url} className="w-12 h-12 rounded object-cover border" alt="logo" />}
                 <label className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg cursor-pointer hover:bg-muted text-sm text-slate-500">
                   {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   Upload Logo

@@ -3,7 +3,7 @@
 **Generated:** 2026-07-03  
 **Scope:** Deploy and validate Supabase infrastructure without switching application runtime  
 **Runtime default:** `VITE_DATA_BACKEND=base44` (unchanged)  
-**Supabase project:** BoothBridge (`ebaquannrgbgjihbjfdc`, ap-northeast-1, ACTIVE_HEALTHY)  
+**Supabase project:** BoothBridge (`jjqhmvfzqpohvukoxeoe`, ap-northeast-1, ACTIVE_HEALTHY)  
 **Prior phase:** [7.4E Edge Functions](./phase7-4e-edge-function-report.md)
 
 ---
@@ -48,7 +48,7 @@ All 10 Edge Functions are deployed and **ACTIVE** on the BoothBridge Supabase pr
 | `ai-match` | **ACTIVE** | 1 | true | `POST /functions/v1/ai-match` |
 | `ai-recommend` | **ACTIVE** | 1 | true | `POST /functions/v1/ai-recommend` |
 
-**Project URL:** `https://ebaquannrgbgjihbjfdc.supabase.co`
+**Project URL:** `https://jjqhmvfzqpohvukoxeoe.supabase.co`
 
 ### Deployment tooling added
 
@@ -80,7 +80,7 @@ All 10 Edge Functions are deployed and **ACTIVE** on the BoothBridge Supabase pr
 
 ```bash
 supabase login
-supabase link --project-ref ebaquannrgbgjihbjfdc
+supabase link --project-ref jjqhmvfzqpohvukoxeoe
 supabase secrets set OPENAI_API_KEY=sk-... AI_PROVIDER=openai
 # Optional:
 supabase secrets set ADMIN_EMAIL=... ADMIN_PASSWORD=...

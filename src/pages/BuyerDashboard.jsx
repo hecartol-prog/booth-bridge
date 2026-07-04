@@ -22,6 +22,7 @@ export default function BuyerDashboard() {
   const queryClient = useQueryClient();
   const [viewBooth, setViewBooth] = useState(null);
   const [showProjectSheet, setShowProjectSheet] = useState(false);
+  const activeMeetingStatuses = new Set(["proposed", "accepted"]);
 
   const { data: savedBooths = [] } = useQuery({
     queryKey: ["buyer-saved-booths", user?.id],
@@ -58,7 +59,24 @@ export default function BuyerDashboard() {
 
   const { data: upcomingMeetings = [] } = useQuery({
     queryKey: ["buyer-upcoming-meetings", user?.id],
-    queryFn: () => db.Meeting.filter({ proposed_to: user.id, status: "scheduled" }, "proposed_time", 5),
+    queryFn: async () => {
+      const [asRecipient, asProposer] = await Promise.all([
+        db.Meeting.filter({ proposed_to: user.id }),
+        db.Meeting.filter({ proposed_by: user.id }),
+      ]);
+      const seen = new Set();
+
+      return [...asRecipient, ...asProposer]
+        .filter((meeting) => {
+          if (!meeting?.id || seen.has(meeting.id)) return false;
+          seen.add(meeting.id);
+          return activeMeetingStatuses.has(meeting.status) &&
+            meeting.proposed_time &&
+            new Date(meeting.proposed_time) > new Date();
+        })
+        .sort((a, b) => new Date(a.proposed_time) - new Date(b.proposed_time))
+        .slice(0, 5);
+    },
     enabled: !!user?.id,
   });
 

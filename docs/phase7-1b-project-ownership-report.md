@@ -79,14 +79,14 @@ If **no team member** can access that organization, the project is effectively *
 | **Organization ID** | `uyjqppgguiroqjcwxpcy` |
 | **Name** | **hecartol-prog's Org** |
 | **Plan** | **Free** |
-| **Projects visible** | 1 — `hffqcsbeyplaoejapzss` ("Supabase tigersourcer Project") |
+| **Projects visible** | 1 — `jjqhmvfzqpohvukoxeoe` ("Booth Bridge App") |
 | **Current account owns this org?** | **Yes** — full MCP API access |
 
 ### Accessible project (not Booth Bridge)
 
 | Field | Value |
 |-------|-------|
-| Ref | `hffqcsbeyplaoejapzss` |
+| Ref | `jjqhmvfzqpohvukoxeoe` |
 | Name | Supabase tigersourcer Project |
 | Region | `us-west-2` |
 | Status | **INACTIVE** (paused) |

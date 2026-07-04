@@ -1,5 +1,5 @@
 import { handleAiRequest } from "../_shared/handler.ts";
-import type { CompletionRequest } from "../_shared/provider.ts";
+import type { CompletionRequest } from "../_shared/aiGateway.ts";
 
 Deno.serve((req) =>
   handleAiRequest(req, {

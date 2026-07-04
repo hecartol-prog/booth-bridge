@@ -1,15 +1,14 @@
 /**
- * aiClient — AI provider abstraction (Phase 7.4D).
+ * aiClient — AI provider abstraction (Phase 7.4D / 7.6C).
  *
  * Routes through Base44 when VITE_DATA_BACKEND=base44 (default).
  * Routes through Supabase Edge Functions when VITE_DATA_BACKEND=supabase.
  *
- * Pages import this module only — never base44.integrations.Core directly.
+ * Pages import this module only — transport lives in aiGateway.js.
  */
 
-import { base44 } from "@/api/base44Client";
 import { isBase44, isAiEnabled } from "@/config/backend";
-import * as supabaseAi from "@/api/supabaseAi";
+import * as aiGateway from "@/api/aiGateway";
 import { createAiResponse, extractTextResult, extractDocumentOutput } from "@/ai/aiResponse";
 import { AiClientError, normalizeAiError } from "@/ai/aiErrors";
 import {
@@ -49,7 +48,7 @@ function ensureAiEnabled() {
 }
 
 function providerName() {
-  return isBase44() ? "base44" : "supabase";
+  return aiGateway.currentGateway();
 }
 
 /**
@@ -64,6 +63,7 @@ async function runAiRequest(fn, options = {}) {
 
   try {
     const raw = await fn();
+    const rawMetadata = raw && typeof raw === "object" ? raw : null;
     const result = options.extractResult ? options.extractResult(raw) : extractTextResult(raw);
     return createAiResponse({
       success: true,
@@ -71,8 +71,10 @@ async function runAiRequest(fn, options = {}) {
       raw,
       provider,
       latency: Date.now() - started,
-      model: raw?.model ?? null,
-      usage: raw?.usage ?? null,
+      model: rawMetadata && "model" in rawMetadata && typeof rawMetadata.model === "string"
+        ? rawMetadata.model
+        : null,
+      usage: rawMetadata && "usage" in rawMetadata ? rawMetadata.usage ?? null : null,
       metadata: { requestId: options.requestId || null },
     });
   } catch (error) {
@@ -101,16 +103,6 @@ function registerAbortSignal(signal) {
   return { requestId, signal: controller.signal };
 }
 
-// ── Base44 low-level delegates ───────────────────────────────────────────────
-
-async function base44InvokeLLM(params) {
-  return base44.integrations.Core.InvokeLLM(params);
-}
-
-async function base44ExtractFromUploadedFile(params) {
-  return base44.integrations.Core.ExtractDataFromUploadedFile(params);
-}
-
 // ── Canonical public API ─────────────────────────────────────────────────────
 
 /**
@@ -122,10 +114,7 @@ export async function generate(params, options = {}) {
   const { requestId, signal } = registerAbortSignal(options.signal);
 
   return runAiRequest(
-    async () => {
-      if (isBase44()) return base44InvokeLLM(params);
-      return supabaseAi.supabaseGenerate(params, { signal });
-    },
+    () => aiGateway.generate(params, { signal }),
     {
       requestId,
       extractResult: (raw) => extractTextResult(raw) ?? raw,
@@ -135,7 +124,7 @@ export async function generate(params, options = {}) {
 
 /**
  * Conversational assistant turn.
- * @param {{ companyName?: string, context?: string, history?: Array<{role: string, content: string}>, message: string, prompt?: string }} params
+ * @param {{ companyName?: string, context?: string, history?: Array<{role: string, content: string}>, message: string, prompt?: string, includeShortAnswerSuffix?: boolean }} params
  */
 export async function chat(params, options = {}) {
   const historyText = Array.isArray(params.history)
@@ -183,10 +172,7 @@ export async function extractDocument(params, options = {}) {
   const { requestId, signal } = registerAbortSignal(options.signal);
 
   return runAiRequest(
-    async () => {
-      if (isBase44()) return base44ExtractFromUploadedFile(payload);
-      return supabaseAi.supabaseExtractDocument(payload, { signal });
-    },
+    () => aiGateway.extractDocument(payload, { signal }),
     {
       requestId,
       extractResult: extractDocumentOutput,
@@ -211,18 +197,20 @@ export async function extractBusinessCard(imageUrl, options = {}) {
 }
 
 /**
- * OCR Scanner flow — preserves pre-7.4D invokeLLM parameters (no file_urls).
- * @param {{ scanType: 'business_card'|'badge', imageUrl?: string }} params
+ * OCR Scanner flow — include the uploaded image URL when available.
+ * @param {{ scanType: 'business_card'|'badge', imageUrl?: string, file_url?: string, fileUrl?: string }} params
  */
 export async function extractOcrScan(params, options = {}) {
   const prompt =
     params.scanType === "business_card"
       ? ocrScannerBusinessCardPrompt()
       : ocrScannerBadgePrompt();
+  const imageUrl = params.imageUrl || params.file_url || params.fileUrl || null;
 
   const response = await generate(
     {
       prompt,
+      ...(imageUrl ? { file_urls: [imageUrl] } : {}),
       add_context_from_internet: false,
       response_json_schema: OCR_SCANNER_BUSINESS_CARD_SCHEMA,
     },
@@ -293,7 +281,7 @@ export async function recommend(params, options = {}) {
 
   const { requestId, signal } = registerAbortSignal(options.signal);
   return runAiRequest(
-    () => supabaseAi.supabaseRecommend({ ...params, prompt }, { signal }),
+    () => aiGateway.recommend({ ...params, prompt }, { signal }),
     { requestId, extractResult: (raw) => raw?.recommendations ?? raw }
   );
 }
@@ -312,7 +300,7 @@ export async function match(params, options = {}) {
 
   const { requestId, signal } = registerAbortSignal(options.signal);
   return runAiRequest(
-    () => supabaseAi.supabaseMatch({ ...params, prompt }, { signal }),
+    () => aiGateway.match({ ...params, prompt }, { signal }),
     { requestId, extractResult: (raw) => raw?.score != null ? raw : raw }
   );
 }
@@ -325,14 +313,7 @@ export async function* stream(params, options = {}) {
   const { requestId, signal } = registerAbortSignal(options.signal);
 
   try {
-    if (isBase44()) {
-      const raw = await base44InvokeLLM({ ...params, stream: false });
-      const text = extractTextResult(raw) ?? String(raw);
-      yield text;
-      return;
-    }
-
-    yield* supabaseAi.supabaseStream(supabaseAi.EDGE_FUNCTIONS.generate, params, {
+    yield* aiGateway.stream(params, {
       signal,
       onChunk: options.onChunk,
     });
@@ -342,18 +323,8 @@ export async function* stream(params, options = {}) {
 }
 
 export async function health() {
-  if (isBase44()) {
-    return createAiResponse({
-      success: true,
-      result: { status: "ok", backend: "base44" },
-      raw: { status: "ok" },
-      provider: "base44",
-      latency: 0,
-    });
-  }
-
   const started = Date.now();
-  const probe = await supabaseAi.supabaseHealth();
+  const probe = await aiGateway.health();
   return createAiResponse({
     success: probe.ok,
     result: probe.ok ? probe.data : null,
@@ -382,7 +353,7 @@ export function cancelAll() {
 /** @deprecated Use generate() — returns legacy Base44 shape */
 export async function invokeLLM(params) {
   ensureAiEnabled();
-  if (isBase44()) return base44InvokeLLM(params);
+  if (isBase44()) return aiGateway.generate(params);
 
   const response = await generate(params);
   if (!response.success) throw new AiClientError(response.error);
@@ -392,7 +363,7 @@ export async function invokeLLM(params) {
 /** @deprecated Use extractDocument() — returns legacy Base44 extraction shape */
 export async function extractFromUploadedFile(params) {
   ensureAiEnabled();
-  if (isBase44()) return base44ExtractFromUploadedFile(params);
+  if (isBase44()) return aiGateway.extractDocument(params);
 
   const response = await extractDocument(params);
   if (!response.success) throw new AiClientError(response.error);

@@ -244,16 +244,17 @@ export async function checkAppReady() {
 /** @returns {Promise<{ data?: { success?: boolean } }>} */
 export async function adminLogin(email, password) {
   if (isBase44()) {
-    return base44.functions.invoke("adminAuth", { email, password });
+    const response = await base44.functions.invoke("adminAuth", { email, password });
+    if (response?.data?.success) {
+      sessionStorage.setItem("bb_admin_authed", "true");
+    }
+    return response;
   }
   return supabaseAuth.supabaseAdminLogin(email, password);
 }
 
 export function isAdminSession() {
-  if (isBase44()) {
-    return sessionStorage.getItem("bb_admin_authed") === "true";
-  }
-  return supabaseAuth.supabaseIsAdminSession();
+  return isBase44() ? sessionStorage.getItem("bb_admin_authed") === "true" : false;
 }
 
 export function clearAdminSession() {

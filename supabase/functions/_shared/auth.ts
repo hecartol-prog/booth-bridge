@@ -4,6 +4,8 @@ export type AuthResult =
   | { ok: true; user: User }
   | { ok: false; message: string; status: number };
 
+const ADMIN_ROLES = new Set(["admin", "superadmin", "systemadmin", "supportadmin"]);
+
 function getEnv(name: string): string {
   const value = Deno.env.get(name);
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
@@ -39,14 +41,7 @@ export async function validateJwt(req: Request): Promise<AuthResult> {
   return { ok: true, user: data.user };
 }
 
-const ADMIN_ROLES = new Set(["admin", "superadmin", "systemadmin", "supportadmin"]);
-
 export function isAdminUser(user: User): boolean {
-  const role = (
-    user.app_metadata?.role ||
-    user.user_metadata?.role ||
-    user.user_metadata?.user_role ||
-    ""
-  ).toString().toLowerCase();
+  const role = (user.app_metadata?.role || "").toString().toLowerCase();
   return ADMIN_ROLES.has(role);
 }

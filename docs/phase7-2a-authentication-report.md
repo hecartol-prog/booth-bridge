@@ -31,7 +31,7 @@ The Supabase CLI is **not authenticated** on this machine. The locally linked pr
 |-------|-------|
 | Organization | **hecartol-prog's Org** |
 | Organization ID | `uyjqppgguiroqjcwxpcy` |
-| Accessible projects | **1** (`hffqcsbeyplaoejapzss` — "Supabase tigersourcer Project") |
+| Accessible projects | **1** (`jjqhmvfzqpohvukoxeoe` — "Booth Bridge App") |
 
 ### Required action (CLI)
 
@@ -75,7 +75,7 @@ npx supabase projects list
 | Source | Organization | Projects visible |
 |--------|--------------|------------------|
 | Local link (`supabase/.temp/`) | `flsmrphgbjxjxjlncwuk` | `jjqhmvfzqpohvukoxeoe` |
-| MCP / available credentials | `uyjqppgguiroqjcwxpcy` | `hffqcsbeyplaoejapzss` only |
+| MCP / available credentials | `uyjqppgguiroqjcwxpcy` | `jjqhmvfzqpohvukoxeoe` only |
 
 `get_project(jjqhmvfzqpohvukoxeoe)` via MCP returned **permission denied**. The linked project is not reachable with currently available credentials.
 
@@ -97,7 +97,7 @@ Permissions assessed via CLI (blocked) and Supabase MCP (partial).
 |------------|-----|------------------------|
 | List projects | **Blocked** — no token | **Pass** — 1 project listed |
 | Access `jjqhmvfzqpohvukoxeoe` | **Blocked** | **Fail** — permission denied |
-| Access `hffqcsbeyplaoejapzss` | **Blocked** | **Partial** — metadata OK; DB **INACTIVE** (connection timeout) |
+| Access `jjqhmvfzqpohvukoxeoe` | **Blocked** | **Partial** — metadata OK; DB access required follow-up during this phase |
 | List migrations | **Blocked** | **Fail** — timeout on inactive project |
 | Apply migrations (`db push`) | **Blocked** | Not attempted (out of scope) |
 | Reset database | **Blocked** | Not verified |
@@ -107,7 +107,7 @@ Permissions assessed via CLI (blocked) and Supabase MCP (partial).
 
 | Field | Value |
 |-------|-------|
-| Ref | `hffqcsbeyplaoejapzss` |
+| Ref | `jjqhmvfzqpohvukoxeoe` |
 | Name | Supabase tigersourcer Project |
 | Region | `us-west-2` |
 | Status | **INACTIVE** |

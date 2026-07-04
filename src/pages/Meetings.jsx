@@ -118,6 +118,7 @@ export default function Meetings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["buyer-upcoming-meetings"] });
       setNewMeeting(false);
       setTitle("");
       setProposedTime("");
@@ -139,7 +140,10 @@ export default function Meetings() {
         });
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["buyer-upcoming-meetings"] });
+    },
   });
 
   const generateICS = (meeting) => {

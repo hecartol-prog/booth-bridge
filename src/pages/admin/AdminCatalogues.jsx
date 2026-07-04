@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { uploadCatalog, uploadMedia } from "@/utils/assetPipeline";
+import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,8 @@ export default function AdminCatalogues() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [filePreviewUrl, setFilePreviewUrl] = useState("");
+  const [thumbPreviewUrl, setThumbPreviewUrl] = useState("");
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [isNew, setIsNew] = useState(false);
@@ -70,6 +73,7 @@ export default function AdminCatalogues() {
     setUploadingFile(true);
     const { file_url } = await uploadCatalog(file, { userId: form.exhibitor_user_id || "admin" });
     setForm(f => ({ ...f, file_url }));
+    setFilePreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploadingFile(false);
   };
 
@@ -79,11 +83,24 @@ export default function AdminCatalogues() {
     setUploadingThumb(true);
     const { file_url } = await uploadMedia(file, form.exhibitor_user_id || "admin");
     setForm(f => ({ ...f, thumbnail_url: file_url }));
+    setThumbPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploadingThumb(false);
   };
 
-  const openEdit = (cat) => { setForm({ ...cat }); setEditing(cat); setIsNew(false); };
-  const openNew = () => { setForm(emptyForm); setEditing({}); setIsNew(true); };
+  const openEdit = (cat) => {
+    setForm({ ...cat });
+    setFilePreviewUrl(cat.file_url || "");
+    setThumbPreviewUrl(cat.thumbnail_url || "");
+    setEditing(cat);
+    setIsNew(false);
+  };
+  const openNew = () => {
+    setForm(emptyForm);
+    setFilePreviewUrl("");
+    setThumbPreviewUrl("");
+    setEditing({});
+    setIsNew(true);
+  };
 
   const filtered = catalogues.filter(c =>
     c.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -206,7 +223,7 @@ export default function AdminCatalogues() {
               <Label>Catalogue File (PDF, image, video)</Label>
               <div className="flex items-center gap-3 mt-1">
                 {form.file_url && (
-                  <a href={form.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <a href={filePreviewUrl || form.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
                     <ExternalLink className="w-3 h-3" /> Current file
                   </a>
                 )}
@@ -221,7 +238,7 @@ export default function AdminCatalogues() {
             <div>
               <Label>Thumbnail Image</Label>
               <div className="flex items-center gap-3 mt-1">
-                {form.thumbnail_url && <img src={form.thumbnail_url} className="w-12 h-12 rounded object-cover border" alt="thumb" />}
+                {form.thumbnail_url && <img src={thumbPreviewUrl || form.thumbnail_url} className="w-12 h-12 rounded object-cover border" alt="thumb" />}
                 <label className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg cursor-pointer hover:bg-muted text-sm text-slate-500">
                   {uploadingThumb ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   Upload Thumbnail

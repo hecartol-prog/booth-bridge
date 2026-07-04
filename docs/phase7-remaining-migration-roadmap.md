@@ -62,7 +62,7 @@ This document covers **remaining phases only**. Phases 7.1–7.5A are complete o
 | Over-restrictive RLS breaks pages | High |
 | Under-restrictive RLS leaves data exposed | High |
 | OAuth misconfiguration blocks login | Medium |
-| Wrong project ref for deploy | Medium (see `ebaquannrgbgjihbjfdc` drift) |
+| Wrong project ref for deploy | Medium (enforce canonical target `jjqhmvfzqpohvukoxeoe`) |
 
 ---
 
@@ -186,7 +186,7 @@ This document covers **remaining phases only**. Phases 7.1–7.5A are complete o
 - Delete archived Base44 Edge Function paths if unused
 - Remove `VITE_DATA_BACKEND=base44` code paths (or keep feature flag for emergency rollback window)
 - Update documentation and onboarding for Supabase-only ops
-- Optional: delete/orphan cloud project `ebaquannrgbgjihbjfdc`
+- Optional: delete/orphan any non-canonical Supabase project after confirming all operators use `jjqhmvfzqpohvukoxeoe`
 - Optional: delete abandoned refs from phase reports
 
 ### Dependencies
@@ -234,4 +234,4 @@ This document covers **remaining phases only**. Phases 7.1–7.5A are complete o
         → 8 (cleanup)
 ```
 
-**Current blocker:** 7.5B cannot start meaningfully until uncommitted 7.4 work is committed and Edge Functions are deployed to `jjqhmvfzqpohvukoxeoe` (not `ebaquannrgbgjihbjfdc`).
+**Current blocker:** 7.5B cannot start meaningfully until uncommitted 7.4 work is committed and Edge Functions are deployed to `jjqhmvfzqpohvukoxeoe`.

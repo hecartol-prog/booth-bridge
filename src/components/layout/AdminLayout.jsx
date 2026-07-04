@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
 import { auth } from "@/api/authClient";
+import { useAuth } from "@/lib/AuthContext";
+import { isSupabase } from "@/config/backend";
 import {
   LayoutDashboard, Users, Building2, Package, FileText,
   Calendar, MessageSquare, Menu, X, ChevronRight, ShieldCheck,
@@ -77,12 +79,24 @@ const navGroups = [
   },
 ];
 
+const ADMIN_ROLES = new Set(["admin", "superadmin", "systemadmin", "supportadmin"]);
+
 export default function AdminLayout() {
+  const { user, authChecked, isLoadingAuth } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState({});
 
-  const isAdminAuthed = auth.isAdminSession();
+  const isAdminAuthed = isSupabase()
+    ? ADMIN_ROLES.has((user?.role || "").toLowerCase())
+    : auth.isAdminSession();
+  if (isSupabase() && (!authChecked || isLoadingAuth)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-slate-500">
+        Verifying admin access...
+      </div>
+    );
+  }
   if (!isAdminAuthed) return <Navigate to="/admin-login" replace />;
 
   const isActive = (item) =>
@@ -144,7 +158,14 @@ export default function AdminLayout() {
           ← Back to App
         </Link>
         <button
-          onClick={() => { auth.clearAdminSession(); window.location.href = "/admin-login"; }}
+          onClick={() => {
+            if (isSupabase()) {
+              auth.logout("/admin-login");
+              return;
+            }
+            auth.clearAdminSession();
+            window.location.href = "/admin-login";
+          }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
         >
           <LogOut className="w-3.5 h-3.5" /> Logout

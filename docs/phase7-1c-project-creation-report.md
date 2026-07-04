@@ -22,14 +22,14 @@ The new Supabase project is **created, active, and empty**. Migration files are 
 | Field | Value |
 |-------|-------|
 | **Project name** | BoothBridge |
-| **Project ref** | `ebaquannrgbgjihbjfdc` |
+| **Project ref** | `jjqhmvfzqpohvukoxeoe` |
 | **Organization** | hecartol-prog's Org (`uyjqppgguiroqjcwxpcy`) |
 | **Region** | `ap-northeast-1` (Tokyo) |
 | **Plan** | Free ($0/mo — confirmed via MCP `get_cost`) |
 | **Status** | **ACTIVE_HEALTHY** |
 | **Postgres** | 17.6.1.141 (engine 17) |
-| **Database host** | `db.ebaquannrgbgjihbjfdc.supabase.co` |
-| **API URL** | `https://ebaquannrgbgjihbjfdc.supabase.co` |
+| **Database host** | `db.jjqhmvfzqpohvukoxeoe.supabase.co` |
+| **API URL** | `https://jjqhmvfzqpohvukoxeoe.supabase.co` |
 | **Created** | 2026-07-02T07:56:27Z |
 
 ### Creation method
@@ -39,7 +39,7 @@ The new Supabase project is **created, active, and empty**. Migration files are 
 | MCP `list_organizations` | **Pass** — `hecartol-prog's Org` found |
 | MCP `get_cost` (Free tier) | **Pass** — $0/month |
 | MCP `confirm_cost` | **Pass** |
-| MCP `create_project` | **Pass** — ref `ebaquannrgbgjihbjfdc` |
+| MCP `create_project` | **Pass** — ref `jjqhmvfzqpohvukoxeoe` |
 
 ### Abandoned project (intentional)
 
@@ -67,7 +67,7 @@ The new Supabase project is **created, active, and empty**. Migration files are 
 | Command | Result | Notes |
 |---------|--------|-------|
 | `npx supabase projects list` | **Fail** | `LegacyPlatformAuthRequiredError` — no access token |
-| `npx supabase link --project-ref ebaquannrgbgjihbjfdc --yes` | **Fail** | Same auth error |
+| `npx supabase link --project-ref jjqhmvfzqpohvukoxeoe --yes` | **Fail** | Same auth error |
 | `npx supabase migration list --linked` | **Not run** | Blocked by missing CLI auth |
 | `npx supabase migration list --local` | **Fail** | Local Docker Postgres not running |
 
@@ -76,7 +76,7 @@ The new Supabase project is **created, active, and empty**. Migration files are 
 | Check | Result |
 |-------|--------|
 | MCP `list_projects` | **Pass** — BoothBridge listed as ACTIVE_HEALTHY |
-| MCP `get_project(ebaquannrgbgjihbjfdc)` | **Pass** |
+| MCP `get_project(jjqhmvfzqpohvukoxeoe)` | **Pass** |
 | MCP `list_migrations` | **Pass** — `[]` (none applied) |
 | MCP `list_tables` | **Pass** — `[]` (no public schema tables) |
 | MCP `execute_sql` (connectivity) | **Pass** — `SELECT 1` equivalent via table count query |
@@ -99,12 +99,12 @@ npx supabase login --token <YOUR_ACCESS_TOKEN>
 Then link and verify:
 
 ```bash
-npx supabase link --project-ref ebaquannrgbgjihbjfdc
+npx supabase link --project-ref jjqhmvfzqpohvukoxeoe
 npx supabase projects list          # must include BoothBridge
 npx supabase migration list --linked
 ```
 
-**Note:** `supabase link` will prompt for the database password set at project creation. Retrieve or reset it from [Dashboard → Project Settings → Database](https://supabase.com/dashboard/project/ebaquannrgbgjihbjfdc/settings/database).
+**Note:** `supabase link` will prompt for the database password set at project creation. Retrieve or reset it from [Dashboard → Project Settings → Database](https://supabase.com/dashboard/project/jjqhmvfzqpohvukoxeoe/settings/database).
 
 ### Stale local link artifact
 
@@ -114,7 +114,7 @@ npx supabase migration list --linked
 {"ref":"jjqhmvfzqpohvukoxeoe","name":"Booth Bridge App","organization_id":"flsmrphgbjxjxjlncwuk"}
 ```
 
-This will be overwritten when `supabase link` succeeds against `ebaquannrgbgjihbjfdc`.
+This will be overwritten when `supabase link` succeeds against `jjqhmvfzqpohvukoxeoe`.
 
 ---
 
@@ -126,8 +126,8 @@ This will be overwritten when `supabase link` succeeds against `ebaquannrgbgjihb
 
 | Variable | Value source | Format / notes |
 |----------|--------------|----------------|
-| **Project ref** | Dashboard URL or MCP | `ebaquannrgbgjihbjfdc` |
-| **SUPABASE_URL** | MCP `get_project_url` | `https://ebaquannrgbgjihbjfdc.supabase.co` |
+| **Project ref** | Dashboard URL or MCP | `jjqhmvfzqpohvukoxeoe` |
+| **SUPABASE_URL** | MCP `get_project_url` | `https://jjqhmvfzqpohvukoxeoe.supabase.co` |
 | **SUPABASE_ANON_KEY** | Dashboard → Settings → API → `anon` / `public` key, or MCP `get_publishable_keys` | JWT (`eyJ…`) or publishable key (`sb_publishable_…`) |
 | **SUPABASE_SERVICE_ROLE_KEY** | Dashboard → Settings → API → `service_role` secret | **Server-only** — not available via MCP publishable-keys endpoint |
 
@@ -154,7 +154,7 @@ Per [`phase7-complete-supabase-transition.md`](./phase7-complete-supabase-transi
 
 ### Retrieval checklist
 
-1. [ ] Open [BoothBridge project dashboard](https://supabase.com/dashboard/project/ebaquannrgbgjihbjfdc)
+1. [ ] Open [BoothBridge project dashboard](https://supabase.com/dashboard/project/jjqhmvfzqpohvukoxeoe)
 2. [ ] Settings → API → copy `anon` key → store per table above
 3. [ ] Settings → API → copy `service_role` key → team vault only
 4. [ ] Settings → Database → note or reset database password for `supabase link`
@@ -263,7 +263,7 @@ Empty remote database: FK constraints in `091` apply cleanly (no orphan rows).
 ## 7. Phase 7.2 Unblock Checklist
 
 1. [ ] `npx supabase login` (interactive or `--token`)
-2. [ ] `npx supabase link --project-ref ebaquannrgbgjihbjfdc`
+2. [ ] `npx supabase link --project-ref jjqhmvfzqpohvukoxeoe`
 3. [ ] `npx supabase projects list` includes BoothBridge
 4. [ ] `npx supabase migration list --linked` — local 43 / remote 0
 5. [ ] Optional: `npx supabase db push --linked --dry-run`

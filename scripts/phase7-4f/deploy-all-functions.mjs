@@ -4,7 +4,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-const PROJECT_REF = "ebaquannrgbgjihbjfdc";
+const PROJECT_REF = "jjqhmvfzqpohvukoxeoe";
 const FUNCTIONS = [
   "admin-auth",
   "ai-health",

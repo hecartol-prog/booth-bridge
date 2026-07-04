@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { auth } from "@/api/authClient";
 import { extractDocument } from "@/api/aiClient";
 import { uploadCompanyLogo, uploadOcrScan } from "@/utils/assetPipeline";
+import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,7 @@ export default function Onboarding() {
   const [boothNumber, setBoothNumber] = useState("");
   const [eventName, setEventName] = useState("");
   const [logo, setLogo] = useState(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Buyer fields
@@ -94,6 +96,7 @@ export default function Onboarding() {
     const me = await auth.getCurrentUser();
     const { file_url } = await uploadCompanyLogo(file, me?.id || "onboarding");
     setLogo(file_url);
+    setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
     setUploadingLogo(false);
   };
 
@@ -454,8 +457,8 @@ export default function Onboarding() {
                 <Label>{t("onboarding.companyLogo")}</Label>
                 {logo ? (
                   <div className="relative w-20 h-20 mt-2">
-                    <img src={logo} className="w-20 h-20 rounded-lg object-cover" alt="Logo" />
-                    <button onClick={() => setLogo(null)} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+                    <img src={logoPreviewUrl || logo} className="w-20 h-20 rounded-lg object-cover" alt="Logo" />
+                    <button onClick={() => { setLogo(null); setLogoPreviewUrl(null); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
                       <X className="w-3 h-3" />
                     </button>
                   </div>

@@ -1,5 +1,56 @@
 begin;
 
+create or replace function private.storage_object_ref(target_bucket text, object_name text)
+returns text
+language sql
+immutable
+as $$
+  select target_bucket || '/' || object_name;
+$$;
+
+create or replace function private.is_shared_media_asset(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.exhibitor_profile ep
+    where ep.logo_url = private.storage_object_ref('boothbridge-media', object_name)
+  )
+  or exists (
+    select 1
+    from public.product p
+    where p.image_url = private.storage_object_ref('boothbridge-media', object_name)
+  )
+  or exists (
+    select 1
+    from public.catalog_item ci
+    where ci.thumbnail_url = private.storage_object_ref('boothbridge-media', object_name)
+  );
+$$;
+
+create or replace function private.is_shared_catalog_asset(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.catalog_item ci
+    where ci.file_url = private.storage_object_ref('boothbridge-assets', object_name)
+  )
+  or exists (
+    select 1
+    from public.exhibitor_profile ep
+    where ep.catalogue_url = private.storage_object_ref('boothbridge-assets', object_name)
+  );
+$$;
+
 drop policy if exists "storage_admin_select" on storage.objects;
 create policy "storage_admin_select"
   on storage.objects
@@ -52,7 +103,10 @@ create policy "storage_media_owner_select"
   using (
     bucket_id = 'boothbridge-media'
     and (storage.foldername(name))[1] in ('uploads', 'logos', 'products')
-    and (storage.foldername(name))[2] = auth.uid()::text
+    and (
+      (storage.foldername(name))[2] = auth.uid()::text
+      or private.is_shared_media_asset(name)
+    )
   );
 
 drop policy if exists "storage_media_owner_insert" on storage.objects;
@@ -104,12 +158,23 @@ create policy "storage_assets_scope_select"
       (
         (storage.foldername(name))[1] = 'companies'
         and (storage.foldername(name))[3] = 'catalogs'
-        and private.is_asset_folder_owner((storage.foldername(name))[2])
+        and (
+          private.is_asset_folder_owner((storage.foldername(name))[2])
+          or private.is_shared_catalog_asset(name)
+        )
       )
       or (
         (storage.foldername(name))[1] = 'uploads'
-        and (storage.foldername(name))[2] = auth.uid()::text
         and (storage.foldername(name))[3] = 'catalogs'
+        and (
+          (storage.foldername(name))[2] = auth.uid()::text
+          or private.is_shared_catalog_asset(name)
+        )
+      )
+      or (
+        (storage.foldername(name))[1] = 'events'
+        and (storage.foldername(name))[3] = 'branding'
+        and private.is_admin()
       )
     )
   );
@@ -132,6 +197,11 @@ create policy "storage_assets_scope_insert"
         and (storage.foldername(name))[2] = auth.uid()::text
         and (storage.foldername(name))[3] = 'catalogs'
       )
+      or (
+        (storage.foldername(name))[1] = 'events'
+        and (storage.foldername(name))[3] = 'branding'
+        and private.is_admin()
+      )
     )
   );
 
@@ -153,6 +223,11 @@ create policy "storage_assets_scope_update"
         and (storage.foldername(name))[2] = auth.uid()::text
         and (storage.foldername(name))[3] = 'catalogs'
       )
+      or (
+        (storage.foldername(name))[1] = 'events'
+        and (storage.foldername(name))[3] = 'branding'
+        and private.is_admin()
+      )
     )
   )
   with check (
@@ -167,6 +242,11 @@ create policy "storage_assets_scope_update"
         (storage.foldername(name))[1] = 'uploads'
         and (storage.foldername(name))[2] = auth.uid()::text
         and (storage.foldername(name))[3] = 'catalogs'
+      )
+      or (
+        (storage.foldername(name))[1] = 'events'
+        and (storage.foldername(name))[3] = 'branding'
+        and private.is_admin()
       )
     )
   );
@@ -188,6 +268,11 @@ create policy "storage_assets_scope_delete"
         (storage.foldername(name))[1] = 'uploads'
         and (storage.foldername(name))[2] = auth.uid()::text
         and (storage.foldername(name))[3] = 'catalogs'
+      )
+      or (
+        (storage.foldername(name))[1] = 'events'
+        and (storage.foldername(name))[3] = 'branding'
+        and private.is_admin()
       )
     )
   );
