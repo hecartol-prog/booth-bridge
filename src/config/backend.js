@@ -1,16 +1,16 @@
 /**
  * Backend configuration — single switch for migration phases.
  *
- * VITE_DATA_BACKEND=base44  (default) — production behavior unchanged
- * VITE_DATA_BACKEND=supabase            — activates Supabase client paths (Phase 4+)
+ * VITE_DATA_BACKEND=supabase  (default) — canonical Supabase backend (Phase 7.7 RC3)
+ * VITE_DATA_BACKEND=base44              — emergency rollback to Base44
  */
 
 const VALID_BACKENDS = ["base44", "supabase"];
 
-const rawBackend = import.meta.env.VITE_DATA_BACKEND || "base44";
+const rawBackend = import.meta.env.VITE_DATA_BACKEND || "supabase";
 
 /** Active data backend identifier */
-export const DATA_BACKEND = VALID_BACKENDS.includes(rawBackend) ? rawBackend : "base44";
+export const DATA_BACKEND = VALID_BACKENDS.includes(rawBackend) ? rawBackend : "supabase";
 
 export function isBase44() {
   return DATA_BACKEND === "base44";
