@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Search, User, Building2, Package, QrCode, Wifi, FileText,
-  RefreshCw, MessageSquare, AlertCircle, CheckCircle2, Clock,
-  ChevronRight, X, Ticket, Users, CreditCard
+  Search, User, Building2, Package, QrCode, Wifi, FileText, MessageSquare, AlertCircle, CheckCircle2, Clock,
+  ChevronRight, X, Ticket, Users
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 

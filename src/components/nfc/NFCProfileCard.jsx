@@ -1,5 +1,5 @@
 import React from "react";
-import { Nfc, Globe, Phone, Mail, Linkedin, MapPin } from "lucide-react";
+import { Nfc, Phone, Mail, MapPin } from "lucide-react";
 
 export default function NFCProfileCard({ profile, user }) {
   const name = profile?.display_name || user?.full_name || "Your Name";

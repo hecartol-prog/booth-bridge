@@ -29,23 +29,23 @@ export default function AdminProducts() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: d => d.id ? db.Product.update(d.id, d) : db.Product.create(d),
-    onSuccess: () => { qc.invalidateQueries(["admin-products"]); toast({ title: "Product saved" }); setEditing(null); },
+    mutationFn: (/** @type {any} */ d) => d.id ? db.Product.update(d.id, d) : db.Product.create(d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); toast({ title: "Product saved" }); setEditing(null); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: id => db.Product.delete(id),
-    onSuccess: () => { qc.invalidateQueries(["admin-products"]); toast({ title: "Product deleted" }); },
+    mutationFn: (/** @type {any} */ id) => db.Product.delete(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); toast({ title: "Product deleted" }); },
   });
 
   const bulkApprove = async (ids) => {
     await Promise.all(ids.map(id => db.Product.update(id, { status: "active" })));
-    qc.invalidateQueries(["admin-products"]); toast({ title: `${ids.length} products approved` });
+    qc.invalidateQueries({ queryKey: ["admin-products"] }); toast({ title: `${ids.length} products approved` });
   };
 
   const bulkReject = async (ids) => {
     await Promise.all(ids.map(id => db.Product.update(id, { status: "rejected" })));
-    qc.invalidateQueries(["admin-products"]); toast({ title: `${ids.length} products rejected` });
+    qc.invalidateQueries({ queryKey: ["admin-products"] }); toast({ title: `${ids.length} products rejected` });
   };
 
   const columns = [

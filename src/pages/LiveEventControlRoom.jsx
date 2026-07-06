@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Activity, Users, Building2, QrCode, Wifi, ScanLine, Bookmark,
   MessageSquare, Calendar, AlertTriangle, CheckCircle2, RefreshCw,
-  Zap, TrendingUp, Clock, Server, Database, Globe, Radio
+  Zap, Server, Radio
 } from "lucide-react";
 
 const REFRESH_INTERVAL = 30000; // 30s
@@ -22,7 +22,7 @@ function LiveBadge() {
   );
 }
 
-function MetricCard({ icon: Icon, label, value, sub, color, bg, alert }) {
+function MetricCard({ icon: Icon, label, value, sub, color, bg, alert = false }) {
   return (
     <Card className={alert ? "border-red-300 bg-red-50/40" : ""}>
       <CardContent className="p-4">
@@ -180,7 +180,7 @@ export default function LiveEventControlRoom() {
       timestamp: r.created_date,
       type: "ocr",
     })),
-  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 20);
+  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 20);
 
   const metrics = [
     { icon: Users, label: "Active Connections (24h)", value: recentConnections.length, sub: `${connections.length} total`, color: "text-blue-600", bg: "bg-blue-50" },

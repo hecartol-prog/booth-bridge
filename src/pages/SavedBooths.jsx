@@ -10,7 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Bookmark, Search, Building2, MapPin, StickyNote, Trash2, ChevronRight, Filter
+  Bookmark, Search, Building2, MapPin, StickyNote, Trash2, Filter
 } from "lucide-react";
 import DigitalBooth from "./DigitalBooth";
 
@@ -46,12 +46,12 @@ export default function SavedBooths() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.SavedBooth.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.SavedBooth.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-booths"] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => db.SavedBooth.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.SavedBooth.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-booths"] }),
   });
 

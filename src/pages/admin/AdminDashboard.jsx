@@ -4,8 +4,7 @@ import { db } from "@/utils/dbClient";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Users, Building2, Package, FileText, MessageSquare, Calendar,
-  TrendingUp, DollarSign, Crown, Star, Zap, BarChart3, Activity,
+  Users, Building2, Package, FileText, MessageSquare, Calendar, DollarSign, Crown, Zap, BarChart3, Activity,
   ShieldCheck, Database, Globe, ArrowRight
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";

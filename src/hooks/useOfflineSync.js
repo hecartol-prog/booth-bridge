@@ -158,7 +158,7 @@ async function syncVisitorActions() {
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
-export function useOfflineSync({ onSyncComplete, onSyncError } = {}) {
+export function useOfflineSync(/** @type {{ onSyncComplete?: (count: number) => void, onSyncError?: (error: unknown) => void }} */ { onSyncComplete, onSyncError } = {}) {
   const syncingRef = useRef(false);
 
   const syncQueue = useCallback(async () => {

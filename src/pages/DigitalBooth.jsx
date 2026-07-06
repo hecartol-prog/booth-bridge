@@ -10,12 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
-  Building2, Globe, Mail, Phone, MessageCircle, Download, Bookmark,
-  BookmarkCheck, Package, FileText, ExternalLink, MapPin, ArrowLeft,
-  Share2, ChevronRight, Image, Loader2, Video, Film, Plus, Calendar
+  Building2, Globe, Mail, Phone, Download, Bookmark,
+  BookmarkCheck, Package, FileText, ExternalLink, MapPin, ArrowLeft, Image, Loader2, Video, Film, Plus, Calendar
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Link } from "react-router-dom";
 import OfflineBanner from "@/components/OfflineBanner";
 import { enqueueVisitorAction, VISITOR_ACTIONS, getPendingVisitorCount } from "@/utils/visitorInteractionQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
@@ -96,46 +94,6 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
   useEffect(() => { refreshPending(); }, [refreshPending]);
 
-  useEffect(() => {
-    let active = true;
-
-    const loadLogo = async () => {
-      const resolved = await resolveAssetUrl(profile?.logo_url);
-      if (active) setLogoUrl(resolved);
-    };
-
-    loadLogo();
-    return () => { active = false; };
-  }, [profile?.logo_url, resolveAssetUrl]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadCatalogUrls = async () => {
-      const entries = await Promise.all(
-        catalogs.map(async (catalog) => [catalog.id, await resolveAssetUrl(catalog.file_url)]),
-      );
-      if (active) setCatalogUrls(Object.fromEntries(entries));
-    };
-
-    loadCatalogUrls();
-    return () => { active = false; };
-  }, [catalogs, resolveAssetUrl]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadProductUrls = async () => {
-      const entries = await Promise.all(
-        products.map(async (product) => [product.id, await resolveAssetUrl(product.image_url)]),
-      );
-      if (active) setProductImageUrls(Object.fromEntries(entries));
-    };
-
-    loadProductUrls();
-    return () => { active = false; };
-  }, [products, resolveAssetUrl]);
-
   useOfflineSync({
     onSyncComplete: (n) => {
       toast({ title: `${n} offline action${n > 1 ? "s" : ""} synced` });
@@ -184,6 +142,46 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
     enabled: !!exhibitorUserId,
     placeholderData: () => cacheRead(BOOTH_CACHE_KEY)?.catalogs || [],
   });
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLogo = async () => {
+      const resolved = await resolveAssetUrl(profile?.logo_url);
+      if (active) setLogoUrl(resolved);
+    };
+
+    loadLogo();
+    return () => { active = false; };
+  }, [profile?.logo_url, resolveAssetUrl]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCatalogUrls = async () => {
+      const entries = await Promise.all(
+        catalogs.map(async (catalog) => [catalog.id, await resolveAssetUrl(catalog.file_url)]),
+      );
+      if (active) setCatalogUrls(Object.fromEntries(entries));
+    };
+
+    loadCatalogUrls();
+    return () => { active = false; };
+  }, [catalogs, resolveAssetUrl]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProductUrls = async () => {
+      const entries = await Promise.all(
+        products.map(async (product) => [product.id, await resolveAssetUrl(product.image_url)]),
+      );
+      if (active) setProductImageUrls(Object.fromEntries(entries));
+    };
+
+    loadProductUrls();
+    return () => { active = false; };
+  }, [products, resolveAssetUrl]);
 
   const { data: savedBooth } = useQuery({
     queryKey: ["saved-booth-check", user?.id, exhibitorUserId],

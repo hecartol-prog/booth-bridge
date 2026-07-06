@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  CheckCircle2, AlertCircle, XCircle, Building2, Package, FileText,
-  QrCode, Wifi, Image, Users, Star, MapPin, Download, RefreshCw, ChevronDown, ChevronUp
+  CheckCircle2, AlertCircle, XCircle, Building2, Star, Download, RefreshCw, ChevronDown, ChevronUp
 } from "lucide-react";
 import { exportGenericCSV } from "@/utils/csvExport";
 
@@ -55,7 +54,7 @@ function ReadinessGauge({ score }) {
   );
 }
 
-function CheckItem({ icon: Icon, label, passed, count, total, onDrill }) {
+function CheckItem({ icon: Icon = null, label, passed, count, total, onDrill }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 100;
   return (
     <div className="flex items-center gap-3 py-2.5 border-b last:border-0">

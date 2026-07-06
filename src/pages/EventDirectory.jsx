@@ -4,7 +4,6 @@ import { db } from "@/utils/dbClient";
 import OfflineBanner from "@/components/OfflineBanner";
 import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,7 +43,7 @@ export default function EventDirectory() {
     placeholderData: () => cacheRead("events") || [],
   });
 
-  const { data: exhibitorCounts = {} } = useQuery({
+  const { data: exhibitorCounts = { byEventId: {}, byName: {} } } = useQuery({
     queryKey: ["event-exhibitor-counts"],
     queryFn: async () => {
       const exhibitors = await db.ExhibitorProfile.list();

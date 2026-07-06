@@ -129,6 +129,17 @@ function isDirectOpenAiFallbackEnabled(): boolean {
   return (Deno.env.get("AI_ENABLE_DIRECT_OPENAI_FALLBACK") || "true").toLowerCase() !== "false";
 }
 
+const MAX_RETRY_BACKOFF_MS = 2000;
+const BASE_RETRY_BACKOFF_MS = 250;
+
+function retryBackoffMs(attemptIndex: number): number {
+  return Math.min(MAX_RETRY_BACKOFF_MS, BASE_RETRY_BACKOFF_MS * (2 ** attemptIndex));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function logStructured(level: "warn" | "error", event: string, payload: Record<string, unknown>) {
   const body = JSON.stringify({
     ts: new Date().toISOString(),
@@ -541,6 +552,15 @@ export async function complete(req: CompletionRequest): Promise<CompletionResult
           attempts,
         });
       }
+
+      const delayMs = retryBackoffMs(index);
+      logStructured("warn", "provider_retry_backoff", {
+        provider: route.provider,
+        gateway: route.gateway,
+        delay_ms: delayMs,
+        attempt_number: index + 1,
+      });
+      await sleep(delayMs);
     }
   }
 

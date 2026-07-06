@@ -3,7 +3,7 @@ import { appParams } from '@/lib/app-params';
 
 const { appId, token, functionsVersion, appBaseUrl } = appParams;
 
-//Create a client with authentication required
+/** @type {import('@base44/sdk').Base44Client} */
 export const base44 = createClient({
   appId,
   token,

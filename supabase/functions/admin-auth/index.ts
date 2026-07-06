@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   if (cors) return cors;
 
   if (req.method !== "POST") {
-    return jsonResponse(errorEnvelope("Method not allowed.", { code: "METHOD_NOT_ALLOWED" }), 405);
+    return jsonResponse(req, errorEnvelope("Method not allowed.", { code: "METHOD_NOT_ALLOWED" }), 405);
   }
 
   const started = Date.now();
@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
 
     if (!email || !password) {
       return jsonResponse(
+        req,
         errorEnvelope("Email and password are required.", {
           code: "INVALID_REQUEST",
           latency: Date.now() - started,
@@ -29,9 +30,11 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceRoleKey) {
+    if (!supabaseUrl || (!anonKey && !serviceRoleKey)) {
       return jsonResponse(
+        req,
         errorEnvelope("Supabase environment is not configured.", {
           code: "CONFIG_ERROR",
           latency: Date.now() - started,
@@ -50,6 +53,7 @@ Deno.serve(async (req) => {
 
       if (!valid) {
         return jsonResponse(
+          req,
           errorEnvelope("Invalid admin credentials.", {
             code: "AI_AUTHENTICATION",
             latency: Date.now() - started,
@@ -59,6 +63,7 @@ Deno.serve(async (req) => {
       }
 
       return jsonResponse(
+        req,
         successEnvelope({
           result: { success: true, mode: "env_credentials" },
           provider: "supabase",
@@ -68,13 +73,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    const authKey = anonKey || serviceRoleKey!;
+    const supabase = createClient(supabaseUrl, authKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
       return jsonResponse(
+        req,
         errorEnvelope(error?.message ?? "Invalid admin credentials.", {
           code: "AI_AUTHENTICATION",
           latency: Date.now() - started,
@@ -85,6 +92,7 @@ Deno.serve(async (req) => {
 
     if (!isAdminUser(data.user)) {
       return jsonResponse(
+        req,
         successEnvelope({
           result: { success: false },
           provider: "supabase",
@@ -95,6 +103,7 @@ Deno.serve(async (req) => {
     }
 
     return jsonResponse(
+      req,
       successEnvelope({
         result: { success: true, mode: "supabase_role" },
         provider: "supabase",
@@ -105,6 +114,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return jsonResponse(
+      req,
       errorEnvelope(message, {
         code: "EDGE_FUNCTION_ERROR",
         latency: Date.now() - started,

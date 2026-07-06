@@ -5,12 +5,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Search, Package, Bookmark, Building2, Trash2, StickyNote, Image,
+  Search, Package, Bookmark, Trash2, StickyNote, Image,
   BookmarkCheck
 } from "lucide-react";
 
@@ -34,12 +33,12 @@ export default function MyLibrary() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.SavedProduct.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.SavedProduct.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-products"] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => db.SavedProduct.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.SavedProduct.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-products"] }),
   });
 

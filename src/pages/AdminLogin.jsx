@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { auth } from "@/api/authClient";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";

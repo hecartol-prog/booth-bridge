@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  ScanLine, Camera, Upload, CheckCircle2, Loader2,
-  User, Building2, Mail, Phone, Globe, MapPin, Edit, Save, X
+  ScanLine, Camera, Upload, CheckCircle2, Loader2, Edit, Save, X
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { sanitizeOCRResult, validateFieldPattern } from "@/utils/securitySanitizer";
@@ -47,7 +46,7 @@ export default function OCRScanner() {
       const { file_url } = await uploadOcrScan(file, user?.id || "anonymous");
       const extractionUrl = (await storage.getSignedUrl(file_url)) || file_url;
       setImageUrl(file_url);
-      const response = await extractOcrScan({ scanType, imageUrl: extractionUrl });
+      const response = await extractOcrScan({ scanType: /** @type {"business_card" | "badge"} */ (scanType), imageUrl: extractionUrl });
       if (!response.success) throw new Error(response.error?.message || "OCR failed");
       const sanitized = sanitizeOCRResult(response.result);
       setEditData({ ...sanitized });

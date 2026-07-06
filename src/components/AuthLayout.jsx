@@ -1,10 +1,17 @@
 import React from "react";
-import { useI18n } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children, onLogoClick, adminLinkVisible }) {
+export default function AuthLayout({
+  icon: Icon,
+  title,
+  subtitle,
+  footer = null,
+  children,
+  onLogoClick = undefined,
+  adminLinkVisible = false,
+}) {
   return (
     <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start sm:justify-center py-10 px-4">
       {/* Language switcher top-right */}

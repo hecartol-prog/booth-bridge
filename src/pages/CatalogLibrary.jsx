@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, FileText, Upload, Trash2, Download, Building2, Package } from "lucide-react";
+import { Plus, FileText, Upload, Trash2, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const typeLabels = {
@@ -85,7 +85,7 @@ export default function CatalogLibrary() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => db.CatalogItem.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.CatalogItem.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-catalogs"] }),
   });
 

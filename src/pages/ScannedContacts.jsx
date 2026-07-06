@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   ScanLine, Search, User, Building2, Mail, Phone,
-  Trash2, MessageCircle, Calendar, Filter, Plus
+  Trash2, Plus
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,12 +34,12 @@ export default function ScannedContacts() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.ScannedContact.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.ScannedContact.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["scanned-contacts", user?.id] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => db.ScannedContact.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.ScannedContact.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scanned-contacts", user?.id] });
       toast({ title: "Contact deleted" });

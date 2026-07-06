@@ -37,7 +37,7 @@ export default function RFIInbox() {
   });
 
   const replyMutation = useMutation({
-    mutationFn: async ({ id, reply }) => {
+    mutationFn: async (/** @type {any} */ { id, reply }) => {
       await db.RFI.update(id, { reply, status: "replied" });
       const rfi = rfis.find(r => r.id === id);
       if (rfi) {

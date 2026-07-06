@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Nfc, Smartphone, Users, Activity, Plus, Edit, Copy, CheckCircle2,
-  Zap, QrCode, Star, BarChart2, Wifi, WifiOff
+  Nfc, Smartphone, Users, Activity, Edit, Copy, CheckCircle2,
+  Zap, BarChart2, WifiOff
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import NFCProfileCard from "@/components/nfc/NFCProfileCard";
@@ -73,7 +72,7 @@ export default function NFCExchange() {
   }, [nfcProfile, user]);
 
   const saveMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (/** @type {any} */ data) => {
       if (nfcProfile) {
         return db.NFCProfile.update(nfcProfile.id, data);
       } else {

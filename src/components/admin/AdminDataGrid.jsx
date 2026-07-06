@@ -1,23 +1,36 @@
 import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight,
-  Download, Trash2, CheckSquare, Square, MoreHorizontal, Filter, X
+  Download, CheckSquare, Square, Filter, X
 } from "lucide-react";
 
+/**
+ * @param {{
+ *   data?: any[],
+ *   columns?: any[],
+ *   isLoading?: boolean,
+ *   onRowClick?: (row: any) => void,
+ *   bulkActions?: any[],
+ *   onExport?: (rows?: any[]) => void,
+ *   title?: string,
+ *   subtitle?: string,
+ *   actions?: import('react').ReactNode,
+ *   filterOptions?: any[],
+ * }} props
+ */
 export default function AdminDataGrid({
   data = [],
   columns = [],
   isLoading = false,
-  onRowClick,
+  onRowClick = undefined,
   bulkActions = [],
-  onExport,
-  title,
-  subtitle,
-  actions,
+  onExport = undefined,
+  title = undefined,
+  subtitle = undefined,
+  actions = undefined,
   filterOptions = [],
 }) {
   const [search, setSearch] = useState("");

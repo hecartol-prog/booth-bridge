@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadCompanyLogo, uploadProductImage, uploadCatalog } from "@/utils/assetPipeline";
 import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
@@ -178,7 +178,7 @@ export default function ExhibitorSetupWizard() {
     } else {
       await db.ExhibitorProfile.create(data);
     }
-    qc.invalidateQueries(["esw-profile"]);
+    qc.invalidateQueries({ queryKey: ["esw-profile"] });
     setSaving(false);
   };
 

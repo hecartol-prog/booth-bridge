@@ -43,7 +43,7 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const result = await auth.verifyOtp({ email, otpCode });
+      const result = /** @type {{ access_token?: string }} */ (await auth.verifyOtp({ email, otpCode }));
       if (result?.access_token) {
         auth.setToken(result.access_token);
       }

@@ -22,14 +22,16 @@ export const AI_ERROR_CODES = {
  */
 export function normalizeAiError(error, context = {}) {
   const provider = context.provider || "unknown";
+  const err = error instanceof Error ? error : null;
+  const errRecord = error && typeof error === "object" ? /** @type {Record<string, unknown>} */ (error) : null;
   const message =
-    error?.message ||
+    err?.message ||
     (typeof error === "string" ? error : "AI request failed");
 
   let code = context.code || AI_ERROR_CODES.UNKNOWN;
   const lower = message.toLowerCase();
 
-  if (error?.name === "AbortError" || lower.includes("aborted")) {
+  if (err?.name === "AbortError" || lower.includes("aborted")) {
     code = AI_ERROR_CODES.CANCELLED;
   } else if (lower.includes("timeout") || lower.includes("timed out")) {
     code = AI_ERROR_CODES.TIMEOUT;
@@ -46,7 +48,7 @@ export function normalizeAiError(error, context = {}) {
     code = AI_ERROR_CODES.NETWORK;
   } else if (lower.includes("json") || lower.includes("parse")) {
     code = AI_ERROR_CODES.MALFORMED_JSON;
-  } else if (lower.includes("edge function") || error?.context === "edge_function") {
+  } else if (lower.includes("edge function") || errRecord?.context === "edge_function") {
     code = AI_ERROR_CODES.EDGE_FUNCTION;
   } else if (provider === "base44") {
     code = AI_ERROR_CODES.BASE44;
@@ -64,7 +66,7 @@ export function normalizeAiError(error, context = {}) {
       AI_ERROR_CODES.NETWORK,
       AI_ERROR_CODES.PROVIDER_UNAVAILABLE,
     ].includes(code),
-    details: error?.details || error?.cause || null,
+    details: errRecord?.details || errRecord?.cause || null,
   };
 }
 

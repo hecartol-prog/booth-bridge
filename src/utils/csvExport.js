@@ -40,7 +40,7 @@ function downloadCSV(csv, filename) {
 /**
  * Export exhibitor leads (accepted connections) to CSV.
  */
-export function exportLeadsCSV({ connections = [], rfis = [], meetings = [], filename }) {
+export function exportLeadsCSV({ connections = [], rfis = [], meetings = [], filename = "leads-export.csv" }) {
   const headers = [
     "Name", "Company", "Email", "Country",
     "Booth", "Event", "Connected At",

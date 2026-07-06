@@ -13,7 +13,8 @@ function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
     req.onupgradeneeded = (e) => {
-      const db = e.target.result;
+      const request = /** @type {any} */ (e.target);
+      const db = /** @type {IDBDatabase} */ (request.result);
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
       }

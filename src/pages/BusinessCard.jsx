@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Edit2, Save, Globe, Mail, Phone, Link2, Building2 } from "lucide-react";
+import { CreditCard, Edit2, Save, Globe, Mail, Phone, Link2 } from "lucide-react";
 
 export default function BusinessCard() {
   const { user } = useAuth();

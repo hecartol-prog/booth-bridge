@@ -48,7 +48,7 @@ export default function AdminCatalogues() {
   });
 
   const saveMut = useMutation({
-    mutationFn: ({ id, data }) => id
+    mutationFn: (/** @type {any} */ { id, data }) => id
       ? db.CatalogItem.update(id, data)
       : db.CatalogItem.create(data),
     onSuccess: () => {
@@ -60,7 +60,7 @@ export default function AdminCatalogues() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => db.CatalogItem.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.CatalogItem.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-catalogues"] });
       toast({ title: "Catalogue deleted" });

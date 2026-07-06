@@ -45,12 +45,12 @@ export function uploadProductImage(file, userId) {
 }
 
 /** Catalog PDFs / documents → boothbridge-assets */
-export function uploadCatalog(file, { userId, companyId } = {}) {
+export function uploadCatalog(file, /** @type {{ userId?: string, companyId?: string }} */ { userId, companyId } = {}) {
   return uploadWithDestination("catalog", file, { userId, companyId });
 }
 
 /** Event banners / maps → boothbridge-assets */
-export function uploadEventBranding(file, { eventId, userId } = {}) {
+export function uploadEventBranding(file, /** @type {{ eventId?: string, userId?: string }} */ { eventId, userId } = {}) {
   return uploadWithDestination("event_branding", file, { eventId, userId });
 }
 

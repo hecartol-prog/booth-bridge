@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
-  Users, Check, X, Search, MessageSquare, FileText, Calendar,
+  Users, Check, X, Search, MessageSquare,
   Building2, Briefcase, Clock, Star
 } from "lucide-react";
 import { format } from "date-fns";
@@ -74,7 +74,7 @@ export default function Connections() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.Connection.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.Connection.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["connections"] }),
   });
 

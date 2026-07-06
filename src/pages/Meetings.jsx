@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar, Clock, Plus, Check, X, Download } from "lucide-react";
-import { format } from "date-fns";
-import { formatMeetingSlot, setVenueTimezone, getVenueTimezone } from "@/utils/venueTimezone";
+import { formatMeetingSlot, setVenueTimezone } from "@/utils/venueTimezone";
 
 export default function Meetings() {
   const { user } = useAuth();
@@ -54,7 +53,7 @@ export default function Meetings() {
         if (seen.has(m.id)) return false;
         seen.add(m.id);
         return true;
-      }).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      }).sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime());
     },
     enabled: !!user?.id,
   });
@@ -90,7 +89,7 @@ export default function Meetings() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async ({ connId, connList }) => {
+    mutationFn: async (/** @type {any} */ { connId, connList }) => {
       const conn = connList.find(c => c.id === connId);
       if (!conn) return;
       const targetId = user.user_role === "exhibitor" ? conn.buyer_user_id : conn.exhibitor_user_id;
@@ -126,7 +125,7 @@ export default function Meetings() {
   });
 
   const respondMutation = useMutation({
-    mutationFn: async ({ id, status }) => {
+    mutationFn: async (/** @type {any} */ { id, status }) => {
       await db.Meeting.update(id, { status });
       const meeting = meetings.find(m => m.id === id);
       if (meeting) {

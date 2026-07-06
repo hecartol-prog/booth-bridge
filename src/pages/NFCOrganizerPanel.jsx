@@ -39,7 +39,7 @@ export default function NFCOrganizerPanel() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, active }) => db.NFCProfile.update(id, { active }),
+    mutationFn: (/** @type {any} */ { id, active }) => db.NFCProfile.update(id, { active }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-nfc-profiles"] });
       toast({ title: "NFC profile updated" });
@@ -47,7 +47,7 @@ export default function NFCOrganizerPanel() {
   });
 
   const toggleTagMutation = useMutation({
-    mutationFn: ({ id, active_status }) => db.NFCProductTag.update(id, { active_status }),
+    mutationFn: (/** @type {any} */ { id, active_status }) => db.NFCProductTag.update(id, { active_status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["nfc-product-tags"] }),
   });
 

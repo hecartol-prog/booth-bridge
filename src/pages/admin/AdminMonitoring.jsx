@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,12 @@ export default function AdminMonitoring() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => db.SystemAlert.create(data),
+    mutationFn: (/** @type {any} */ data) => db.SystemAlert.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["system-alerts"] }); setCreating(false); setForm({ title: "", message: "", severity: "info", category: "system" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.SystemAlert.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.SystemAlert.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["system-alerts"] }),
   });
 

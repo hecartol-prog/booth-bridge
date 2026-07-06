@@ -3,17 +3,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Flame, Users, Search, ArrowLeft, TrendingUp,
-  Building2, Globe, Calendar, FileText, Package, Download
+  Flame, Users, Search, ArrowLeft, TrendingUp, Calendar, FileText, Download
 } from "lucide-react";
 import { calculateLeadScore, getLeadTemperature, TEMPERATURE_BANDS } from "@/utils/leadScoring";
 import { formatMeetingSlot } from "@/utils/venueTimezone";
 import { exportLeadsCSV } from "@/utils/csvExport";
-import { Link } from "react-router-dom";
 
 export default function LeadIntelligence() {
   const { user } = useAuth();
@@ -175,7 +172,7 @@ function LeadDetailView({ lead, onBack }) {
     ...lead.interactions.map(i => ({ date: i.created_date, type: i.interaction_type, label: i.interaction_type?.replace(/_/g, " ") })),
     ...lead.rfis.map(r => ({ date: r.created_date, type: "rfi", label: `RFI: ${r.request_type?.replace(/_/g, " ")}` })),
     ...lead.meetings.map(m => ({ date: m.created_date, type: "meeting", label: `Meeting: ${m.status}` })),
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">

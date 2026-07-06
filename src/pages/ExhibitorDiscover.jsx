@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Search, Building2, MapPin, Globe, Package, ChevronRight, X, Filter
+  Search, Building2, MapPin, Package, ChevronRight, X, Filter
 } from "lucide-react";
 import DigitalBooth from "./DigitalBooth";
 import OfflineBanner from "@/components/OfflineBanner";

@@ -46,7 +46,7 @@ export default function Products() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => db.Product.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.Product.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });
 

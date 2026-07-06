@@ -10,7 +10,6 @@ import {
   ChevronDown, Search, CheckCircle2, Radio, HeadphonesIcon,
   Ticket, ScanLine, FlaskConical, Monitor
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
 
@@ -104,7 +103,7 @@ export default function AdminLayout() {
 
   const toggleGroup = (label) => setCollapsed(c => ({ ...c, [label]: !c[label] }));
 
-  const SidebarContent = ({ onNavigate }) => (
+  const SidebarContent = ({ onNavigate = () => {} }) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 border-b border-white/10">

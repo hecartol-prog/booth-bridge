@@ -35,11 +35,15 @@ function base44NotSupported(method) {
  *   eventId?: string,
  *   upsert?: boolean,
  *   contentType?: string,
+ *   filename?: string,
  * }} [options]
  * @returns {Promise<{ file_url: string, file_path?: string, bucket?: string }>}
  */
 export async function upload(file, options = {}) {
   if (isBase44()) {
+    if (!(file instanceof File)) {
+      throw new Error("[storageClient] Base44 upload requires a File instance");
+    }
     const result = await base44.integrations.Core.UploadFile({ file });
     return {
       file_url: result.file_url,
@@ -95,7 +99,8 @@ export async function getSignedUrl(fileRef, options = {}) {
       file_uri: fileRef,
       expires_in: expiresIn,
     });
-    return result?.signed_url || null;
+    const signed = /** @type {{ signed_url?: string } | null} */ (result);
+    return signed?.signed_url || null;
   }
 
   return supabaseStorage.supabaseGetSignedUrl(fileRef, options);

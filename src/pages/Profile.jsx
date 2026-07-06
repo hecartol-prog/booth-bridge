@@ -22,7 +22,7 @@ export default function Profile() {
   const isExhibitor = user?.user_role === "exhibitor";
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState(/** @type {Record<string, any>} */ ({}));
   const [newInterest, setNewInterest] = useState("");
 
   const { data: profile, isLoading } = useQuery({

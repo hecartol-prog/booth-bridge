@@ -95,32 +95,34 @@ function normalizeOperatorObject(value) {
  * @param {import('@supabase/supabase-js').PostgrestFilterBuilder} query
  */
 function applyClause(query, column, operator, operand) {
+  /** @type {any} */
+  const q = query;
   switch (operator) {
     case "eq":
-      return query.eq(column, operand);
+      return q.eq(column, operand);
     case "neq":
-      return query.neq(column, operand);
+      return q.neq(column, operand);
     case "gt":
-      return query.gt(column, operand);
+      return q.gt(column, operand);
     case "gte":
-      return query.gte(column, operand);
+      return q.gte(column, operand);
     case "lt":
-      return query.lt(column, operand);
+      return q.lt(column, operand);
     case "lte":
-      return query.lte(column, operand);
+      return q.lte(column, operand);
     case "like":
-      return query.like(column, operand);
+      return q.like(column, operand);
     case "ilike":
-      return query.ilike(column, operand);
+      return q.ilike(column, operand);
     case "in":
-      return query.in(column, Array.isArray(operand) ? operand : [operand]);
+      return q.in(column, Array.isArray(operand) ? operand : [operand]);
     case "contains":
       if (typeof operand === "string") {
-        return query.ilike(column, `%${operand}%`);
+        return q.ilike(column, `%${operand}%`);
       }
-      return query.contains(column, operand);
+      return q.contains(column, operand);
     default:
-      return query.eq(column, operand);
+      return q.eq(column, operand);
   }
 }
 

@@ -3,7 +3,7 @@ import { auth } from '@/api/authClient';
 import { appParams } from '@/lib/app-params';
 import { isSupabase } from '@/config/backend';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

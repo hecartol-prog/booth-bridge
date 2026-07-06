@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -24,7 +23,7 @@ export default function AdminConnections() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => db.Connection.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.Connection.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-connections"] });
       toast({ title: "Connection deleted" });

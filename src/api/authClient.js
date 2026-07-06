@@ -96,13 +96,20 @@ export async function resetPassword(emailOrPayload, newPassword) {
     emailOrPayload && typeof emailOrPayload === "object"
       ? emailOrPayload
       : { resetToken: emailOrPayload, newPassword };
+  if (!payload.resetToken || !payload.newPassword) {
+    throw new Error("resetToken and newPassword are required to complete password reset");
+  }
+  const resetPayload = /** @type {{ resetToken: string, newPassword: string }} */ ({
+    resetToken: payload.resetToken,
+    newPassword: payload.newPassword,
+  });
   if (isBase44()) {
     if (typeof base44.auth.resetPassword === "function") {
-      return base44.auth.resetPassword(payload);
+      return base44.auth.resetPassword(resetPayload);
     }
     throw new Error("resetPassword not supported by current Base44 SDK");
   }
-  return supabaseAuth.supabaseCompletePasswordReset(payload);
+  return supabaseAuth.supabaseCompletePasswordReset(resetPayload);
 }
 
 export async function updatePassword(newPassword) {
@@ -146,11 +153,11 @@ export function onAuthStateChange(callback) {
 }
 
 export function signInWithGoogle(redirectPath = "/") {
-  return signInWithProvider("google", redirectPath);
+  return loginWithProvider("google", redirectPath);
 }
 
 export function signInWithLinkedIn(redirectPath = "/") {
-  return signInWithProvider("linkedin", redirectPath);
+  return loginWithProvider("linkedin", redirectPath);
 }
 
 export function loginWithProvider(provider, redirectPathAfter = "/") {
@@ -245,7 +252,8 @@ export async function checkAppReady() {
 export async function adminLogin(email, password) {
   if (isBase44()) {
     const response = await base44.functions.invoke("adminAuth", { email, password });
-    if (response?.data?.success) {
+    const payload = /** @type {{ data?: { success?: boolean } }} */ (response);
+    if (payload?.data?.success) {
       sessionStorage.setItem("bb_admin_authed", "true");
     }
     return response;

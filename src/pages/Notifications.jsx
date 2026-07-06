@@ -4,7 +4,6 @@ import { db } from "@/utils/dbClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Bell, Users, Inbox, Calendar, CheckCheck, Camera } from "lucide-react";
 import { format } from "date-fns";
 

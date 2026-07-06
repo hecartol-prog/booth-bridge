@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   CheckCircle2, XCircle, RefreshCw, Plug, PlugZap, AlertCircle,
-  BarChart2, Calendar, Users, Zap, Clock, ArrowUpRight
+  BarChart2, Zap, Clock
 } from "lucide-react";
 
 const PROVIDERS = [
@@ -122,13 +122,13 @@ export default function IntegrationHub() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_active }) =>
+    mutationFn: (/** @type {any} */ { id, is_active }) =>
       db.IntegrationConnection.update(id, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
   });
 
   const disconnectMutation = useMutation({
-    mutationFn: (id) =>
+    mutationFn: (/** @type {any} */ id) =>
       db.IntegrationConnection.update(id, { status: "disconnected", is_active: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
   });

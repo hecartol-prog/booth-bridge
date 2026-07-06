@@ -6,14 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Users, Building2, MessageSquare, Calendar, FileText, Download,
-  TrendingUp, Trophy, Globe, BarChart3, Star, Activity, QrCode, Bookmark,
+  Users, Building2, MessageSquare, Calendar, Download,
+  TrendingUp, Globe, Star, Activity, Bookmark,
   CheckCircle2, Radio, HeadphonesIcon
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
 import { exportGenericCSV } from "@/utils/csvExport";
 

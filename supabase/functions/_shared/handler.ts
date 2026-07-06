@@ -30,7 +30,7 @@ export async function handleAiRequest(
   if (cors) return cors;
 
   if (req.method !== "POST") {
-    return jsonResponse(errorEnvelope("Method not allowed.", { code: "METHOD_NOT_ALLOWED" }), 405);
+    return jsonResponse(req, errorEnvelope("Method not allowed.", { code: "METHOD_NOT_ALLOWED" }), 405);
   }
 
   const started = Date.now();
@@ -40,6 +40,7 @@ export async function handleAiRequest(
       const auth = await validateJwt(req);
       if (!auth.ok) {
         return jsonResponse(
+          req,
           errorEnvelope(auth.message, { code: "AI_AUTHENTICATION", latency: Date.now() - started }),
           auth.status,
         );
@@ -53,6 +54,7 @@ export async function handleAiRequest(
 
     if (!completionReq.prompt && !completionReq.messages?.length && !completionReq.file_url && !completionReq.file_urls?.length) {
       return jsonResponse(
+        req,
         errorEnvelope("prompt, messages, or file_url(s) required.", {
           code: "INVALID_REQUEST",
           latency: Date.now() - started,
@@ -93,7 +95,7 @@ export async function handleAiRequest(
       envelope.result = text;
     }
 
-    return jsonResponse(envelope);
+    return jsonResponse(req, envelope);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const gatewayError = error as Error & {
@@ -137,6 +139,7 @@ export async function handleAiRequest(
     }));
 
     return jsonResponse(
+      req,
       errorEnvelope(message, {
         code,
         retryable,

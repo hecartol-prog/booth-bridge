@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminDataGrid from "@/components/admin/AdminDataGrid";
 import { exportToCSV } from "@/utils/adminExport";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { DollarSign, Crown, Star, TrendingUp, Zap, Edit, RefreshCcw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -26,8 +26,8 @@ export default function AdminRevenue() {
   const { data: billingSubs = [] } = useQuery({ queryKey: ["admin-billing-subs"], queryFn: () => db.BillingSubscription.list() });
 
   const updateSub = useMutation({
-    mutationFn: d => db.PremiumBoothSubscription.update(d.id, d),
-    onSuccess: () => { qc.invalidateQueries(["admin-subs"]); toast({ title: "Subscription updated" }); setEditing(null); },
+    mutationFn: (/** @type {any} */ d) => db.PremiumBoothSubscription.update(d.id, d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-subs"] }); toast({ title: "Subscription updated" }); setEditing(null); },
   });
 
   const activeSubs = subscriptions.filter(s => s.status === "active");

@@ -3,10 +3,9 @@ import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Nfc, Mail, Phone, Globe, Linkedin, MapPin, MessageCircle,
-  UserPlus, Calendar, FolderPlus, BookOpen, Loader2, CheckCircle2
+  UserPlus, Loader2, CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 

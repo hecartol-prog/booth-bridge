@@ -14,7 +14,8 @@ function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 2); // bump version to add new store
     req.onupgradeneeded = (e) => {
-      const db = e.target.result;
+      const request = /** @type {any} */ (e.target);
+      const db = /** @type {IDBDatabase} */ (request.result);
       if (!db.objectStoreNames.contains("scan_queue")) {
         db.createObjectStore("scan_queue", { keyPath: "id", autoIncrement: true });
       }

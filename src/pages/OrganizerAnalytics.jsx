@@ -3,14 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
-  Users, Building2, MessageSquare, Calendar, FileText, Download,
+  Users, Building2, MessageSquare, Calendar, Download,
   TrendingUp, Trophy, Activity
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  FunnelChart, Funnel, LabelList, Cell
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
 
 export default function OrganizerAnalytics() {

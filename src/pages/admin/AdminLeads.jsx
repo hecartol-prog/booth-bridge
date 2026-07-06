@@ -27,13 +27,13 @@ export default function AdminLeads() {
   const { data: rfis = [], isLoading: loadingRFIs } = useQuery({ queryKey: ["admin-rfis"], queryFn: () => db.RFI.list() });
 
   const updateLead = useMutation({
-    mutationFn: d => db.LeadProfile.update(d.id, d),
-    onSuccess: () => { qc.invalidateQueries(["admin-leads"]); toast({ title: "Lead updated" }); setEditing(null); },
+    mutationFn: (/** @type {any} */ d) => db.LeadProfile.update(d.id, d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-leads"] }); toast({ title: "Lead updated" }); setEditing(null); },
   });
 
   const deleteLead = useMutation({
-    mutationFn: id => db.LeadProfile.delete(id),
-    onSuccess: () => { qc.invalidateQueries(["admin-leads"]); toast({ title: "Lead deleted" }); },
+    mutationFn: (/** @type {any} */ id) => db.LeadProfile.delete(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-leads"] }); toast({ title: "Lead deleted" }); },
   });
 
   const leadColumns = [

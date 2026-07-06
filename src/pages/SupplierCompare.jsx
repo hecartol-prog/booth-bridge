@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, saveEvaluation } from "@/utils/dbClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Building2, Star, Plus, Loader2, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Building2, Star, Loader2, SlidersHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -39,7 +39,7 @@ function EvalCell({ mapping, fieldKey, fieldType, queryClient, toast }) {
   const [val, setVal] = useState(mapping[fieldKey] ?? "");
 
   const mut = useMutation({
-    mutationFn: (v) => saveEvaluation(mapping.id, { [fieldKey]: fieldType === "number" ? Number(v) : v }),
+    mutationFn: (/** @type {any} */ v) => saveEvaluation(mapping.id, { [fieldKey]: fieldType === "number" ? Number(v) : v }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["compare-mappings"] });
       setEditing(false);

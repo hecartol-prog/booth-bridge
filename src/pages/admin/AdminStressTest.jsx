@@ -4,7 +4,7 @@ import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Zap, CheckCircle2, AlertTriangle, Download, BarChart3, Clock } from "lucide-react";
+import { Zap, Download, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 
 const ACTION_TYPES = ["qr_scan", "nfc_tap", "ocr_capture", "supplier_save", "product_save", "meeting_create", "follow_up"];
@@ -54,7 +54,7 @@ export default function AdminStressTest() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (data) => db.StressTestResult.create(data),
+    mutationFn: (/** @type {any} */ data) => db.StressTestResult.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["stress-tests"] }),
   });
 

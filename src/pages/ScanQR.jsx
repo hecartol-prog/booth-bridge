@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Link2, AlertCircle, Building2, Loader2, WifiOff, CloudUpload, CheckCircle2 } from "lucide-react";
+import { Camera, Link2, AlertCircle, Building2, Loader2, WifiOff, CloudUpload } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import DigitalBooth from "./DigitalBooth";
 import { enqueueScan, getPendingCount } from "@/utils/offlineScanQueue";

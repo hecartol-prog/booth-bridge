@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, AlertTriangle, CheckCircle2, XCircle, Radio, BarChart3 } from "lucide-react";
+import { ShieldCheck, AlertTriangle, CheckCircle2, XCircle, Radio } from "lucide-react";
 
 export default function AdminNFCValidation() {
   const [running, setRunning] = useState(false);

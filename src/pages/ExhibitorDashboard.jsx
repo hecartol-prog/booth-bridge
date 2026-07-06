@@ -3,7 +3,6 @@ import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Inbox, Calendar, TrendingUp, FileText, CreditCard, Flame, Download, Wand2 } from "lucide-react";
 import { calculateLeadScore, getLeadTemperature } from "@/utils/leadScoring";

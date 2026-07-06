@@ -13,7 +13,7 @@ const LANGUAGES = ["English", "Chinese (Simplified)", "Arabic", "French", "Germa
 const CURRENCIES = ["USD", "EUR", "GBP", "CNY", "JPY", "AED", "INR", "BRL", "CAD", "AUD"];
 const TIMEZONES = ["UTC", "Asia/Shanghai", "America/New_York", "Europe/London", "America/Los_Angeles", "Asia/Dubai", "Asia/Tokyo"];
 
-function SettingRow({ label, description, children }) {
+function SettingRow({ label, description = undefined, children }) {
   return (
     <div className="flex items-center justify-between py-4 border-b last:border-0">
       <div>

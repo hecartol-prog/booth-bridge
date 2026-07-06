@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Ticket, Search, Clock, AlertTriangle, CheckCircle2, Filter } from "lucide-react";
+import { Ticket, Search } from "lucide-react";
 import { format } from "date-fns";
 
 const PRIORITY_COLORS = { low: "bg-slate-100 text-slate-700", medium: "bg-blue-100 text-blue-700", high: "bg-orange-100 text-orange-700", critical: "bg-red-100 text-red-700" };
@@ -29,12 +28,12 @@ export default function AdminSupportTickets() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.SupportTicket.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.SupportTicket.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["support-tickets"] }),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => db.SupportTicket.create({ ...data, ticket_number: `TKT-${Date.now()}` }),
+    mutationFn: (/** @type {any} */ data) => db.SupportTicket.create({ ...data, ticket_number: `TKT-${Date.now()}` }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["support-tickets"] }); setCreating(false); setForm({ subject: "", description: "", priority: "medium", category: "other", created_by: "admin", created_by_name: "Admin" }); },
   });
 

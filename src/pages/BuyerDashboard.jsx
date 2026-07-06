@@ -4,9 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Bookmark, Camera, Package, ArrowRight, Building2, FileText,
-  TrendingUp, FolderPlus, SlidersHorizontal, Nfc, ScanLine
+import { Camera, Package, ArrowRight, Building2, FileText, FolderPlus, SlidersHorizontal, Nfc, ScanLine
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -74,7 +72,7 @@ export default function BuyerDashboard() {
             meeting.proposed_time &&
             new Date(meeting.proposed_time) > new Date();
         })
-        .sort((a, b) => new Date(a.proposed_time) - new Date(b.proposed_time))
+        .sort((a, b) => new Date(a.proposed_time).getTime() - new Date(b.proposed_time).getTime())
         .slice(0, 5);
     },
     enabled: !!user?.id,

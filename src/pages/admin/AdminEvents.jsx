@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminDataGrid from "@/components/admin/AdminDataGrid";
-import { exportToCSV, exportToJSON } from "@/utils/adminExport";
+import { exportToCSV } from "@/utils/adminExport";
 import { Plus, Edit, Trash2, Copy, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -36,13 +35,13 @@ export default function AdminEvents() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (d) => d.id ? db.Event.update(d.id, d) : db.Event.create(d),
-    onSuccess: () => { qc.invalidateQueries(["admin-events"]); toast({ title: "Event saved" }); setEditing(null); setIsNew(false); },
+    mutationFn: (/** @type {any} */ d) => d.id ? db.Event.update(d.id, d) : db.Event.create(d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-events"] }); toast({ title: "Event saved" }); setEditing(null); setIsNew(false); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: id => db.Event.delete(id),
-    onSuccess: () => { qc.invalidateQueries(["admin-events"]); toast({ title: "Event deleted" }); },
+    mutationFn: (/** @type {any} */ id) => db.Event.delete(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-events"] }); toast({ title: "Event deleted" }); },
   });
 
   const openNew = () => { setEditing({ ...EMPTY }); setIsNew(true); };

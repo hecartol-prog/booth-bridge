@@ -6,10 +6,8 @@ import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Upload, Eye, Trash2, Download, Image, FileText, Film, Tag, Grid, List } from "lucide-react";
+import { Search, Upload, Eye, Trash2, Download, Image, FileText, Grid, List } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const TYPE_FILTERS = {
@@ -23,7 +21,7 @@ export default function AdminMedia() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const fileRef = useRef();
+  const fileRef = useRef(/** @type {HTMLInputElement | null} */ (null));
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [activeType, setActiveType] = useState("all");
@@ -36,8 +34,8 @@ export default function AdminMedia() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: id => db.Media.delete(id),
-    onSuccess: () => { qc.invalidateQueries(["admin-media"]); toast({ title: "Media deleted" }); },
+    mutationFn: (/** @type {any} */ id) => db.Media.delete(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-media"] }); toast({ title: "Media deleted" }); },
   });
 
   const handleUpload = async (files) => {
@@ -52,7 +50,7 @@ export default function AdminMedia() {
         title: file.name,
       });
     }
-    qc.invalidateQueries(["admin-media"]);
+    qc.invalidateQueries({ queryKey: ["admin-media"] });
     setUploading(false);
     toast({ title: `${files.length} file(s) uploaded` });
   };
@@ -73,7 +71,7 @@ export default function AdminMedia() {
           <p className="text-sm text-slate-500">{media.length} assets</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+          <Button variant="outline" size="sm" onClick={() => { fileRef.current?.click(); }} disabled={uploading}>
             <Upload className="w-4 h-4 mr-1" /> {uploading ? "Uploading..." : "Upload Files"}
           </Button>
           <input ref={fileRef} type="file" multiple className="hidden" accept="image/*,video/*,.pdf,.doc,.docx"

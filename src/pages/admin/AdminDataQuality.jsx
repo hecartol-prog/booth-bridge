@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle, RefreshCw, Shield, Users, Package, Building2, Mail, Link as LinkIcon, ImageOff } from "lucide-react";
+import { AlertTriangle, CheckCircle, RefreshCw, Shield } from "lucide-react";
 
 function IssueRow({ severity, label, count, items, description }) {
   const [open, setOpen] = useState(false);

@@ -4,16 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import {
-  BarChart3, Globe, Package, Download, Users, Eye,
-  TrendingUp, FileText, ArrowLeft
+  BarChart3, Globe, Package, Download, Users, Eye, FileText, ArrowLeft
 } from "lucide-react";
-import { exportLeadsCSV, exportGenericCSV } from "@/utils/csvExport";
+import { exportGenericCSV } from "@/utils/csvExport";
 import { Link } from "react-router-dom";
 
 const COLORS = ["hsl(221,73%,40%)", "hsl(213,65%,65%)", "hsl(170,55%,45%)", "hsl(340,65%,55%)", "hsl(200,70%,50%)"];

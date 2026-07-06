@@ -14,7 +14,7 @@ import { useToast } from "@/components/ui/use-toast";
 export default function AdminExhibitors() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState(/** @type {Record<string, any>} */ ({}));
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -26,7 +26,7 @@ export default function AdminExhibitors() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, data }) => db.ExhibitorProfile.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.ExhibitorProfile.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-exhibitors"] });
       setEditing(null);
@@ -35,7 +35,7 @@ export default function AdminExhibitors() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => db.ExhibitorProfile.delete(id),
+    mutationFn: (/** @type {any} */ id) => db.ExhibitorProfile.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-exhibitors"] });
       toast({ title: "Exhibitor deleted" });

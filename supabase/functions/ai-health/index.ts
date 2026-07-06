@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   if (cors) return cors;
 
   if (req.method !== "POST") {
-    return jsonResponse(errorEnvelope("Method not allowed.", { code: "METHOD_NOT_ALLOWED" }), 405);
+    return jsonResponse(req, errorEnvelope("Method not allowed.", { code: "METHOD_NOT_ALLOWED" }), 405);
   }
 
   const started = Date.now();
@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
     const auth = await validateJwt(req);
     if (!auth.ok) {
       return jsonResponse(
+        req,
         errorEnvelope(auth.message, { code: "AI_AUTHENTICATION", latency: Date.now() - started }),
         auth.status,
       );
@@ -40,6 +41,7 @@ Deno.serve(async (req) => {
     const latency = Date.now() - started;
 
     return jsonResponse(
+      req,
       successEnvelope({
         result: {
           status: probe?.ok === false ? "degraded" : "ok",
@@ -66,6 +68,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return jsonResponse(
+      req,
       errorEnvelope(message, {
         code: "EDGE_FUNCTION_ERROR",
         latency: Date.now() - started,

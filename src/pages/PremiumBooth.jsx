@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Star, Crown, Upload, Users, Award, BarChart3,
+  Star, Crown, Users, Award, BarChart3,
   Eye, QrCode, Bookmark, FileText, Calendar, ArrowLeft, Loader2, Plus, Trash2
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -64,7 +64,7 @@ export default function PremiumBooth() {
   });
 
   const updateProfile = useMutation({
-    mutationFn: (data) => db.ExhibitorProfile.update(profile.id, data),
+    mutationFn: (/** @type {any} */ data) => db.ExhibitorProfile.update(profile.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["premium-profile", user?.id] });
       setEditingSection(null);

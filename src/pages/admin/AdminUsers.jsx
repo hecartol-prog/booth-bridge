@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminDataGrid from "@/components/admin/AdminDataGrid";
 import { exportToCSV, exportToJSON } from "@/utils/adminExport";
-import { UserCheck, UserX, Edit, Download, Trash2 } from "lucide-react";
+import { Edit, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const ROLE_COLORS = { admin: "bg-red-100 text-red-700", user: "bg-slate-100 text-slate-700" };
@@ -24,8 +23,8 @@ export default function AdminUsers() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.User.update(id, data),
-    onSuccess: () => { qc.invalidateQueries(["admin-users"]); toast({ title: "User updated" }); setEditing(null); },
+    mutationFn: (/** @type {any} */ { id, data }) => db.User.update(id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-users"] }); toast({ title: "User updated" }); setEditing(null); },
   });
 
   const columns = [

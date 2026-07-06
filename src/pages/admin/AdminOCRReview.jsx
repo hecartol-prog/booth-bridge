@@ -2,12 +2,11 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScanLine, CheckCircle2, XCircle, AlertTriangle, Search, Eye } from "lucide-react";
+import { ScanLine, CheckCircle2, XCircle, Search, Eye } from "lucide-react";
 import { format } from "date-fns";
 
 const CONFIDENCE_COLOR = (score) => score >= 80 ? "text-green-600 bg-green-50" : score >= 60 ? "text-yellow-600 bg-yellow-50" : "text-red-600 bg-red-50";
@@ -25,7 +24,7 @@ export default function AdminOCRReview() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => db.ScannedContact.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => db.ScannedContact.update(id, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["scanned-contacts-review"] }); setSelected(null); },
   });
 
