@@ -1,24 +1,18 @@
 /**
- * Supabase client singleton — lazy-initialized when backend is supabase.
- * Not used while VITE_DATA_BACKEND=base44 (default).
+ * Supabase client singleton — lazy-initialized when env vars are present.
+ * Auth always uses this client regardless of VITE_DATA_BACKEND.
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { isSupabase, isSupabaseConfigured } from "@/config/backend";
+import { isSupabaseConfigured } from "@/config/backend";
 
 let client = null;
 
 /**
- * Returns the shared Supabase client. Throws if backend is not supabase or env is missing.
+ * Returns the shared Supabase client. Throws if Supabase env vars are missing.
  * @returns {import('@supabase/supabase-js').SupabaseClient}
  */
 export function getSupabaseClient() {
-  if (!isSupabase()) {
-    throw new Error(
-      "[supabaseClient] getSupabaseClient() requires VITE_DATA_BACKEND=supabase"
-    );
-  }
-
   if (!isSupabaseConfigured()) {
     throw new Error(
       "[supabaseClient] VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are required"
@@ -34,6 +28,7 @@ export function getSupabaseClient() {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          flowType: "pkce",
         },
       }
     );
@@ -46,6 +41,6 @@ export function getSupabaseClient() {
  * Safe check for Phase 1+ diagnostics without throwing.
  */
 export function tryGetSupabaseClient() {
-  if (!isSupabase() || !isSupabaseConfigured()) return null;
+  if (!isSupabaseConfigured()) return null;
   return getSupabaseClient();
 }

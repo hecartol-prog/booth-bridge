@@ -2,86 +2,97 @@
 
 ## Objective
 
-Replace OAuth-first authentication with an MVP-focused flow optimized for trade-show reliability and speed, while preserving OAuth implementation code for Phase 2.
+Replace OAuth-first authentication with a trade-show-first MVP flow:
 
-## Final Classification
+- Email/password registration
+- Supabase email verification
+- OCR-assisted registration
+- Manual registration
 
-**READY FOR MVP**
-
-## Architecture Decisions
-
-- Email/password is now the only active runtime authentication path in login/register UX.
-- Supabase email verification remains mandatory through `signUp` email confirmation flow.
-- OAuth abstraction remains intact in `authClient` and `supabaseAuth`, explicitly marked as reserved for Phase 2.
-- Business card OCR reuses existing OCR infrastructure (`uploadOcrScan`, `extractOcrScan`, existing sanitizer/validation utilities).
-- No schema changes were introduced; registration profile attributes are stored in Supabase auth metadata.
-
-## Screens Modified
-
-- `src/pages/Login.jsx`
-  - Removed Google and LinkedIn buttons.
-  - Kept only email, password, forgot password, sign in, and create account path.
-- `src/pages/Register.jsx`
-  - Added method selection screen:
-    - Primary: **Scan Business Card**
-    - Secondary: **Register Manually**
-  - Added unified registration form with required + optional MVP fields.
-  - Integrated OCR capture/upload and prefill.
-  - Added low-confidence highlighting + explicit user confirmation before OCR-based account creation.
-  - Removed OAuth and OTP-first UI from registration runtime path.
+Google and LinkedIn OAuth remain in code but are removed from MVP runtime UI paths.
 
 ## Files Changed
 
 - `src/pages/Login.jsx`
 - `src/pages/Register.jsx`
-- `src/api/supabaseAuth.js`
 - `src/api/authClient.js`
+- `src/api/supabaseAuth.js`
+- `src/api/supabaseClient.js`
+- `src/lib/AuthContext.jsx`
+- `src/components/layout/AdminLayout.jsx`
+- `src/App.jsx`
+- `src/vite-env.d.ts`
+- `vercel.json`
 - `docs/rc6-mvp-authentication-simplification.md`
 
-## Flow Implemented
+## Architecture Decisions
 
-1. User opens Register.
-2. User chooses one:
-   - Register manually
-   - Scan business card
-3. OCR flow (if selected):
-   - Camera/upload
-   - OCR extraction
-   - Form prefill
-   - Low-confidence warning/highlighting
-   - User confirmation required
-4. User submits registration form with password.
-5. Supabase email/password signup executes.
-6. User is instructed to verify email before login.
-7. User logs in via email/password.
+- Kept authentication abstraction layer intact: `authClient` delegates to `supabaseAuth`.
+- Removed OAuth entry points from Login/Register runtime UI.
+- Preserved OAuth implementation and provider mapping for future reactivation.
+- Added explicit Phase 2 comments on OAuth functions to prevent accidental MVP runtime usage.
+- Kept Supabase email verification flow active via `signUp(... options.emailRedirectTo ...)`.
+- Reused existing OCR extraction pipeline (`extractOcrScan`) for registration prefill.
+- Pre-auth registration OCR sends the image as a data URL to the AI gateway (no storage upload), avoiding Supabase Storage RLS that requires `auth.uid()` on `scans/{userId}/...` paths.
+- Added `vercel.json` SPA rewrites so client routes resolve on Vercel.
 
-## Validation Results
+## Screens Modified
 
-- Manual registration flow: **implemented**
-- OCR-assisted registration flow: **implemented**
-- Login flow (email/password only): **implemented**
-- Password reset flow: **retained and accessible**
-- Supabase email verification: **retained and required**
-- OAuth buttons in auth UI: **removed**
-- Build: **pass** (`npm run build`)
-- Lint: **pass** (`npm run lint`)
-- Typecheck: **pass** (`npm run typecheck`)
+- **Login (`/login`)**
+  - Email
+  - Password
+  - Forgot password
+  - Sign in
+  - Create account link
+  - No OAuth buttons
+
+- **Register (`/register`)**
+  - Screen 1: Mode selection
+    - Primary: Scan Business Card
+    - Secondary: Register Manually
+  - Screen 2: Registration form
+    - Required: First Name, Last Name, Email, Company, Password, Confirm Password
+    - Optional: Job Title, Phone, Country
+    - OCR mode pre-fills fields and shows confidence
+    - Low-confidence OCR enforces explicit user confirmation
+
+## Validation Checklist
+
+- [ ] Registration works manually (manual QA pending)
+- [ ] Registration works after OCR prefill (manual QA pending)
+- [ ] Login works (manual QA pending)
+- [ ] Password reset works (manual QA pending)
+- [ ] Email verification works (manual QA pending)
+- [x] No remaining OAuth buttons in auth runtime UI
+- [x] Build passes
+- [x] Lint passes
+- [x] Typecheck passes
+
+### Command Outputs
+
+- `npm run lint` -> pass (`eslint . --quiet`)
+- `npm run typecheck` -> pass (`tsc -p ./jsconfig.json`)
+- `npm run build` -> pass (`vite build`)
 
 ## OAuth Reactivation Plan (Phase 2)
 
-1. Re-enable OAuth buttons in `Login`/`Register` UI.
-2. Keep using existing `authClient.loginWithProvider` and `supabaseAuth.supabaseSignInWithOAuth`.
-3. Restore provider UX labels and telemetry flags.
-4. Validate Google/LinkedIn provider configuration in Supabase project settings.
-5. Run full auth regression (email + OAuth + reset + onboarding).
-
-## Remaining Future Work
-
-- Optional: add per-field OCR confidence from model output (currently overall confidence is used).
-- Optional: add telemetry for conversion comparison between manual vs OCR registration.
-- Optional: add a dedicated post-signup verification screen with resend controls for onboarding optimization.
+1. Reintroduce OAuth buttons in `Login` and/or `Register`.
+2. Route button handlers back to `auth.loginWithProvider(...)`.
+3. Verify Supabase provider configuration and callback/origin allow-lists.
+4. Run regression for:
+   - Email/password login + signup
+   - Password reset
+   - Email verification
+   - OAuth login paths
+5. Optional: add feature flag for controlled rollout.
 
 ## Known Limitations
 
-- OCR uncertainty highlighting uses overall confidence and missing required data; field-level confidence is not currently provided by OCR schema.
-- Registration details are currently captured in auth metadata; deeper profile-table hydration remains an onboarding concern.
+- OCR prefill quality depends on image quality and card layout.
+- Low-confidence handling currently highlights key required fields conservatively.
+- Registration metadata is captured in auth metadata; downstream profile normalization still occurs in onboarding/profile flows.
+- OCR registration images are not persisted to storage until after sign-in (by design for pre-auth MVP flow).
+
+## Final Classification
+
+READY FOR MVP

@@ -1,7 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { auth } from '@/api/authClient';
-import { appParams } from '@/lib/app-params';
-import { isSupabase } from '@/config/backend';
 
 const AuthContext = createContext(null);
 
@@ -48,20 +46,8 @@ export const AuthProvider = ({ children }) => {
       setAppPublicSettings(publicSettings);
       setIsLoadingPublicSettings(false);
 
-      if (isSupabase()) {
-        const authed = await auth.isAuthenticated();
-        if (authed) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-          setAuthChecked(true);
-        }
-        return;
-      }
-
-      // Base44: token-gated user check
-      if (appParams.token) {
+      const authed = await auth.isAuthenticated();
+      if (authed) {
         await checkUserAuth();
       } else {
         setIsLoadingAuth(false);
@@ -70,39 +56,13 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (appError) {
       console.error('App state check failed:', appError);
-
-      if (isSupabase()) {
-        setAuthError({
-          type: 'unknown',
-          message: appError.message || 'Failed to initialize auth'
-        });
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
-        return;
-      }
-
-      if (appError.status === 403 && appError.data?.extra_data?.reason) {
-        const reason = appError.data.extra_data.reason;
-        if (reason === 'auth_required') {
-          setAuthError({ type: 'auth_required', message: 'Authentication required' });
-        } else if (reason === 'user_not_registered') {
-          setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
-        } else {
-          setAuthError({ type: 'auth_required', message: appError.message });
-        }
-      } else {
-        setAuthError({
-          type: 'auth_required',
-          message: appError.message || 'Failed to load app'
-        });
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
-        return;
-      }
+      setAuthError({
+        type: 'unknown',
+        message: appError.message || 'Failed to initialize auth'
+      });
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
+      setAuthChecked(true);
     }
   }, [checkUserAuth]);
 
@@ -110,10 +70,7 @@ export const AuthProvider = ({ children }) => {
     checkAppState();
   }, [checkAppState]);
 
-  // Supabase: keep React state in sync with auth session changes
   useEffect(() => {
-    if (!isSupabase()) return undefined;
-
     const unsubscribe = auth.onAuthStateChange(async (session) => {
       if (session) {
         await checkUserAuth();

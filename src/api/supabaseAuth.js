@@ -96,23 +96,29 @@ export async function supabaseLogin(email, password) {
 export async function supabaseRegister({
   email,
   password,
-  first_name,
-  last_name,
+  firstName,
+  lastName,
+  company,
+  jobTitle,
+  phone,
+  country,
 }) {
   const supabase = getSupabaseClient();
-  const displayName = [first_name, last_name].filter(Boolean).join(" ").trim();
+  const metadata = {
+    first_name: firstName || "",
+    last_name: lastName || "",
+    company: company || "",
+    job_title: jobTitle || "",
+    phone: phone || "",
+    country: country || "",
+  };
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: redirectPath("/"),
-      data: {
-        // Keep auth metadata minimal for MVP.
-        // Business profile fields are Phase 2 migration work.
-        display_name: displayName || "",
-        role: "user",
-        onboarding_complete: false,
-      },
+      data: metadata,
     },
   });
   if (error) throw error;
@@ -230,7 +236,7 @@ export async function supabaseRefresh() {
 }
 
 export async function supabaseSignInWithOAuth(provider, redirectPathAfter = "/") {
-  // Reserved for Phase 2 (OAuth providers reactivation).
+  // Reserved for Phase 2 (post-MVP): OAuth runtime remains available but disabled in MVP UI.
   const supabase = getSupabaseClient();
   const providerMap = {
     google: "google",

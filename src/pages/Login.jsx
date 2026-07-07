@@ -31,30 +31,6 @@ export default function Login() {
     }
   };
 
-  const mapLoginError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
-    if (!navigator.onLine) return "No internet connection. Check your network and try again.";
-    if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
-      return "Your email is not verified yet. Please verify your email before signing in.";
-    }
-    if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
-      return "Wrong email or password. Please try again.";
-    }
-    if (msg.includes("invalid") && msg.includes("password")) {
-      return "Wrong password. Please try again.";
-    }
-    if (msg.includes("user not found") || msg.includes("no user")) {
-      return "No account found with this email. Please create an account.";
-    }
-    if (msg.includes("fetch failed") || msg.includes("network") || msg.includes("timeout")) {
-      return "Network error. Please try again in a moment.";
-    }
-    if (msg.includes("service unavailable") || msg.includes("500") || msg.includes("503")) {
-      return "Service is temporarily unavailable. Please try again shortly.";
-    }
-    return "Unable to sign in right now. Please try again.";
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -63,7 +39,21 @@ export default function Login() {
       await auth.loginWithEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
-      setError(mapLoginError(err));
+      // Map common error codes to user-friendly messages
+      const msg = err?.message || "";
+      if (!navigator.onLine) {
+        setError("No internet connection. Please check your network and try again.");
+      } else if (msg.toLowerCase().includes("invalid") || msg.toLowerCase().includes("credentials") || msg.toLowerCase().includes("password")) {
+        setError("Invalid email or password. Please try again.");
+      } else if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no user")) {
+        setError("No account found with this email. Please register first.");
+      } else if (msg.toLowerCase().includes("timeout") || msg.toLowerCase().includes("network")) {
+        setError("Network timeout. Please check your connection and try again.");
+      } else if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("rate limit")) {
+        setError("Too many login attempts. Please wait a moment and try again.");
+      } else {
+        setError(msg || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -86,7 +76,7 @@ export default function Login() {
       }
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm whitespace-pre-wrap" role="alert" aria-live="polite">
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm whitespace-pre-wrap">
           {error}
         </div>
       )}
@@ -132,7 +122,7 @@ export default function Login() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

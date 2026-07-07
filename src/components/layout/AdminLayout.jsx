@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
 import { auth } from "@/api/authClient";
 import { useAuth } from "@/lib/AuthContext";
-import { isSupabase } from "@/config/backend";
 import {
   LayoutDashboard, Users, Building2, Package, FileText,
   Calendar, MessageSquare, Menu, X, ChevronRight, ShieldCheck,
@@ -86,10 +85,8 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState({});
 
-  const isAdminAuthed = isSupabase()
-    ? ADMIN_ROLES.has((user?.role || "").toLowerCase())
-    : auth.isAdminSession();
-  if (isSupabase() && (!authChecked || isLoadingAuth)) {
+  const isAdminAuthed = ADMIN_ROLES.has((user?.role || "").toLowerCase());
+  if (!authChecked || isLoadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-slate-500">
         Verifying admin access...
@@ -158,12 +155,7 @@ export default function AdminLayout() {
         </Link>
         <button
           onClick={() => {
-            if (isSupabase()) {
-              auth.logout("/admin-login");
-              return;
-            }
-            auth.clearAdminSession();
-            window.location.href = "/admin-login";
+            auth.logout("/admin-login");
           }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-white/50 hover:text-white hover:bg-white/10 transition-colors"
         >

@@ -80,17 +80,17 @@ export function onAuthStateChange(callback) {
 }
 
 export function signInWithGoogle(redirectPath = "/") {
-  // Reserved for Phase 2 (OAuth providers reactivation).
+  // Reserved for Phase 2 (post-MVP).
   return loginWithProvider("google", redirectPath);
 }
 
 export function signInWithLinkedIn(redirectPath = "/") {
-  // Reserved for Phase 2 (OAuth providers reactivation).
+  // Reserved for Phase 2 (post-MVP).
   return loginWithProvider("linkedin", redirectPath);
 }
 
 export function loginWithProvider(provider, redirectPathAfter = "/") {
-  // Reserved for Phase 2 (OAuth providers reactivation).
+  // Reserved for Phase 2 (post-MVP): keep abstraction stable without MVP runtime callers.
   return supabaseAuth.supabaseSignInWithOAuth(provider, redirectPathAfter);
 }
 

@@ -1,55 +1,34 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { auth } from "@/api/authClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  UserPlus,
-  Mail,
-  Lock,
-  Loader2,
-  Eye,
-  EyeOff,
-  Camera,
-  Upload,
-  ScanLine,
-  CheckCircle2,
-  AlertTriangle,
-} from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, Eye, EyeOff, ScanLine, Upload, Camera } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { extractOcrScan } from "@/api/aiClient";
-import { uploadOcrScan } from "@/utils/assetPipeline";
-import { storage } from "@/api/storageClient";
-import { sanitizeOCRResult, validateFieldPattern } from "@/utils/securitySanitizer";
+import { sanitizeOCRResult } from "@/utils/securitySanitizer";
 
-function normalizeCompanyName(name) {
-  const collapsed = String(name || "").replace(/\s+/g, " ").trim().toLowerCase();
-  if (!collapsed) return "";
-  return collapsed
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
+const LOW_CONFIDENCE_THRESHOLD = 70;
 
-function passwordChecks(password) {
-  return {
-    length: password.length >= 8,
-    uppercase: /[A-Z]/.test(password),
-    lowercase: /[a-z]/.test(password),
-    number: /\d/.test(password),
-    special: /[^A-Za-z0-9]/.test(password),
-  };
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === "string") resolve(result);
+      else reject(new Error("Could not read image file"));
+    };
+    reader.onerror = () => reject(new Error("Could not read image file"));
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function Register() {
-  const navigate = useNavigate();
-  const [entryMode, setEntryMode] = useState("choose");
-  const captureRef = useRef(null);
-  const uploadRef = useRef(null);
+  const [mode, setMode] = useState(null);
+  const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [phone, setPhone] = useState("");
@@ -57,136 +36,140 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [ocrConfidence, setOcrConfidence] = useState(null);
+  const [uncertainFieldKeys, setUncertainFieldKeys] = useState([]);
+  const [fieldsConfirmed, setFieldsConfirmed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [ocrConfidence, setOcrConfidence] = useState(null);
-  const [ocrComplete, setOcrComplete] = useState(false);
-  const [ocrConfirmChecked, setOcrConfirmChecked] = useState(false);
-  const [processingScan, setProcessingScan] = useState(false);
-  const [uncertainFields, setUncertainFields] = useState([]);
-  const [ocrStage, setOcrStage] = useState("scan");
-  const [retryAvailable, setRetryAvailable] = useState(false);
+  const cameraInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
 
-  const isOcrFlow = entryMode === "scan";
-  const confidenceLevel =
-    typeof ocrConfidence !== "number" ? "unknown" : ocrConfidence >= 80 ? "high" : ocrConfidence >= 60 ? "medium" : "low";
-  const checks = useMemo(() => passwordChecks(password), [password]);
-  const passwordStrong = Object.values(checks).every(Boolean);
-  const requiredFieldsComplete = !!firstName.trim() && !!lastName.trim() && !!email.trim() && !!company.trim();
-  const emailValidation = validateFieldPattern(email, "email");
-  const phoneValidation = validateFieldPattern(phone, "phone");
-  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
-  const canSubmit =
-    !loading &&
-    !processingScan &&
-    requiredFieldsComplete &&
-    emailValidation.valid &&
-    phoneValidation.valid &&
-    passwordStrong &&
-    passwordsMatch &&
-    (!isOcrFlow || (ocrComplete && ocrStage === "account" && ocrConfirmChecked));
-
-  const setFromExtractedData = (data) => {
-    const fullName = (data.full_name || "").trim();
-    const guessedFirstName = fullName && !data.first_name ? fullName.split(" ")[0] : "";
-    const guessedLastName =
-      fullName && !data.last_name ? fullName.split(" ").slice(1).join(" ") : "";
-
-    const nextFirstName = (data.first_name || guessedFirstName || "").trim();
-    const nextLastName = (data.last_name || guessedLastName || "").trim();
-    const nextEmail = (data.email || "").trim();
-    const nextCompany = (data.company || "").trim();
-    const nextJobTitle = (data.position || "").trim();
-    const nextPhone = (data.phone || data.mobile || "").trim();
-    const nextCountry = (data.country || "").trim();
-
-    setFirstName(nextFirstName);
-    setLastName(nextLastName);
-    setEmail(nextEmail);
-    setCompany(normalizeCompanyName(nextCompany));
-    setJobTitle(nextJobTitle);
-    setPhone(nextPhone);
-    setCountry(nextCountry);
-  };
-
-  const processBusinessCard = async (file) => {
-    setError("");
-    setSuccessMessage("");
-    setRetryAvailable(false);
-    setOcrStage("extracting");
-    setProcessingScan(true);
-    try {
-      const { file_url } = await uploadOcrScan(file, "registration");
-      const extractionUrl = (await storage.getSignedUrl(file_url)) || file_url;
-      const response = await extractOcrScan({ scanType: "business_card", imageUrl: extractionUrl });
-      if (!response.success) throw new Error(response.error?.message || "OCR extraction failed");
-
-      const sanitized = sanitizeOCRResult(response.result || {});
-      const confidence = Number.isFinite(sanitized.confidence) ? sanitized.confidence : 60;
-      setOcrConfidence(confidence);
-      setFromExtractedData(sanitized);
-      setOcrComplete(true);
-      setOcrConfirmChecked(false);
-      setOcrStage("review");
-
-      const uncertain = [];
-      if (!sanitized.first_name && !sanitized.full_name) uncertain.push("firstName");
-      if (!sanitized.last_name && !sanitized.full_name) uncertain.push("lastName");
-      if (!sanitized.email) uncertain.push("email");
-      if (!sanitized.company) uncertain.push("company");
-      if (confidence < 70) {
-        uncertain.push("firstName", "lastName", "email", "company", "jobTitle", "phone");
-      }
-      setUncertainFields(Array.from(new Set(uncertain)));
-    } catch (err) {
-      setRetryAvailable(true);
-      setOcrStage("scan");
-      setError("Could not process your business card. Please retry or continue with manual registration.");
-    } finally {
-      setProcessingScan(false);
-    }
-  };
-
-  const onScanSelected = (event) => {
-    const file = event.target.files?.[0];
-    if (file) processBusinessCard(file);
-    event.target.value = "";
-  };
+  const requiresFieldConfirmation = useMemo(
+    () => mode === "scan" && (ocrConfidence || 0) < LOW_CONFIDENCE_THRESHOLD,
+    [mode, ocrConfidence]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!canSubmit) return;
     setError("");
-    setSuccessMessage("");
+
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !company.trim()) {
+      setError("Please complete all required fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (requiresFieldConfirmation && !fieldsConfirmed) {
+      setError("Please confirm the highlighted OCR fields before creating your account.");
+      return;
+    }
+
     setLoading(true);
     try {
       await auth.register({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
         email: email.trim(),
-        company: normalizeCompanyName(company),
-        job_title: jobTitle.trim(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        company: company.trim(),
+        jobTitle: jobTitle.trim(),
         phone: phone.trim(),
         country: country.trim(),
-        password,
-        registration_source: isOcrFlow ? "business_card_ocr" : "manual",
       });
-      setSuccessMessage("Account created. Sending verification instructions...");
-      navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+      setVerificationMessage(
+        `We've sent a verification email to ${email.trim()}. Please verify your email before signing in.`
+      );
     } catch (err) {
-      setError("We couldn't create your account right now. Please check your details and try again.");
+      setError(err?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const runOcr = async (file) => {
+    setError("");
+    setOcrLoading(true);
+    setFieldsConfirmed(false);
+    try {
+      // Pre-auth registration: send image directly to OCR (no storage upload — RLS requires auth.uid()).
+      const imageUrl = await readFileAsDataUrl(file);
+      const response = await extractOcrScan({
+        scanType: "business_card",
+        imageUrl,
+      });
+
+      if (!response?.success || !response?.result) {
+        throw new Error("Could not extract card details. Please enter details manually.");
+      }
+
+      const sanitized = sanitizeOCRResult(response.result);
+      setFirstName(String(sanitized.first_name || "").trim());
+      setLastName(String(sanitized.last_name || "").trim());
+      setCompany(String(sanitized.company || "").trim());
+      setEmail(String(sanitized.email || "").trim());
+      setPhone(String(sanitized.phone || "").trim());
+      setJobTitle(String(sanitized.position || "").trim());
+      setCountry(String(sanitized.country || "").trim());
+
+      const confidence = Number.isFinite(sanitized.confidence) ? sanitized.confidence : 75;
+      setOcrConfidence(confidence);
+
+      const uncertain = [];
+      if (confidence < LOW_CONFIDENCE_THRESHOLD) {
+        uncertain.push("firstName", "lastName", "company", "email");
+      }
+      setUncertainFieldKeys(uncertain);
+    } catch (err) {
+      setError(err?.message || "Card scan failed. You can continue with manual registration.");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await runOcr(file);
+    event.target.value = "";
+  };
+
+  if (verificationMessage) {
+    return (
+      <AuthLayout
+        icon={Mail}
+        title="Verify your email"
+        subtitle={verificationMessage}
+        footer={
+          <>
+            Already verified?{" "}
+            <Link to="/login" className="text-primary font-medium hover:underline">
+              Sign in
+            </Link>
+          </>
+        }
+      >
+        <div className="rounded-lg border bg-muted/30 p-4 text-sm">
+          Your account has been created. You must verify your email to complete sign-in.
+        </div>
+        <p className="text-sm text-muted-foreground mt-3">
+          If you do not receive the email in a few minutes, check spam or try registering again.
+        </p>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout
       icon={UserPlus}
       title="Create your account"
-      subtitle={entryMode === "choose" ? "Choose how to register" : "Fast signup for trade-show users"}
+      subtitle="Fast signup for live events"
       footer={
         <>
           Already have an account?{" "}
@@ -196,324 +179,238 @@ export default function Register() {
         </>
       }
     >
-      {entryMode === "choose" ? (
-        <div className="space-y-3">
-          <Button className="w-full h-14 text-base font-semibold" onClick={() => setEntryMode("scan")}>
-            <ScanLine className="w-5 h-5 mr-2" />
+      {!mode && (
+        <div className="space-y-3 mb-6">
+          <Button
+            type="button"
+            className="w-full h-12 font-medium"
+            onClick={() => setMode("scan")}
+          >
+            <ScanLine className="w-4 h-4 mr-2" />
             Scan Business Card
           </Button>
-          <Button variant="outline" className="w-full h-12" onClick={() => setEntryMode("manual")}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-12"
+            onClick={() => setMode("manual")}
+          >
             Register Manually
           </Button>
         </div>
-      ) : (
-        <>
-          {isOcrFlow && (
-            <div className="mb-5 rounded-lg border border-border p-3 space-y-2">
-              <div className="text-sm font-medium">Business Card Registration</div>
-              <div className="grid grid-cols-4 gap-1" aria-label="OCR registration progress">
-                {["Scan", "Extracting", "Review", "Create"].map((item, index) => {
-                  const stageIdx = { scan: 0, extracting: 1, review: 2, account: 3 }[ocrStage] ?? 0;
-                  const active = index <= stageIdx;
-                  return <div key={item} className={`h-1 rounded ${active ? "bg-primary" : "bg-muted"}`} />;
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {ocrStage === "scan" && "Step 1 of 4: Scan card"}
-                {ocrStage === "extracting" && "Step 2 of 4: Extracting information..."}
-                {ocrStage === "review" && "Step 3 of 4: Review extracted information"}
-                {ocrStage === "account" && "Step 4 of 4: Create account"}
-              </p>
-              <input
-                ref={captureRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={onScanSelected}
-              />
-              <input
-                ref={uploadRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={onScanSelected}
-              />
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => captureRef.current?.click()}
-                  disabled={processingScan}
-                  aria-label="Scan business card with camera"
-                >
-                  {processingScan ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
-                  Camera
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => uploadRef.current?.click()}
-                  disabled={processingScan}
-                  aria-label="Upload business card image"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload
-                </Button>
-              </div>
-              {processingScan && (
-                <div className="rounded-md bg-muted/60 p-2 text-xs text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Uploading business card and extracting information...
-                </div>
-              )}
-              {retryAvailable && (
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setOcrStage("scan")}>
-                  Retry scan
-                </Button>
-              )}
-              {ocrComplete && (
-                <div
-                  className={`text-xs rounded-md p-2 flex items-center gap-2 ${
-                    confidenceLevel === "high"
-                      ? "bg-green-100 text-green-800"
-                      : confidenceLevel === "medium"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {confidenceLevel === "low" ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5 animate-bounce" />}
-                  {confidenceLevel === "high" && "High confidence extraction."}
-                  {confidenceLevel === "medium" && "Medium confidence extraction."}
-                  {confidenceLevel === "low" && "Low confidence extraction. Please verify highlighted fields."}
-                  {" "}({ocrConfidence}%)
-                </div>
-              )}
-            </div>
+      )}
+
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          {error}
+        </div>
+      )}
+
+      {mode === "scan" && (
+        <div className="space-y-3 mb-5">
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <input
+            ref={uploadInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={ocrLoading}
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            {ocrLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+            Capture Card Photo
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={ocrLoading}
+            onClick={() => uploadInputRef.current?.click()}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Upload Card Image
+          </Button>
+          {ocrConfidence !== null && (
+            <p className={`text-xs ${ocrConfidence < LOW_CONFIDENCE_THRESHOLD ? "text-amber-600" : "text-green-600"}`}>
+              OCR confidence: {ocrConfidence}%
+            </p>
           )}
+        </div>
+      )}
 
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm" role="alert" aria-live="polite">
-              <p>{error}</p>
-              {isOcrFlow && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="mt-2 px-0 h-auto text-destructive underline"
-                  onClick={() => setEntryMode("manual")}
-                >
-                  Continue with manual registration
-                </Button>
-              )}
-            </div>
+      {mode && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
+              id="firstName"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className={uncertainFieldKeys.includes("firstName") ? "border-amber-500" : ""}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className={uncertainFieldKeys.includes("lastName") ? "border-amber-500" : ""}
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              autoFocus
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`pl-10 h-12 ${uncertainFieldKeys.includes("email") ? "border-amber-500" : ""}`}
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="company">Company</Label>
+          <Input
+            id="company"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            className={uncertainFieldKeys.includes("company") ? "border-amber-500" : ""}
+            required
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="jobTitle">Job Title (optional)</Label>
+            <Input
+              id="jobTitle"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone (optional)</Label>
+            <Input
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="country">Country (optional)</Label>
+          <Input
+            id="country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10 pr-10 h-12"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirm">Confirm Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="confirm"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="pl-10 pr-10 h-12"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+        {requiresFieldConfirmation && (
+          <label className="flex items-start gap-2 text-sm rounded-md border border-amber-300 bg-amber-50 p-3">
+            <input
+              type="checkbox"
+              checked={fieldsConfirmed}
+              onChange={(e) => setFieldsConfirmed(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              OCR confidence is low. I reviewed and corrected highlighted fields before creating my account.
+            </span>
+          </label>
+        )}
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating account...
+            </>
+          ) : (
+            "Create account"
           )}
-
-          {successMessage && (
-            <div className="mb-4 p-3 rounded-lg bg-green-100 text-green-800 text-sm">
-              {successMessage}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className={uncertainFields.includes("firstName") ? "border-amber-500" : ""}
-                  aria-invalid={!firstName.trim()}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className={uncertainFields.includes("lastName") ? "border-amber-500" : ""}
-                  aria-invalid={!lastName.trim()}
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  autoFocus
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`pl-10 h-12 ${uncertainFields.includes("email") ? "border-amber-500" : ""}`}
-                  aria-invalid={!emailValidation.valid}
-                  required
-                />
-              </div>
-              {email && (
-                <p className={`text-xs ${emailValidation.valid ? "text-green-700" : "text-red-700"}`}>
-                  {emailValidation.valid ? "Valid email" : emailValidation.reason}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className={uncertainFields.includes("company") ? "border-amber-500" : ""}
-                aria-invalid={!company.trim()}
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2 sm:col-span-1">
-                <Label htmlFor="jobTitle">Job Title (Optional)</Label>
-                <Input
-                  id="jobTitle"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                  className={uncertainFields.includes("jobTitle") ? "border-amber-500" : ""}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-1">
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={uncertainFields.includes("phone") ? "border-amber-500" : ""}
-                  aria-invalid={!phoneValidation.valid}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-1">
-                <Label htmlFor="country">Country (Optional)</Label>
-                <Input
-                  id="country"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-12"
-                  aria-invalid={!passwordStrong && password.length > 0}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <div className="space-y-1 text-xs">
-                <div className="h-1.5 rounded bg-muted overflow-hidden">
-                  <div
-                    className={`h-full transition-all ${
-                      passwordStrong ? "bg-green-600" : Object.values(checks).filter(Boolean).length >= 3 ? "bg-amber-500" : "bg-red-500"
-                    }`}
-                    style={{ width: `${(Object.values(checks).filter(Boolean).length / 5) * 100}%` }}
-                  />
-                </div>
-                <p className="text-muted-foreground">Password strength requirements:</p>
-                <p className={checks.length ? "text-green-700" : "text-muted-foreground"}>✓ 8+ characters</p>
-                <p className={checks.uppercase ? "text-green-700" : "text-muted-foreground"}>✓ Uppercase</p>
-                <p className={checks.lowercase ? "text-green-700" : "text-muted-foreground"}>✓ Lowercase</p>
-                <p className={checks.number ? "text-green-700" : "text-muted-foreground"}>✓ Number</p>
-                <p className={checks.special ? "text-green-700" : "text-muted-foreground"}>✓ Special character</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                <Input
-                  id="confirm"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10 pr-10 h-12"
-                  aria-invalid={confirmPassword.length > 0 && !passwordsMatch}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {confirmPassword.length > 0 && (
-                <p className={`text-xs ${passwordsMatch ? "text-green-700" : "text-red-700"}`}>
-                  {passwordsMatch ? "Passwords match" : "Passwords do not match"}
-                </p>
-              )}
-            </div>
-
-            {isOcrFlow && ocrComplete && ocrStage === "review" && (
-              <Button
-                type="button"
-                className="w-full"
-                variant="outline"
-                onClick={() => setOcrStage("account")}
-              >
-                Continue
-              </Button>
-            )}
-
-            {isOcrFlow && ocrComplete && ocrStage === "account" && (
-              <label className="flex gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={ocrConfirmChecked}
-                  onChange={(e) => setOcrConfirmChecked(e.target.checked)}
-                />
-                I confirm the scanned details are correct.
-              </label>
-            )}
-
-            <Button type="submit" className="w-full h-12 font-medium" disabled={!canSubmit}>
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Create account"
-              )}
-            </Button>
-
-            <Button type="button" variant="ghost" className="w-full" onClick={() => setEntryMode("choose")}>
-              Back
-            </Button>
-          </form>
-        </>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          onClick={() => {
+            setMode(null);
+            setError("");
+          }}
+        >
+          Back
+        </Button>
+        </form>
       )}
     </AuthLayout>
   );
