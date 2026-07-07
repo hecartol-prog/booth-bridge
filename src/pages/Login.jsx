@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
 import { useI18n } from "@/lib/i18n";
 
 export default function Login() {
@@ -32,6 +31,30 @@ export default function Login() {
     }
   };
 
+  const mapLoginError = (err) => {
+    const msg = (err?.message || "").toLowerCase();
+    if (!navigator.onLine) return "No internet connection. Check your network and try again.";
+    if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+      return "Your email is not verified yet. Please verify your email before signing in.";
+    }
+    if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
+      return "Wrong email or password. Please try again.";
+    }
+    if (msg.includes("invalid") && msg.includes("password")) {
+      return "Wrong password. Please try again.";
+    }
+    if (msg.includes("user not found") || msg.includes("no user")) {
+      return "No account found with this email. Please create an account.";
+    }
+    if (msg.includes("fetch failed") || msg.includes("network") || msg.includes("timeout")) {
+      return "Network error. Please try again in a moment.";
+    }
+    if (msg.includes("service unavailable") || msg.includes("500") || msg.includes("503")) {
+      return "Service is temporarily unavailable. Please try again shortly.";
+    }
+    return "Unable to sign in right now. Please try again.";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -40,32 +63,10 @@ export default function Login() {
       await auth.loginWithEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
-      // Map common error codes to user-friendly messages
-      const msg = err?.message || "";
-      if (!navigator.onLine) {
-        setError("No internet connection. Please check your network and try again.");
-      } else if (msg.toLowerCase().includes("invalid") || msg.toLowerCase().includes("credentials") || msg.toLowerCase().includes("password")) {
-        setError("Invalid email or password. Please try again.");
-      } else if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no user")) {
-        setError("No account found with this email. Please register first.");
-      } else if (msg.toLowerCase().includes("timeout") || msg.toLowerCase().includes("network")) {
-        setError("Network timeout. Please check your connection and try again.");
-      } else if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("rate limit")) {
-        setError("Too many login attempts. Please wait a moment and try again.");
-      } else {
-        setError(msg || "Login failed. Please try again.");
-      }
+      setError(mapLoginError(err));
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogle = () => {
-    auth.loginWithProvider("google", "/");
-  };
-
-  const handleLinkedIn = () => {
-    auth.loginWithProvider("linkedin", "/");
   };
 
   return (
@@ -84,30 +85,8 @@ export default function Login() {
         </>
       }
     >
-      <div className="flex flex-col gap-3 mb-6">
-        <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleGoogle}>
-          <GoogleIcon className="w-5 h-5 mr-2" />
-          {t("auth.continueWithGoogle")}
-        </Button>
-        <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={handleLinkedIn}>
-          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="#0A66C2">
-            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-          </svg>
-          {t("auth.continueWithLinkedIn")}
-        </Button>
-      </div>
-
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">{t("common.or")}</span>
-        </div>
-      </div>
-
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm whitespace-pre-wrap" role="alert" aria-live="polite">
           {error}
         </div>
       )}
@@ -153,7 +132,7 @@ export default function Login() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              tabIndex={-1}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

@@ -13,6 +13,8 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import VerifyEmail from "@/pages/VerifyEmail";
+import AuthErrorBoundary from "@/components/AuthErrorBoundary";
 
 // App pages
 import Onboarding from "@/pages/Onboarding";
@@ -79,6 +81,8 @@ import AdminOCRReview from "@/pages/admin/AdminOCRReview";
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, user } = useAuth();
 
+  const withAuthBoundary = (node) => <AuthErrorBoundary>{node}</AuthErrorBoundary>;
+
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -94,10 +98,11 @@ const AuthenticatedApp = () => {
       // Render login route — don't call navigateToLogin() during render (causes loops)
       return (
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/login" element={withAuthBoundary(<Login />)} />
+          <Route path="/register" element={withAuthBoundary(<Register />)} />
+          <Route path="/forgot-password" element={withAuthBoundary(<ForgotPassword />)} />
+          <Route path="/reset-password" element={withAuthBoundary(<ResetPassword />)} />
+          <Route path="/verify-email" element={withAuthBoundary(<VerifyEmail />)} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       );
@@ -105,10 +110,11 @@ const AuthenticatedApp = () => {
       // Unknown/network errors — show login so the app is still accessible
       return (
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/login" element={withAuthBoundary(<Login />)} />
+          <Route path="/register" element={withAuthBoundary(<Register />)} />
+          <Route path="/forgot-password" element={withAuthBoundary(<ForgotPassword />)} />
+          <Route path="/reset-password" element={withAuthBoundary(<ResetPassword />)} />
+          <Route path="/verify-email" element={withAuthBoundary(<VerifyEmail />)} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       );
@@ -118,10 +124,11 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Auth routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/login" element={withAuthBoundary(<Login />)} />
+      <Route path="/register" element={withAuthBoundary(<Register />)} />
+      <Route path="/forgot-password" element={withAuthBoundary(<ForgotPassword />)} />
+      <Route path="/reset-password" element={withAuthBoundary(<ResetPassword />)} />
+      <Route path="/verify-email" element={withAuthBoundary(<VerifyEmail />)} />
 
       {/* Onboarding */}
       <Route

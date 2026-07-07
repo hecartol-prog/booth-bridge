@@ -4,18 +4,17 @@
  */
 
 import { getSupabaseClient } from "@/api/supabaseClient";
+import {
+  buildOAuthRedirectTo,
+  formatOAuthError,
+  getGoogleOAuthOptions,
+  getLinkedInOAuthOptions,
+} from "@/config/oauth";
 
 const ADMIN_ROLES = new Set(["admin", "superadmin", "systemadmin", "supportadmin"]);
 
-function appOrigin() {
-  if (typeof window === "undefined") return "";
-  return import.meta.env.VITE_APP_URL || window.location.origin;
-}
-
 function redirectPath(path = "/") {
-  const origin = appOrigin();
-  if (!path.startsWith("/")) return `${origin}/${path}`;
-  return `${origin}${path}`;
+  return buildOAuthRedirectTo(path);
 }
 
 /** Map Supabase auth user + public.user row → Base44-compatible app user */
@@ -94,12 +93,27 @@ export async function supabaseLogin(email, password) {
   return mergeAppUser(data.user);
 }
 
-export async function supabaseRegister({ email, password }) {
+export async function supabaseRegister({
+  email,
+  password,
+  first_name,
+  last_name,
+}) {
   const supabase = getSupabaseClient();
+  const displayName = [first_name, last_name].filter(Boolean).join(" ").trim();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: redirectPath("/") },
+    options: {
+      emailRedirectTo: redirectPath("/"),
+      data: {
+        // Keep auth metadata minimal for MVP.
+        // Business profile fields are Phase 2 migration work.
+        display_name: displayName || "",
+        role: "user",
+        onboarding_complete: false,
+      },
+    },
   });
   if (error) throw error;
   return data;
@@ -216,18 +230,32 @@ export async function supabaseRefresh() {
 }
 
 export async function supabaseSignInWithOAuth(provider, redirectPathAfter = "/") {
+  // Reserved for Phase 2 (OAuth providers reactivation).
   const supabase = getSupabaseClient();
   const providerMap = {
     google: "google",
     linkedin: "linkedin_oidc",
   };
   const supabaseProvider = providerMap[provider] || provider;
+  const redirectTo = redirectPath(redirectPathAfter);
 
-  const { error } = await supabase.auth.signInWithOAuth({
+  const options =
+    supabaseProvider === "google"
+      ? getGoogleOAuthOptions(redirectTo)
+      : getLinkedInOAuthOptions(redirectTo);
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: supabaseProvider,
-    options: { redirectTo: redirectPath(redirectPathAfter) },
+    options,
   });
-  if (error) throw error;
+
+  if (error) {
+    throw new Error(formatOAuthError(error, supabaseProvider));
+  }
+
+  if (typeof window !== "undefined" && data?.url) {
+    window.location.assign(data.url);
+  }
 }
 
 export async function supabaseAdminLogin(email, password) {
