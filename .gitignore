@@ -33,3 +33,4 @@ dist-ssr
 # Phase 6 migration exports (production PII — never commit)
 exports/phase6/**/*.json
 !exports/phase6/.gitkeep
+.vercel

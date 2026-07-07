@@ -1,7 +1,6 @@
 import React from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-
-const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
+import { APP_LOGO_URL } from "@/config/branding";
 
 export default function AuthLayout({
   icon: Icon,
@@ -22,19 +21,13 @@ export default function AuthLayout({
       </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <button
-            type="button"
+          <img
+            src={APP_LOGO_URL}
+            alt="Booth Bridge"
+            className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 cursor-pointer select-none"
             onClick={onLogoClick}
-            className="mx-auto mb-4 block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
-            aria-label="BoothBridge logo"
-          >
-            <img
-              src={LOGO}
-              alt="Booth Bridge"
-              className="w-16 h-16 rounded-2xl object-cover cursor-pointer select-none"
-              draggable={false}
-            />
-          </button>
+            draggable={false}
+          />
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2 text-sm">{subtitle}</p>}
         </div>

@@ -8,21 +8,11 @@ import { UserPlus, Mail, Lock, Loader2, Eye, EyeOff, ScanLine, Upload, Camera } 
 import AuthLayout from "@/components/AuthLayout";
 import { extractOcrScan } from "@/api/aiClient";
 import { sanitizeOCRResult } from "@/utils/securitySanitizer";
+import { readCompressedImageAsDataUrl } from "@/utils/imageCompression";
+import { isPasswordAcceptable } from "@/utils/passwordStrength";
+import PasswordStrengthFeedback from "@/components/PasswordStrengthFeedback";
 
 const LOW_CONFIDENCE_THRESHOLD = 70;
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result;
-      if (typeof result === "string") resolve(result);
-      else reject(new Error("Could not read image file"));
-    };
-    reader.onerror = () => reject(new Error("Could not read image file"));
-    reader.readAsDataURL(file);
-  });
-}
 
 export default function Register() {
   const [mode, setMode] = useState(null);
@@ -58,6 +48,11 @@ export default function Register() {
 
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !company.trim()) {
       setError("Please complete all required fields.");
+      return;
+    }
+
+    if (!isPasswordAcceptable(password)) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -99,7 +94,7 @@ export default function Register() {
     setFieldsConfirmed(false);
     try {
       // Pre-auth registration: send image directly to OCR (no storage upload — RLS requires auth.uid()).
-      const imageUrl = await readFileAsDataUrl(file);
+      const imageUrl = await readCompressedImageAsDataUrl(file);
       const response = await extractOcrScan({
         scanType: "business_card",
         imageUrl,
@@ -351,6 +346,7 @@ export default function Register() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          <PasswordStrengthFeedback password={password} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirm">Confirm Password</Label>

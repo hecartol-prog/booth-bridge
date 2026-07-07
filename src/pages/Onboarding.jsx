@@ -13,6 +13,7 @@ import { Briefcase, ShoppingBag, ArrowRight, Upload, X, ScanLine, Sparkles, Chec
 import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { APP_LOGO_URL } from "@/config/branding";
 
 const INDUSTRIES = [
   "Aerospace & Defense",
@@ -236,7 +237,7 @@ export default function Onboarding() {
         {/* Header */}
         <div className="text-center mb-8">
           <img
-            src="https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png"
+            src={APP_LOGO_URL}
             alt="Booth Bridge"
             className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4"
           />

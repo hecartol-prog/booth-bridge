@@ -14,8 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { auth } from "@/api/authClient";
 import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
-
-const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
+import { APP_LOGO_URL } from "@/config/branding";
 
 const exhibitorNav = [
   { path: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
@@ -198,7 +197,7 @@ export default function AppLayout() {
       <aside className="hidden md:flex flex-col w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-full">
         <div className="p-5">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={LOGO} alt="Booth Bridge" className="w-9 h-9 rounded-xl object-cover" />
+            <img src={APP_LOGO_URL} alt="Booth Bridge" className="w-9 h-9 rounded-xl object-cover" />
             <span className="font-bold text-white tracking-widest uppercase text-sm" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}>
               Booth Bridge
             </span>
@@ -222,7 +221,7 @@ export default function AppLayout() {
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col">
             <div className="p-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src={LOGO} alt="Booth Bridge" className="w-8 h-8 rounded-xl object-cover" />
+                <img src={APP_LOGO_URL} alt="Booth Bridge" className="w-8 h-8 rounded-xl object-cover" />
                 <span className="font-bold text-white tracking-widest uppercase text-xs" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}>
                   Booth Bridge
                 </span>
@@ -257,7 +256,7 @@ export default function AppLayout() {
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-2">
-            <img src={LOGO} alt="Booth Bridge" className="w-7 h-7 rounded-lg object-cover" />
+            <img src={APP_LOGO_URL} alt="Booth Bridge" className="w-7 h-7 rounded-lg object-cover" />
             <span className="font-bold text-foreground tracking-widest uppercase text-[10px]" style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em" }}>
               Booth Bridge
             </span>

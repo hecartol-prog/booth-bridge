@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import PasswordStrengthFeedback from "@/components/PasswordStrengthFeedback";
+import { isPasswordAcceptable } from "@/utils/passwordStrength";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -19,6 +21,11 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!isPasswordAcceptable(newPassword)) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -81,6 +88,7 @@ export default function ResetPassword() {
               required
             />
           </div>
+          <PasswordStrengthFeedback password={newPassword} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirm">Confirm Password</Label>

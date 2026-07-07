@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Mail, Lock, Loader2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 
-const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
-
 const ADMIN_ROLES = ["admin", "superadmin", "systemadmin", "supportadmin"];
 
 // Track failed attempts in session storage so they reset on page reload

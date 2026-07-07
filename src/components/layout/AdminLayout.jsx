@@ -10,7 +10,7 @@ import {
   Ticket, ScanLine, FlaskConical, Monitor
 } from "lucide-react";
 
-const LOGO = "https://media.base44.com/images/public/6a1efdb97246f738e8422e59/5b248dbd5_logoBB-removebg-preview.png";
+import { APP_LOGO_URL } from "@/config/branding";
 
 const navGroups = [
   {
@@ -105,7 +105,7 @@ export default function AdminLayout() {
       {/* Logo */}
       <div className="p-4 border-b border-white/10">
         <Link to="/admin" className="flex items-center gap-2.5" onClick={onNavigate}>
-          <img src={LOGO} alt="BoothBridge" className="w-8 h-8 rounded-lg object-cover" />
+          <img src={APP_LOGO_URL} alt="BoothBridge" className="w-8 h-8 rounded-lg object-cover" />
           <div>
             <p className="text-xs font-bold text-white tracking-widest uppercase" style={{ fontFamily: "'Orbitron', sans-serif" }}>Booth Bridge</p>
             <p className="text-[10px] text-white/50 flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Admin Panel</p>
