@@ -3,4 +3,4 @@
  * Served from local static asset.
  */
 export const APP_LOGO_URL =
-  "/brand-mark.svg";
+  "/brand-mark.png";
