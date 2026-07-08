@@ -10,7 +10,6 @@ export const AI_ERROR_CODES = {
   AUTHENTICATION: "AI_AUTHENTICATION",
   NETWORK: "AI_NETWORK",
   EDGE_FUNCTION: "AI_EDGE_FUNCTION",
-  BASE44: "AI_BASE44",
   DISABLED: "AI_DISABLED",
   CANCELLED: "AI_CANCELLED",
   UNKNOWN: "AI_UNKNOWN",
@@ -50,8 +49,6 @@ export function normalizeAiError(error, context = {}) {
     code = AI_ERROR_CODES.MALFORMED_JSON;
   } else if (lower.includes("edge function") || errRecord?.context === "edge_function") {
     code = AI_ERROR_CODES.EDGE_FUNCTION;
-  } else if (provider === "base44") {
-    code = AI_ERROR_CODES.BASE44;
   } else if (lower.includes("unavailable") || lower.includes("503")) {
     code = AI_ERROR_CODES.PROVIDER_UNAVAILABLE;
   }

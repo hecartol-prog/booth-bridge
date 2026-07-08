@@ -2,7 +2,7 @@
  * authClient — authentication abstraction (Supabase-only).
  *
  * All auth flows route through supabaseAuth.js. Pages and AuthContext import
- * this module only — never base44.auth or supabase.auth directly.
+ * this module only — never call provider SDK auth clients directly.
  */
 
 import { getSupabaseClient } from "@/api/supabaseClient";

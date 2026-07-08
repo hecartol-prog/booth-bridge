@@ -17,7 +17,7 @@ function redirectPath(path = "/") {
   return buildOAuthRedirectTo(path);
 }
 
-/** Map Supabase auth user + public.user row → Base44-compatible app user */
+/** Map Supabase auth user + public.user row to app user model */
 export async function mergeAppUser(authUser) {
   if (!authUser) return null;
 

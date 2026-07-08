@@ -1,13 +1,10 @@
 /**
  * aiClient — AI provider abstraction (Phase 7.4D / 7.6C).
  *
- * Routes through Base44 when VITE_DATA_BACKEND=base44 (default).
- * Routes through Supabase Edge Functions when VITE_DATA_BACKEND=supabase.
- *
- * Pages import this module only — transport lives in aiGateway.js.
+ * Supabase Edge Functions wrapper. Pages import this module only.
  */
 
-import { isBase44, isAiEnabled } from "@/config/backend";
+import { isAiEnabled } from "@/config/backend";
 import * as aiGateway from "@/api/aiGateway";
 import { createAiResponse, extractTextResult, extractDocumentOutput } from "@/ai/aiResponse";
 import { AiClientError, normalizeAiError } from "@/ai/aiErrors";
@@ -40,7 +37,7 @@ function ensureAiEnabled() {
   if (!isAiEnabled()) {
     throw new AiClientError(
       normalizeAiError(new Error("AI features are disabled (VITE_AI_ENABLED=false)"), {
-        provider: isBase44() ? "base44" : "supabase",
+        provider: "supabase",
         code: "AI_DISABLED",
       })
     );
@@ -275,10 +272,6 @@ export async function recommend(params, options = {}) {
       goal: params.goal,
     });
 
-  if (isBase44()) {
-    return generate({ prompt, response_json_schema: params.response_json_schema }, options);
-  }
-
   const { requestId, signal } = registerAbortSignal(options.signal);
   return runAiRequest(
     () => aiGateway.recommend({ ...params, prompt }, { signal }),
@@ -293,10 +286,6 @@ export async function match(params, options = {}) {
       buyerProfile: params.buyerProfile,
       supplierProfile: params.supplierProfile,
     });
-
-  if (isBase44()) {
-    return generate({ prompt, response_json_schema: params.response_json_schema }, options);
-  }
 
   const { requestId, signal } = registerAbortSignal(options.signal);
   return runAiRequest(
@@ -350,21 +339,17 @@ export function cancelAll() {
 
 // ── Backward-compatible API (Phase 1 / Phase 2) ──────────────────────────────
 
-/** @deprecated Use generate() — returns legacy Base44 shape */
+/** @deprecated Use generate() */
 export async function invokeLLM(params) {
   ensureAiEnabled();
-  if (isBase44()) return aiGateway.generate(params);
-
   const response = await generate(params);
   if (!response.success) throw new AiClientError(response.error);
   return response.raw ?? response.result;
 }
 
-/** @deprecated Use extractDocument() — returns legacy Base44 extraction shape */
+/** @deprecated Use extractDocument() */
 export async function extractFromUploadedFile(params) {
   ensureAiEnabled();
-  if (isBase44()) return aiGateway.extractDocument(params);
-
   const response = await extractDocument(params);
   if (!response.success) throw new AiClientError(response.error);
   return response.raw ?? { status: "success", output: response.result };

@@ -1,14 +1,9 @@
 /**
  * storageClient — file storage abstraction (Phase 7.4C).
  *
- * Routes through Base44 when VITE_DATA_BACKEND=base44 (default).
- * Routes through Supabase Storage when VITE_DATA_BACKEND=supabase.
- *
- * Pages and assetPipeline import this module only — never base44.integrations.Core directly.
+ * Supabase Storage wrapper used by pages and assetPipeline.
  */
 
-import { base44 } from "@/api/base44Client";
-import { isBase44 } from "@/config/backend";
 import {
   BUCKETS,
   resolveUploadDestination,
@@ -17,12 +12,6 @@ import {
 import * as supabaseStorage from "@/api/supabaseStorage";
 
 const DEFAULT_BUCKET = BUCKETS.ASSETS;
-
-function base44NotSupported(method) {
-  throw new Error(
-    `[storageClient] ${method} is not supported on the Base44 backend`
-  );
-}
 
 /**
  * @param {File|Blob} file
@@ -40,18 +29,6 @@ function base44NotSupported(method) {
  * @returns {Promise<{ file_url: string, file_path?: string, bucket?: string }>}
  */
 export async function upload(file, options = {}) {
-  if (isBase44()) {
-    if (!(file instanceof File)) {
-      throw new Error("[storageClient] Base44 upload requires a File instance");
-    }
-    const result = await base44.integrations.Core.UploadFile({ file });
-    return {
-      file_url: result.file_url,
-      file_path: options.path || null,
-      bucket: options.bucket || null,
-    };
-  }
-
   let bucket = options.bucket;
   let path = options.path;
 
@@ -93,16 +70,6 @@ export async function getSignedUrl(fileRef, options = {}) {
   const parsed = parseFileRef(fileRef, options);
   if (parsed?.kind === "http") return parsed.url;
 
-  if (isBase44()) {
-    const expiresIn = options.expiresIn ?? 900;
-    const result = await base44.integrations.Core.CreateFileSignedUrl({
-      file_uri: fileRef,
-      expires_in: expiresIn,
-    });
-    const signed = /** @type {{ signed_url?: string } | null} */ (result);
-    return signed?.signed_url || null;
-  }
-
   return supabaseStorage.supabaseGetSignedUrl(fileRef, options);
 }
 
@@ -115,7 +82,6 @@ export function getPublicUrl(filePath, bucket = DEFAULT_BUCKET) {
   if (!filePath) return null;
   const parsed = parseFileRef(filePath, { bucket });
   if (parsed?.kind === "http") return parsed.url;
-  if (isBase44()) return null;
   return supabaseStorage.supabaseGetPublicUrl(filePath, bucket);
 }
 
@@ -125,13 +91,6 @@ export function getPublicUrl(filePath, bucket = DEFAULT_BUCKET) {
  * @returns {Promise<Blob>}
  */
 export async function download(fileRef, options = {}) {
-  if (isBase44()) {
-    const url = await getSignedUrl(fileRef, options);
-    if (!url) throw new Error("[storageClient] download: could not resolve URL");
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("[storageClient] download failed");
-    return resp.blob();
-  }
   return supabaseStorage.supabaseDownload(fileRef, options);
 }
 
@@ -140,7 +99,6 @@ export async function download(fileRef, options = {}) {
  * @param {{ bucket?: string }} [options]
  */
 export async function remove(fileRef, options = {}) {
-  if (isBase44()) base44NotSupported("remove");
   return supabaseStorage.supabaseRemove(fileRef, options);
 }
 
@@ -148,7 +106,6 @@ export async function remove(fileRef, options = {}) {
  * @param {{ bucket: string, path?: string, limit?: number, offset?: number }} options
  */
 export async function list(options) {
-  if (isBase44()) base44NotSupported("list");
   return supabaseStorage.supabaseList(options);
 }
 
@@ -161,15 +118,6 @@ export async function exists(fileRef, options = {}) {
   const parsed = parseFileRef(fileRef, options);
   if (parsed?.kind === "http") return true;
 
-  if (isBase44()) {
-    try {
-      const url = await getSignedUrl(fileRef, options);
-      return !!url;
-    } catch {
-      return false;
-    }
-  }
-
   return supabaseStorage.supabaseExists(fileRef, options);
 }
 
@@ -178,7 +126,6 @@ export async function exists(fileRef, options = {}) {
  * @param {string} folderPath
  */
 export async function createFolder(bucket, folderPath) {
-  if (isBase44()) base44NotSupported("createFolder");
   return supabaseStorage.supabaseCreateFolder(bucket, folderPath);
 }
 
@@ -187,7 +134,6 @@ export async function createFolder(bucket, folderPath) {
  * @param {string} folderPath
  */
 export async function deleteFolder(bucket, folderPath) {
-  if (isBase44()) base44NotSupported("deleteFolder");
   return supabaseStorage.supabaseDeleteFolder(bucket, folderPath);
 }
 
@@ -197,7 +143,6 @@ export async function deleteFolder(bucket, folderPath) {
  * @param {{ bucket?: string }} [options]
  */
 export async function copy(fileRef, destPath, options = {}) {
-  if (isBase44()) base44NotSupported("copy");
   return supabaseStorage.supabaseCopy(fileRef, destPath, options);
 }
 
@@ -207,7 +152,6 @@ export async function copy(fileRef, destPath, options = {}) {
  * @param {{ bucket?: string }} [options]
  */
 export async function move(fileRef, destPath, options = {}) {
-  if (isBase44()) base44NotSupported("move");
   return supabaseStorage.supabaseMove(fileRef, destPath, options);
 }
 

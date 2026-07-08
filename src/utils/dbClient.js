@@ -1,8 +1,7 @@
 /**
  * dbClient — centralized data access layer.
  *
- * TODAY:  Routes through Base44 when VITE_DATA_BACKEND=base44 (default).
- *         Routes through Supabase when VITE_DATA_BACKEND=supabase (Phase 7.4A).
+ * Supabase-native entity access wrapper.
  *
  * Usage:
  *   import { db } from "@/utils/dbClient";
@@ -10,8 +9,6 @@
  *   const leads = await db.Connection.filter({ exhibitor_user_id: user.id });
  */
 
-import { base44 } from "@/api/base44Client";
-import { isBase44 } from "@/config/backend";
 import { makeSupabaseEntity } from "@/utils/supabaseEntity";
 import { generateUUID as createUUID, parseSort as parseSortQuery } from "@/utils/supabaseQuery";
 
@@ -33,13 +30,13 @@ export function deserializeMetadata(str) {
   try { return JSON.parse(str); } catch { return {}; }
 }
 
-// ── Sort parser (Base44 "-field" / "+field" → Supabase order) ─────────────
+// ── Sort parser ("-field" / "+field" → Supabase order) ─────────────────────
 export function parseSort(sort = "-created_date") {
   return parseSortQuery(sort);
 }
 
-// ── Entity registry (all 39 Base44 entities) ───────────────────────────────
-/** PascalCase entity name → Postgres table name (snake_case) for Supabase phase */
+// ── Entity registry (all 39 entities) ───────────────────────────────────────
+/** PascalCase entity name → Postgres table name (snake_case). */
 export const ENTITY_TABLE_MAP = {
   Activity: "activity",
   AdminAccessLog: "admin_access_log",
@@ -90,53 +87,7 @@ const ENTITY_OPTIONS = {
   Notification: { selectAfterInsert: false },
 };
 
-// ── Base44 entity proxy ────────────────────────────────────────────────────
-function makeBase44Entity(entityName) {
-  const entity = base44.entities[entityName];
-  return {
-    async list(sort = "-created_date", limit = 200, pagination) {
-      if (pagination != null) {
-        return entity.list(sort, limit, pagination);
-      }
-      return entity.list(sort, limit);
-    },
-    async filter(query, sort = "-created_date", limit = 200, pagination) {
-      if (pagination != null) {
-        return entity.filter(query, sort, limit, pagination);
-      }
-      return entity.filter(query, sort, limit);
-    },
-    async get(id) {
-      const rows = await entity.filter({ id });
-      return rows[0] || null;
-    },
-    async create(payload) {
-      return entity.create(payload);
-    },
-    async update(id, payload) {
-      return entity.update(id, payload);
-    },
-    async delete(id) {
-      return entity.delete(id);
-    },
-    async count(query) {
-      if (typeof entity.count === "function") {
-        return entity.count(query);
-      }
-      const rows = await entity.filter(query ?? {});
-      return rows.length;
-    },
-    subscribe(callback) {
-      if (typeof entity.subscribe === "function") {
-        return entity.subscribe(callback);
-      }
-      return () => {};
-    },
-  };
-}
-
 function makeEntity(entityName) {
-  if (isBase44()) return makeBase44Entity(entityName);
   const tableName = ENTITY_TABLE_MAP[entityName];
   return makeSupabaseEntity(entityName, tableName, ENTITY_OPTIONS[entityName]);
 }

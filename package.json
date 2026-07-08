@@ -1,5 +1,5 @@
 {
-  "name": "base44-app",
+  "name": "booth-bridge",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,16 +9,9 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview",
-    "phase6:dry-run": "node scripts/phase6/dry-run-estimate.mjs",
-    "phase6:verify-infra": "node scripts/phase6/verify-infrastructure.mjs",
-    "phase6:verify-uuid": "node scripts/phase6/verify-uuid-sample.mjs",
-    "phase6:export": "node scripts/phase6/export-entities.mjs",
-    "phase6:manifest": "node scripts/phase6/generate-manifest.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@base44/sdk": "^0.8.32",
-    "@base44/vite-plugin": "^1.0.21",
     "@hello-pangea/dnd": "^17.0.0",
     "@hookform/resolvers": "^4.1.2",
     "@radix-ui/react-accordion": "^1.2.3",

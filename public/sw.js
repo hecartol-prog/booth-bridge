@@ -26,7 +26,7 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET and API requests
   if (request.method !== 'GET') return;
-  if (url.pathname.startsWith('/api/') || url.hostname.includes('base44')) return;
+  if (url.pathname.startsWith('/api/')) return;
 
   // Network-first for HTML navigation
   if (request.mode === 'navigate') {

@@ -1,6 +1,6 @@
 /**
  * Supabase client singleton — lazy-initialized when env vars are present.
- * Auth always uses this client regardless of VITE_DATA_BACKEND.
+ * Auth always uses this client.
  */
 
 import { createClient } from "@supabase/supabase-js";

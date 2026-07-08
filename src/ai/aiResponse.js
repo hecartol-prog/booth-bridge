@@ -84,7 +84,7 @@ export function extractTextResult(raw) {
 }
 
 /**
- * Extract structured document output from Base44 extraction shape.
+ * Extract structured document output from gateway response shape.
  * @param {*} raw
  */
 export function extractDocumentOutput(raw) {

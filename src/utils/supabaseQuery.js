@@ -1,6 +1,6 @@
 /**
  * Supabase query translation for dbClient — filter operators, sort, pagination.
- * Maps Base44-style filter objects to PostgREST / supabase-js chain methods.
+ * Maps app-level filter objects to PostgREST / supabase-js chain methods.
  */
 
 /** RFC-4122 v4 UUID — shared by dbClient writes and Supabase create paths */
@@ -32,7 +32,7 @@ const OPERATOR_ALIASES = {
 };
 
 /**
- * @param {string} sort Base44 sort string, e.g. "-created_date" or "proposed_time"
+ * @param {string} sort Sort string, e.g. "-created_date" or "proposed_time"
  * @returns {{ column: string, ascending: boolean }}
  */
 export function parseSort(sort = "-created_date") {
@@ -127,7 +127,7 @@ function applyClause(query, column, operator, operand) {
 }
 
 /**
- * Apply Base44-style filter object to a supabase query builder.
+ * Apply app-level filter object to a supabase query builder.
  * Supports: eq (default), neq, gt, gte, lt, lte, like, ilike, in, contains
  * via suffix keys (field_gt), $operator objects ({ field: { $gt: n } }), or arrays (in).
  *
