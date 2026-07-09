@@ -1,8 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { extractOcrScan } from "@/api/aiClient";
-import { storage } from "@/api/storageClient";
-import { uploadOcrScan } from "@/utils/assetPipeline";
+import { runBusinessCardPipeline, PIPELINE_MODES } from "@/pipeline/businessCardPipeline";
 import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +11,7 @@ import {
   ScanLine, Camera, Upload, CheckCircle2, Loader2, Edit, Save, X
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { sanitizeOCRResult, validateFieldPattern } from "@/utils/securitySanitizer";
+import { validateFieldPattern } from "@/utils/securitySanitizer";
 
 const SCAN_TYPES = [
   { id: "business_card", label: "Business Card", desc: "Scan paper business cards", icon: "🪪" },
@@ -33,7 +31,7 @@ export default function OCRScanner() {
   const [editData, setEditData] = useState(null);
   const [confidence, setConfidence] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [pipelineMode, setPipelineMode] = useState("ocr_ai");
 
   const processFile = async (file) => {
     setStep("processing");
@@ -43,18 +41,29 @@ export default function OCRScanner() {
       reader.onload = (event) => setPreviewUrl(event.target?.result || null);
       reader.readAsDataURL(file);
 
-      const { file_url } = await uploadOcrScan(file, user?.id || "anonymous");
-      const extractionUrl = (await storage.getSignedUrl(file_url)) || file_url;
-      setImageUrl(file_url);
-      const response = await extractOcrScan({ scanType: /** @type {"business_card" | "badge"} */ (scanType), imageUrl: extractionUrl });
-      if (!response.success) throw new Error(response.error?.message || "OCR failed");
-      const sanitized = sanitizeOCRResult(response.result);
-      setEditData({ ...sanitized });
-      setConfidence(sanitized.confidence || 75);
+      const result = await runBusinessCardPipeline({
+        file,
+        mode: pipelineMode,
+        scanType: /** @type {"business_card" | "badge"} */ (scanType),
+        userId: user?.id || null,
+        skipStorage: !user?.id,
+        target: "scanner",
+      });
+
+      if (!result.success || !result.formFields) {
+        const stage = result.error?.stage || "pipeline";
+        const code = result.error?.code || "PIPELINE_FAILED";
+        throw new Error(`[${stage}/${code}] ${result.error?.message || "OCR failed"}`);
+      }
+
+      setImageUrl(result.storagePath);
+      setEditData({ ...result.formFields });
+      setConfidence(result.formFields.confidence || 75);
       setFieldErrors({});
       setStep("review");
-    } catch {
-      toast({ title: "OCR failed", description: "Could not process image. Please try again.", variant: "destructive" });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : "Could not process image. Please try again.";
+      toast({ title: "OCR failed", description, variant: "destructive" });
       setStep("select");
     }
     setLoading(false);
@@ -110,8 +119,9 @@ export default function OCRScanner() {
       queryClient.invalidateQueries({ queryKey: ["scanned-contacts", user?.id] });
       toast({ title: "Contact saved!", description: `${editData.full_name || editData.company || "Contact"} added.` });
       setStep("saved");
-    } catch {
-      toast({ title: "Save failed", variant: "destructive" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Save failed";
+      toast({ title: "Save failed", description: message, variant: "destructive" });
     }
     setLoading(false);
   };
@@ -171,6 +181,23 @@ export default function OCRScanner() {
                 <p className="text-xs text-muted-foreground mt-0.5">{st.desc}</p>
               </Card>
             ))}
+          </div>
+
+          <div className="flex gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setPipelineMode(PIPELINE_MODES.OCR_ONLY)}
+              className={`flex-1 rounded-md border px-2 py-2 ${pipelineMode === PIPELINE_MODES.OCR_ONLY ? "border-primary bg-primary/5" : ""}`}
+            >
+              OCR only
+            </button>
+            <button
+              type="button"
+              onClick={() => setPipelineMode(PIPELINE_MODES.OCR_AI)}
+              className={`flex-1 rounded-md border px-2 py-2 ${pipelineMode === PIPELINE_MODES.OCR_AI ? "border-primary bg-primary/5" : ""}`}
+            >
+              OCR + AI
+            </button>
           </div>
 
           <input type="file" accept="image/*" capture="environment" ref={captureRef} className="hidden" onChange={handleFileChange} />

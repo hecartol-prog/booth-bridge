@@ -81,6 +81,7 @@ export async function handleAiRequest(
         attempts: completion.attempts,
         gatewayVersion: getGatewayVersion(),
         requestTimeoutMs: getRequestTimeoutMs(),
+        pipelineStage: typeof body.pipeline_stage === "string" ? body.pipeline_stage : null,
       },
     });
 

@@ -14,6 +14,10 @@ import {
   OCR_SCANNER_BUSINESS_CARD_SCHEMA,
 } from "@/ai/prompts/businessCard/ocrScanner";
 import {
+  businessCardNormalizePrompt,
+  BUSINESS_CARD_NORMALIZED_SCHEMA,
+} from "@/ai/prompts/businessCard/normalize";
+import {
   businessCardExtractPrompt,
   BUSINESS_CARD_EXTRACT_SCHEMA,
   badgeExtractPrompt,
@@ -177,6 +181,16 @@ export async function extractDocument(params, options = {}) {
   );
 }
 
+function unwrapAiResult(response) {
+  if (!response?.success) return response;
+  const envelope = response.raw ?? response;
+  const inner =
+    envelope && typeof envelope === "object" && "result" in envelope
+      ? envelope.result
+      : envelope;
+  return { ...response, result: inner };
+}
+
 /**
  * Business card image extraction (with file URL).
  */
@@ -190,7 +204,7 @@ export async function extractBusinessCard(imageUrl, options = {}) {
 
   const response = await generate(params, options);
   if (!response.success) return response;
-  return { ...response, result: response.raw ?? response.result };
+  return unwrapAiResult(response);
 }
 
 /**
@@ -210,12 +224,36 @@ export async function extractOcrScan(params, options = {}) {
       ...(imageUrl ? { file_urls: [imageUrl] } : {}),
       add_context_from_internet: false,
       response_json_schema: OCR_SCANNER_BUSINESS_CARD_SCHEMA,
+      pipeline_stage: params.pipelineStage || "ocr_extraction",
     },
     options
   );
 
   if (!response.success) return response;
-  return { ...response, result: response.raw ?? response.result };
+  return unwrapAiResult(response);
+}
+
+/**
+ * RC9 — Normalize raw OCR JSON into a registration-ready profile (text-only Qwen call).
+ * @param {Record<string, unknown>} ocrProfile
+ * @param {{ signal?: AbortSignal, pipelineStage?: string }} [options]
+ */
+export async function normalizeBusinessCardProfile(ocrProfile, options = {}) {
+  const payload = {
+    prompt: businessCardNormalizePrompt(),
+    messages: [
+      {
+        role: "user",
+        content: `Raw OCR extraction JSON:\n${JSON.stringify(ocrProfile, null, 2)}`,
+      },
+    ],
+    response_json_schema: BUSINESS_CARD_NORMALIZED_SCHEMA,
+    pipeline_stage: options.pipelineStage || "ai_normalization",
+  };
+
+  const response = await generate(payload, options);
+  if (!response.success) return response;
+  return unwrapAiResult(response);
 }
 
 /** Event badge image extraction (with file URL). */
@@ -229,7 +267,7 @@ export async function extractBadge(imageUrl, options = {}) {
 
   const response = await generate(params, options);
   if (!response.success) return response;
-  return { ...response, result: response.raw ?? response.result };
+  return unwrapAiResult(response);
 }
 
 export async function summarize(params, options = {}) {
@@ -369,6 +407,7 @@ export const ai = {
   extractBusinessCard,
   extractBadge,
   extractOcrScan,
+  normalizeBusinessCardProfile,
   summarize,
   classify,
   recommend,

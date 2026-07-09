@@ -1,0 +1,616 @@
+{
+  "runId": "rc9-1783585128434",
+  "timestamp": "2026-07-09T08:18:48.451Z",
+  "projectRef": "jjqhmvfzqpohvukoxeoe",
+  "pipelineMode": "ocr_ai",
+  "productionModel": "qwen/qwen-2.5-vl-72b-instruct",
+  "provider": "openrouter",
+  "testUser": {
+    "userId": "3ec6c6da-80ff-4ceb-bcd9-0c30e46a296b",
+    "email": "rc9-1783585128434@example.com"
+  },
+  "storage": {
+    "filePath": "scans/3ec6c6da-80ff-4ceb-bcd9-0c30e46a296b/rc9-1783585128434-card.png",
+    "signedUrl": "https://jjqhmvfzqpohvukoxeoe.supabase.co/storage/v1/object/sign/boothbridge-ocr/scans/3ec6c6da-80ff-4ceb-bcd9-0c30e46a296b/rc9-1783585128434-card.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84MWE5OGJkOS01Mjc5LTQ0MTgtYTQ5Ny03MjI2OTYzZDcyYjkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJib290aGJyaWRnZS1vY3Ivc2NhbnMvM2VjNmM2ZGEtODBmZi00Y2ViLWJjZDktMGMzMGU0NmEyOTZiL3JjOS0xNzgzNTg1MTI4NDM0LWNhcmQucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4MzU4NTEzNCwiZXhwIjoxNzgzNTg2MDM0fQ.BGgmnH3lnSDWH_IpnZRySAyOI2Dk8DT3HaOw2vvoNck",
+    "latencyMs": 1492
+  },
+  "pipeline": {
+    "stages": [
+      {
+        "stage": "ocr_extraction",
+        "status": "ok",
+        "latencyMs": 6258,
+        "httpStatus": 200,
+        "model": "qwen/qwen2.5-vl-72b-instruct"
+      },
+      {
+        "stage": "ai_normalization",
+        "status": "ok",
+        "latencyMs": 5580,
+        "httpStatus": 200,
+        "model": "qwen/qwen2.5-vl-72b-instruct"
+      }
+    ],
+    "metrics": {
+      "compressionMs": 0,
+      "storageUploadMs": 0,
+      "ocrMs": 6258,
+      "aiMs": 5580,
+      "fieldMappingMs": 0
+    },
+    "profile": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "company": "Acme Corp",
+      "email": "john.doe@acme.com",
+      "phone": "555-1234",
+      "confidence": 0.95
+    },
+    "usage": {
+      "ocr": {
+        "prompt_tokens": 95,
+        "completion_tokens": 66,
+        "total_tokens": 161
+      },
+      "ai": {
+        "prompt_tokens": 112,
+        "completion_tokens": 66,
+        "total_tokens": 178
+      }
+    },
+    "error": null
+  },
+  "costEstimate": {
+    "ocr": {
+      "inputTokens": 95,
+      "outputTokens": 66,
+      "totalTokens": 161,
+      "usd": 0.00012880000000000001
+    },
+    "ai": {
+      "inputTokens": 112,
+      "outputTokens": 66,
+      "totalTokens": 178,
+      "usd": 0.00014240000000000002
+    },
+    "totalUsd": 0.00027120000000000003,
+    "model": "qwen/qwen-2.5-vl-72b-instruct",
+    "pricingNote": "OpenRouter Qwen 2.5 72B Instruct approx $0.35/1M input, $0.40/1M output"
+  },
+  "edgeFunctions": {
+    "ai-health": {
+      "status": 200,
+      "ok": true,
+      "json": {
+        "success": true,
+        "result": {
+          "status": "degraded",
+          "backend": "supabase",
+          "gateway": "openrouter",
+          "provider": "qwen",
+          "model": "qwen/qwen-2.5-vl-72b-instruct",
+          "selectedProvider": "qwen",
+          "activeModel": "qwen/qwen-2.5-vl-72b-instruct",
+          "fallbackProvider": null,
+          "gatewayVersion": "rc9",
+          "requestTimeoutMs": 30000,
+          "latency": 208,
+          "providerHealth": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 130,
+              "status": 200,
+              "message": "Model qwen/qwen-2.5-vl-72b-instruct not listed by openrouter."
+            }
+          ],
+          "routing": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "enabled": true,
+              "timeoutMs": 30000
+            }
+          ],
+          "probe": {
+            "ok": false,
+            "provider": "qwen",
+            "model": "qwen/qwen-2.5-vl-72b-instruct",
+            "gateway": "openrouter",
+            "selectedProvider": "qwen",
+            "activeModel": "qwen/qwen-2.5-vl-72b-instruct",
+            "fallbackProvider": null,
+            "providers": [
+              {
+                "provider": "qwen",
+                "gateway": "openrouter",
+                "model": "qwen/qwen-2.5-vl-72b-instruct",
+                "ok": false,
+                "latency": 130,
+                "status": 200,
+                "message": "Model qwen/qwen-2.5-vl-72b-instruct not listed by openrouter."
+              }
+            ]
+          }
+        },
+        "error": null,
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-vl-72b-instruct",
+        "latency": 208,
+        "usage": null,
+        "metadata": {
+          "ping": true
+        }
+      },
+      "latencyMs": 1766
+    },
+    "ai-generate": {
+      "status": 200,
+      "ok": true,
+      "json": {
+        "success": true,
+        "result": {
+          "ok": true
+        },
+        "error": null,
+        "provider": "qwen",
+        "model": "qwen/qwen2.5-vl-72b-instruct",
+        "latency": 656,
+        "usage": {
+          "prompt_tokens": 39,
+          "completion_tokens": 9,
+          "total_tokens": 48
+        },
+        "metadata": {
+          "function": "ai",
+          "gateway": "openrouter",
+          "fallbackProvider": null,
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": true,
+              "latency": 590
+            }
+          ],
+          "gatewayVersion": "rc9",
+          "requestTimeoutMs": 30000,
+          "pipelineStage": null
+        }
+      },
+      "latencyMs": 1059
+    },
+    "ai-document": {
+      "status": 429,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_RATE_LIMIT",
+          "message": "qwen via openrouter failed (429): Provider returned error",
+          "retryable": true,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 367,
+              "retryable": true,
+              "status": 429,
+              "message": "qwen via openrouter failed (429): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-vl-72b-instruct",
+        "latency": 419,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 367,
+              "retryable": true,
+              "status": 429,
+              "message": "qwen via openrouter failed (429): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 2021
+    },
+    "ai-business-card": {
+      "status": 429,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_RATE_LIMIT",
+          "message": "qwen via openrouter failed (429): Provider returned error",
+          "retryable": true,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 158,
+              "retryable": true,
+              "status": 429,
+              "message": "qwen via openrouter failed (429): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-vl-72b-instruct",
+        "latency": 236,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 158,
+              "retryable": true,
+              "status": 429,
+              "message": "qwen via openrouter failed (429): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 1644
+    },
+    "ai-chat": {
+      "status": 400,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_PROVIDER_ERROR",
+          "message": "qwen via openrouter failed (400): Provider returned error",
+          "retryable": false,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 1754,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-72b-instruct",
+        "latency": 1818,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 1754,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 3476
+    },
+    "ai-summary": {
+      "status": 400,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_PROVIDER_ERROR",
+          "message": "qwen via openrouter failed (400): Provider returned error",
+          "retryable": false,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 593,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-72b-instruct",
+        "latency": 689,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 593,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 2021
+    },
+    "ai-classify": {
+      "status": 400,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_PROVIDER_ERROR",
+          "message": "qwen via openrouter failed (400): Provider returned error",
+          "retryable": false,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 547,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-72b-instruct",
+        "latency": 632,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 547,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 2055
+    },
+    "ai-match": {
+      "status": 400,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_PROVIDER_ERROR",
+          "message": "qwen via openrouter failed (400): Provider returned error",
+          "retryable": false,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 316,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-72b-instruct",
+        "latency": 376,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 316,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 1784
+    },
+    "ai-recommend": {
+      "status": 400,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_PROVIDER_ERROR",
+          "message": "qwen via openrouter failed (400): Provider returned error",
+          "retryable": false,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 299,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-72b-instruct",
+        "latency": 378,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-72b-instruct",
+              "ok": false,
+              "latency": 299,
+              "retryable": false,
+              "status": 400,
+              "message": "qwen via openrouter failed (400): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 2530
+    }
+  },
+  "errorPaths": {
+    "no_auth": {
+      "status": 401,
+      "ok": false,
+      "json": {
+        "code": "UNAUTHORIZED_NO_AUTH_HEADER",
+        "message": "Missing authorization header"
+      },
+      "latencyMs": 347
+    },
+    "anon_jwt": {
+      "status": 401,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_AUTHENTICATION",
+          "message": "invalid claim: missing sub claim",
+          "retryable": false
+        },
+        "provider": null,
+        "model": null,
+        "latency": 124,
+        "usage": null,
+        "metadata": {}
+      },
+      "latencyMs": 526
+    },
+    "missing_prompt": {
+      "status": 400,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "INVALID_REQUEST",
+          "message": "prompt, messages, or file_url(s) required.",
+          "retryable": false
+        },
+        "provider": null,
+        "model": null,
+        "latency": 60,
+        "usage": null,
+        "metadata": {}
+      },
+      "latencyMs": 753
+    },
+    "invalid_image": {
+      "status": 429,
+      "ok": false,
+      "json": {
+        "success": false,
+        "result": null,
+        "error": {
+          "code": "AI_RATE_LIMIT",
+          "message": "qwen via openrouter failed (429): Provider returned error",
+          "retryable": true,
+          "details": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 332,
+              "retryable": true,
+              "status": 429,
+              "message": "qwen via openrouter failed (429): Provider returned error"
+            }
+          ]
+        },
+        "provider": "qwen",
+        "model": "qwen/qwen-2.5-vl-72b-instruct",
+        "latency": 406,
+        "usage": null,
+        "metadata": {
+          "gateway": "openrouter",
+          "attempts": [
+            {
+              "provider": "qwen",
+              "gateway": "openrouter",
+              "model": "qwen/qwen-2.5-vl-72b-instruct",
+              "ok": false,
+              "latency": 332,
+              "retryable": true,
+              "status": 429,
+              "message": "qwen via openrouter failed (429): Provider returned error"
+            }
+          ]
+        }
+      },
+      "latencyMs": 813
+    }
+  },
+  "routing": {
+    "ai_health": [
+      {
+        "provider": "qwen",
+        "gateway": "openrouter",
+        "model": "qwen/qwen-2.5-vl-72b-instruct",
+        "enabled": true,
+        "timeoutMs": 30000
+      }
+    ],
+    "activeModel": "qwen/qwen-2.5-vl-72b-instruct",
+    "provider": "qwen"
+  },
+  "summary": {
+    "pipelineSuccess": true,
+    "totalLatencyMs": 13330,
+    "stagesCompleted": 2,
+    "stagesFailed": 0
+  }
+}

@@ -69,21 +69,21 @@ type GatewayPlan = {
   routes: GatewayRoute[];
 };
 
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+const OPENROUTER_BASE_URL = (() => {
+  const configured = Deno.env.get("OPENROUTER_BASE_URL")?.trim();
+  if (configured && configured.startsWith("https://")) {
+    return configured.replace(/\/$/, "");
+  }
+  return "https://openrouter.ai/api/v1";
+})();
 const OPENAI_BASE_URL = "https://api.openai.com/v1";
-const GATEWAY_VERSION = Deno.env.get("AI_GATEWAY_VERSION") || "phase7.7a";
-const MAX_REQUEST_TIMEOUT_MS = 5000;
+const GATEWAY_VERSION = Deno.env.get("AI_GATEWAY_VERSION") || "rc9";
+/** RC9 production model — OpenRouter Qwen 2.5 VL 72B Instruct (vision + text). */
+const RC9_PRODUCTION_MODEL = "qwen/qwen-2.5-vl-72b-instruct";
+const MAX_REQUEST_TIMEOUT_MS = 60000;
 const MIN_REQUEST_TIMEOUT_MS = 1000;
-const DEFAULT_REQUEST_TIMEOUT_MS = 5000;
-const DEFAULT_OPENROUTER_PROVIDER_ORDER: AiProviderName[] = [
-  "deepseek",
-  "qwen",
-  "zhipu",
-  "moonshot",
-  "openai",
-  "claude",
-  "gemini",
-];
+const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+const DEFAULT_OPENROUTER_PROVIDER_ORDER: AiProviderName[] = ["qwen"];
 
 function resolveRequestTimeoutMs(): number {
   const raw = Number(Deno.env.get("AI_REQUEST_TIMEOUT_MS") || DEFAULT_REQUEST_TIMEOUT_MS);
@@ -98,7 +98,7 @@ const REQUEST_TIMEOUT_MS = resolveRequestTimeoutMs();
 
 const DEFAULT_MODELS: Record<AiProviderName, string> = {
   deepseek: "deepseek/deepseek-chat",
-  qwen: "qwen/qwen-2.5-72b-instruct",
+  qwen: "qwen/qwen-2.5-vl-72b-instruct",
   zhipu: "zhipuai/glm-4-plus",
   moonshot: "moonshotai/kimi-k2",
   openai: "openai/gpt-4o-mini",
@@ -126,7 +126,7 @@ function getOpenRouterProviderOrder(): AiProviderName[] {
 }
 
 function isDirectOpenAiFallbackEnabled(): boolean {
-  return (Deno.env.get("AI_ENABLE_DIRECT_OPENAI_FALLBACK") || "true").toLowerCase() !== "false";
+  return (Deno.env.get("AI_ENABLE_DIRECT_OPENAI_FALLBACK") || "false").toLowerCase() === "true";
 }
 
 const MAX_RETRY_BACKOFF_MS = 2000;
@@ -165,6 +165,13 @@ function envModel(provider: AiProviderName, requestedModel?: string): string {
   return value || DEFAULT_MODELS[provider];
 }
 
+function readSecret(name: string): string | null {
+  const value = Deno.env.get(name);
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function createRoute(
   provider: AiProviderName,
   gateway: AiGatewayName,
@@ -175,7 +182,7 @@ function createRoute(
       provider,
       gateway,
       model,
-      apiKey: Deno.env.get("OPENROUTER_API_KEY"),
+      apiKey: readSecret("OPENROUTER_API_KEY"),
       baseUrl: OPENROUTER_BASE_URL,
       extraHeaders: {
         "HTTP-Referer": Deno.env.get("OPENROUTER_HTTP_REFERER") || "https://boothbridge.app",
@@ -188,16 +195,24 @@ function createRoute(
     provider,
     gateway,
     model,
-    apiKey: Deno.env.get("OPENAI_API_KEY"),
+    apiKey: readSecret("OPENAI_API_KEY"),
     baseUrl: OPENAI_BASE_URL,
   };
 }
 
+function resolveProductionModel(requestedModel?: string): string {
+  return requestedModel ||
+    Deno.env.get("AI_MODEL") ||
+    Deno.env.get("OPENROUTER_DEFAULT_MODEL") ||
+    RC9_PRODUCTION_MODEL;
+}
+
 function buildGatewayPlan(requestedModel?: string): GatewayPlan {
   const requestedGateway = (Deno.env.get("AI_PROVIDER") || "openrouter").toLowerCase();
+  const productionModel = resolveProductionModel(requestedModel);
 
   if (requestedGateway === "openai") {
-    const openAiModel = requestedModel || Deno.env.get("AI_MODEL") || "gpt-4o-mini";
+    const openAiModel = productionModel;
     const routes = [createRoute("openai", "openai", openAiModel)];
     return {
       selectedProvider: routes[0].apiKey ? routes[0].provider : null,
@@ -207,23 +222,20 @@ function buildGatewayPlan(requestedModel?: string): GatewayPlan {
     };
   }
 
-  const openRouterOrder = getOpenRouterProviderOrder();
-  const routes: GatewayRoute[] = openRouterOrder.map((provider, index) =>
-    createRoute(provider, "openrouter", envModel(provider, index === 0 ? requestedModel : undefined))
-  );
+  // RC9: single OpenRouter route — Qwen 2.5 72B Instruct only.
+  const routes: GatewayRoute[] = [
+    createRoute("qwen", "openrouter", productionModel),
+  ];
 
-  // Legacy direct OpenAI compatibility remains available after the OpenRouter chain.
   if (isDirectOpenAiFallbackEnabled()) {
     const directOpenAiModel = Deno.env.get("AI_MODEL_OPENAI_DIRECT") || "gpt-4o-mini";
     routes.push(createRoute("openai", "openai", directOpenAiModel));
   }
 
-  const enabledRoutes = routes.filter((route) => Boolean(route.apiKey));
-
   return {
-    selectedProvider: enabledRoutes[0]?.provider ?? null,
-    activeModel: enabledRoutes[0]?.model ?? null,
-    fallbackProvider: enabledRoutes[1]?.provider ?? null,
+    selectedProvider: routes[0]?.apiKey ? routes[0].provider : null,
+    activeModel: routes[0]?.apiKey ? routes[0].model : null,
+    fallbackProvider: routes[1]?.provider ?? null,
     routes,
   };
 }
@@ -468,9 +480,9 @@ async function callChatCompletions(
 }
 
 function noGatewayConfiguredError(): Error {
-  const route = createRoute("openai", "openai", "gpt-4o-mini");
+  const route = createRoute("qwen", "openrouter", RC9_PRODUCTION_MODEL);
   return createGatewayError(
-    "No AI gateway credentials configured. Set OPENROUTER_API_KEY or OPENAI_API_KEY.",
+    "No AI gateway credentials configured. Set OPENROUTER_API_KEY.",
     route,
     { code: "AI_AUTHENTICATION", retryable: false },
   );
@@ -509,6 +521,15 @@ export async function complete(req: CompletionRequest): Promise<CompletionResult
   }
 
   const attempts: GatewayAttempt[] = [];
+  const hasVision = Boolean(req.file_url || req.file_urls?.length);
+  logStructured("warn", "ai_request", {
+    model: plan.activeModel,
+    gateway: "openrouter",
+    hasVision,
+    hasSchema: Boolean(schemaFromRequest(req)),
+    messageCount: buildMessages(req).length,
+    hasOpenRouterKey: Boolean(readSecret("OPENROUTER_API_KEY")),
+  });
 
   for (let index = 0; index < routes.length; index += 1) {
     const route = routes[index];
@@ -517,6 +538,15 @@ export async function complete(req: CompletionRequest): Promise<CompletionResult
     try {
       const completion = await callChatCompletions(route, req);
       attempts.push(successAttempt(route, Date.now() - started));
+      logStructured("warn", "ai_response", {
+        provider: completion.provider,
+        gateway: completion.gateway,
+        model: completion.model,
+        latency_ms: Date.now() - started,
+        prompt_tokens: completion.usage?.prompt_tokens ?? null,
+        completion_tokens: completion.usage?.completion_tokens ?? null,
+        total_tokens: completion.usage?.total_tokens ?? null,
+      });
 
       return {
         ...completion,

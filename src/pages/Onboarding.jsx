@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "@/api/authClient";
-import { extractDocument } from "@/api/aiClient";
-import { uploadCompanyLogo, uploadOcrScan } from "@/utils/assetPipeline";
+import { runBusinessCardPipeline, PIPELINE_MODES } from "@/pipeline/businessCardPipeline";
+import { uploadCompanyLogo } from "@/utils/assetPipeline";
 import { storage } from "@/api/storageClient";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Briefcase, ShoppingBag, ArrowRight, Upload, X, ScanLine, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  Briefcase,
+  ShoppingBag,
+  ArrowRight,
+  Upload,
+  X,
+  ScanLine,
+  Sparkles,
+  CheckCircle2,
+  Loader2,
+  Camera,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { APP_LOGO_URL } from "@/config/branding";
+
+const LOW_CONFIDENCE_THRESHOLD = 70;
 
 const INDUSTRIES = [
   "Aerospace & Defense",
@@ -62,6 +75,7 @@ export default function Onboarding() {
   const { t } = useI18n();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(null);
+  const [profileMethod, setProfileMethod] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // Exhibitor fields
@@ -73,6 +87,8 @@ export default function Onboarding() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Buyer fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [buyerCompany, setBuyerCompany] = useState("");
   const [industry, setIndustry] = useState("");
@@ -86,9 +102,26 @@ export default function Onboarding() {
   const [productsOfInterest, setProductsOfInterest] = useState("");
 
   // Card scan state
-  const [scanStep, setScanStep] = useState("upload"); // "upload" | "scanning" | "done"
+  const [scanStep, setScanStep] = useState("upload");
   const [cardPreview, setCardPreview] = useState(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrConfidence, setOcrConfidence] = useState(null);
+  const [uncertainFieldKeys, setUncertainFieldKeys] = useState([]);
+  const [fieldsConfirmed, setFieldsConfirmed] = useState(false);
   const [finishError, setFinishError] = useState(null);
+  const cameraInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
+
+  const requiresFieldConfirmation = useMemo(
+    () => profileMethod === "scan" && (ocrConfidence || 0) < LOW_CONFIDENCE_THRESHOLD,
+    [profileMethod, ocrConfidence]
+  );
+
+  useEffect(() => {
+    auth.getCurrentUser().then((me) => {
+      if (me?.email && !email) setEmail(me.email);
+    }).catch(() => {});
+  }, [email]);
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
@@ -101,63 +134,116 @@ export default function Onboarding() {
     setUploadingLogo(false);
   };
 
-  const handleCardScan = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const applyOcrFields = (fields) => {
+    setFirstName(String(fields.firstName || "").trim());
+    setLastName(String(fields.lastName || "").trim());
+    setBuyerCompany(String(fields.company || "").trim());
+    setEmail(String(fields.email || "").trim());
+    setPhone(String(fields.phone || "").trim());
+    setJobTitle(String(fields.jobTitle || "").trim());
+    setCountry(String(fields.country || "").trim());
 
-    // Show preview
+    const confidence = Number.isFinite(fields.confidence) ? fields.confidence : 75;
+    setOcrConfidence(confidence);
+
+    const uncertain = [];
+    if (confidence < LOW_CONFIDENCE_THRESHOLD) {
+      uncertain.push("firstName", "lastName", "company", "email");
+    }
+    setUncertainFieldKeys(uncertain);
+    setFieldsConfirmed(false);
+  };
+
+  const runOcr = async (file) => {
+    setFinishError(null);
+    setOcrLoading(true);
+    setFieldsConfirmed(false);
+    setScanStep("scanning");
+
     const reader = new FileReader();
     reader.onload = (ev) => setCardPreview(ev.target.result);
     reader.readAsDataURL(file);
 
-    setScanStep("scanning");
-
     try {
-      // Upload then extract
       const me = await auth.getCurrentUser();
-      const { file_url } = await uploadOcrScan(file, me?.id || "onboarding");
-      const response = await extractDocument({ file_url });
-
-      if (response.success && response.result) {
-        const data = Array.isArray(response.result) ? response.result[0] : response.result;
-        if (data.title) setJobTitle(data.title);
-        if (data.company) setBuyerCompany(data.company);
-        if (data.email) setEmail(data.email);
-        if (data.phone) setPhone(data.phone);
-        if (data.mobile) setMobile(data.mobile);
-        if (data.website) setWebsite(data.website);
-        if (data.linkedin) setLinkedin(data.linkedin);
-        if (data.company_address) setCompanyAddress(data.company_address);
-        if (data.country) setCountry(data.country);
-        if (data.products_of_interest?.length) setProductsOfInterest(data.products_of_interest.join(", "));
-        // Try to match industry
-        if (data.industry) {
-          const match = INDUSTRIES.find(ind =>
-            ind.toLowerCase().includes(data.industry.toLowerCase()) ||
-            data.industry.toLowerCase().includes(ind.toLowerCase().split(" ")[0])
-          );
-          if (match) setIndustry(match);
-        }
+      if (!me?.id) {
+        throw new Error("You must be signed in to scan a business card.");
       }
+
+      const result = await runBusinessCardPipeline({
+        file,
+        mode: PIPELINE_MODES.OCR_AI,
+        scanType: "business_card",
+        userId: me.id,
+        skipStorage: false,
+        target: "onboarding",
+      });
+
+      if (!result.success || !result.formFields) {
+        const stage = result.error?.stage || "pipeline";
+        const code = result.error?.code || "PIPELINE_FAILED";
+        throw new Error(
+          `[${stage}/${code}] ${result.error?.message || "Could not extract card details. Please enter details manually."}`
+        );
+      }
+
+      applyOcrFields(result.formFields);
     } catch (err) {
-      // Scan failed — still allow user to continue manually
+      const message = err instanceof Error ? err.message : "Card scan failed.";
+      setFinishError(`${message} You can fill fields manually.`);
     } finally {
+      setOcrLoading(false);
       setScanStep("done");
     }
   };
 
-  const skipScan = () => {
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await runOcr(file);
+    event.target.value = "";
+  };
+
+  const chooseManualProfile = () => {
+    setProfileMethod("manual");
     setScanStep("done");
+    setCardPreview(null);
+    setOcrConfidence(null);
+    setUncertainFieldKeys([]);
+    setFieldsConfirmed(false);
+    setFinishError(null);
+    setStep(4);
+  };
+
+  const chooseScanProfile = () => {
+    setProfileMethod("scan");
+    setScanStep("upload");
+    setCardPreview(null);
+    setOcrConfidence(null);
+    setUncertainFieldKeys([]);
+    setFieldsConfirmed(false);
+    setFinishError(null);
     setStep(3);
   };
 
   const handleFinish = async () => {
-    // Derive role from current step context if not explicitly set
-    const effectiveRole = role || (step === 3 ? "buyer" : step === 2 && !role ? null : null);
+    const effectiveRole = role || (step === 4 ? "buyer" : step === 2 && !role ? null : null);
     if (!effectiveRole) {
       setFinishError("Please select a role to continue.");
       return;
     }
+
+    if (effectiveRole === "buyer") {
+      if (!firstName.trim() || !lastName.trim() || !buyerCompany.trim()) {
+        setFinishError("Please complete first name, last name, and company.");
+        return;
+      }
+      if (requiresFieldConfirmation && !fieldsConfirmed) {
+        setFinishError("Please confirm the highlighted OCR fields before saving your profile.");
+        return;
+      }
+    }
+
     setSaving(true);
     setFinishError(null);
     try {
@@ -187,6 +273,7 @@ export default function Onboarding() {
         }
         await auth.updateUserMetadata({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
       } else {
+        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
         const buyerData = {
           job_title: jobTitle,
           company: buyerCompany,
@@ -195,7 +282,7 @@ export default function Onboarding() {
           company_address: companyAddress || "",
           country: country || "",
           digital_card: {
-            name: me.full_name,
+            name: fullName || me.full_name,
             email: email || me.email,
             title: jobTitle,
             phone,
@@ -222,9 +309,11 @@ export default function Onboarding() {
     }
   };
 
-  // Total steps: 1 (role) + 2 (buyer: scan + form) or 2 (exhibitor: booth form)
-  const totalSteps = role === "buyer" ? 3 : 2;
-  const currentStep = step === 1 ? 1 : role === "buyer" ? step : 2;
+  const totalSteps = role === "buyer" ? 4 : 2;
+  const currentStep =
+    step === 1 ? 1
+    : role === "exhibitor" ? (step >= 2 ? 2 : 1)
+    : step;
 
   return (
     <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start sm:justify-center py-8 px-4">
@@ -234,7 +323,6 @@ export default function Onboarding() {
         </div>
       </div>
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <img
             src={APP_LOGO_URL}
@@ -245,7 +333,6 @@ export default function Onboarding() {
           <p className="text-muted-foreground mt-1 text-sm">{t("onboarding.setupProfile")}</p>
         </div>
 
-        {/* Progress dots */}
         <div className="flex gap-2 mb-6 justify-center">
           {Array.from({ length: totalSteps || 2 }).map((_, i) => (
             <div
@@ -259,7 +346,6 @@ export default function Onboarding() {
 
         <AnimatePresence mode="wait">
 
-          {/* ── STEP 1: Choose role ── */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <h2 className="text-lg font-heading font-semibold mb-4 text-center">{t("onboarding.iAmAn")}</h2>
@@ -281,31 +367,83 @@ export default function Onboarding() {
                   <p className="text-xs text-muted-foreground mt-1">{t("onboarding.attendee")}</p>
                 </Card>
               </div>
-              <Button className="w-full mt-6" disabled={!role} onClick={() => setStep(2)}>
+              <Button
+                className="w-full mt-6"
+                disabled={!role}
+                onClick={() => setStep(role === "buyer" ? 2 : 2)}
+              >
                 {t("onboarding.continue")} <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </motion.div>
           )}
 
-          {/* ── STEP 2 (buyer): Scan business card ── */}
           {step === 2 && role === "buyer" && (
-            <motion.div key="step2-scan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+            <motion.div key="step2-method" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+              <div className="text-center mb-2">
+                <h2 className="text-lg font-heading font-semibold">Complete your profile</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Scan your business card or enter your details manually.
+                </p>
+              </div>
+              <Button type="button" className="w-full h-12 font-medium" onClick={chooseScanProfile}>
+                <ScanLine className="w-4 h-4 mr-2" />
+                Scan Business Card
+              </Button>
+              <Button type="button" variant="outline" className="w-full h-12" onClick={chooseManualProfile}>
+                Complete Manually
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setStep(1)}>
+                {t("onboarding.back")}
+              </Button>
+            </motion.div>
+          )}
+
+          {step === 3 && role === "buyer" && profileMethod === "scan" && (
+            <motion.div key="step3-scan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="text-center">
                 <h2 className="text-lg font-heading font-semibold">{t("onboarding.scanCard")}</h2>
                 <p className="text-sm text-muted-foreground mt-1">{t("onboarding.scanCardSubtitle")}</p>
               </div>
 
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
               {scanStep === "upload" && (
-                <label className="flex flex-col items-center gap-3 p-8 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <ScanLine className="w-7 h-7 text-primary" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-medium text-sm">{t("onboarding.uploadCard")}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{t("onboarding.cardFormats")}</p>
-                  </div>
-                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleCardScan} />
-                </label>
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={ocrLoading}
+                    onClick={() => cameraInputRef.current?.click()}
+                  >
+                    {ocrLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
+                    Capture Card Photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={ocrLoading}
+                    onClick={() => uploadInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Card Image
+                  </Button>
+                </div>
               )}
 
               {scanStep === "scanning" && (
@@ -335,23 +473,22 @@ export default function Onboarding() {
                       {cardPreview ? t("onboarding.cardScanned") : t("onboarding.readyFill")}
                     </span>
                   </div>
+                  {ocrConfidence !== null && (
+                    <p className={`text-xs ${ocrConfidence < LOW_CONFIDENCE_THRESHOLD ? "text-amber-600" : "text-green-600"}`}>
+                      OCR confidence: {ocrConfidence}%
+                    </p>
+                  )}
                 </div>
               )}
 
+              {finishError && (
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{finishError}</div>
+              )}
+
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">{t("onboarding.back")}</Button>
-                {scanStep === "upload" && (
-                  <Button variant="ghost" onClick={skipScan} className="flex-1 text-muted-foreground">
-                    {t("onboarding.skip")}
-                  </Button>
-                )}
-                {scanStep === "scanning" && (
-                  <Button variant="ghost" onClick={skipScan} className="flex-1 text-muted-foreground">
-                    {t("onboarding.skip")}
-                  </Button>
-                )}
-                {scanStep === "done" && (
-                  <Button onClick={() => setStep(3)} className="flex-1">
+                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">{t("onboarding.back")}</Button>
+                {scanStep !== "scanning" && (
+                  <Button onClick={() => setStep(4)} className="flex-1">
                     {t("onboarding.continue")} <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 )}
@@ -359,11 +496,10 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {/* ── STEP 3 (buyer): Profile form ── */}
-          {step === 3 && role === "buyer" && (
-            <motion.div key="step3-buyer" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+          {step === 4 && role === "buyer" && (
+            <motion.div key="step4-buyer" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
               <h2 className="text-lg font-heading font-semibold text-center">{t("onboarding.yourProfile")}</h2>
-              {cardPreview && (
+              {profileMethod === "scan" && cardPreview && (
                 <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg">
                   <Sparkles className="w-3.5 h-3.5" />
                   {t("onboarding.autoFilled")}
@@ -371,13 +507,37 @@ export default function Onboarding() {
               )}
 
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>First Name *</Label>
+                  <Input
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    className={uncertainFieldKeys.includes("firstName") ? "border-amber-500" : ""}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Last Name *</Label>
+                  <Input
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    className={uncertainFieldKeys.includes("lastName") ? "border-amber-500" : ""}
+                    required
+                  />
+                </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.jobTitle")}</Label>
                   <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Procurement Manager" />
                 </div>
                 <div className="col-span-2">
-                  <Label>{t("onboarding.company")}</Label>
-                  <Input value={buyerCompany} onChange={e => setBuyerCompany(e.target.value)} placeholder="Acme Corp" />
+                  <Label>{t("onboarding.company")} *</Label>
+                  <Input
+                    value={buyerCompany}
+                    onChange={e => setBuyerCompany(e.target.value)}
+                    className={uncertainFieldKeys.includes("company") ? "border-amber-500" : ""}
+                    placeholder="Acme Corp"
+                    required
+                  />
                 </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.industry")}</Label>
@@ -402,7 +562,13 @@ export default function Onboarding() {
                 </div>
                 <div className="col-span-2">
                   <Label>{t("auth.email")}</Label>
-                  <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" type="email" />
+                  <Input
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className={uncertainFieldKeys.includes("email") ? "border-amber-500" : ""}
+                    placeholder="you@company.com"
+                    type="email"
+                  />
                 </div>
                 <div className="col-span-2">
                   <Label>Company Address</Label>
@@ -426,11 +592,31 @@ export default function Onboarding() {
                 </div>
               </div>
 
+              {requiresFieldConfirmation && (
+                <label className="flex items-start gap-2 text-sm rounded-md border border-amber-300 bg-amber-50 p-3">
+                  <input
+                    type="checkbox"
+                    checked={fieldsConfirmed}
+                    onChange={(e) => setFieldsConfirmed(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    OCR confidence is low. I reviewed and corrected highlighted fields before saving my profile.
+                  </span>
+                </label>
+              )}
+
               {finishError && (
                 <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{finishError}</div>
               )}
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">{t("onboarding.back")}</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(profileMethod === "scan" ? 3 : 2)}
+                  className="flex-1"
+                >
+                  {t("onboarding.back")}
+                </Button>
                 <Button onClick={handleFinish} disabled={saving} className="flex-1">
                   {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("onboarding.settingUp")}</> : t("onboarding.finishSetup")}
                 </Button>
@@ -438,7 +624,6 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {/* ── STEP 2 (exhibitor): Booth setup ── */}
           {step === 2 && role === "exhibitor" && (
             <motion.div key="step2-exhibitor" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <h2 className="text-lg font-heading font-semibold text-center">{t("onboarding.setupBooth")}</h2>
