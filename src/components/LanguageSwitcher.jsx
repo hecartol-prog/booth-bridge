@@ -2,7 +2,21 @@ import React, { useState, useRef, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Globe } from "lucide-react";
 
-export default function LanguageSwitcher({ compact = false }) {
+const VARIANT_STYLES = {
+  default: "text-foreground hover:text-foreground hover:bg-muted",
+  sidebar: "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+};
+
+const PLACEMENT_STYLES = {
+  bottom: "absolute top-full left-0 mt-1",
+  top: "absolute bottom-full left-0 mb-1",
+};
+
+export default function LanguageSwitcher({
+  compact = false,
+  variant = "default",
+  placement = "bottom",
+}) {
   const { language, setLanguage, SUPPORTED_LANGUAGES } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -17,16 +31,18 @@ export default function LanguageSwitcher({ compact = false }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const buttonSize = compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm";
+  const sidebarLayout = variant === "sidebar" ? "gap-3" : "gap-1.5";
+
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Select language"
-        className={`flex items-center gap-1.5 rounded-lg transition-colors text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 ${
-          compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"
-        }`}
+        className={`flex items-center rounded-lg transition-colors ${VARIANT_STYLES[variant]} ${buttonSize} ${sidebarLayout}`}
       >
         <Globe className="w-4 h-4 shrink-0" />
         <span className="font-medium uppercase">{current.code}</span>
@@ -36,11 +52,12 @@ export default function LanguageSwitcher({ compact = false }) {
         <div
           role="listbox"
           aria-label="Language options"
-          className="absolute bottom-full left-0 mb-1 z-50 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px] py-1"
+          className={`${PLACEMENT_STYLES[placement]} z-50 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px] py-1 max-h-[min(320px,70vh)] overflow-y-auto`}
         >
           {SUPPORTED_LANGUAGES.map(lang => (
             <button
               key={lang.code}
+              type="button"
               role="option"
               aria-selected={language === lang.code}
               onClick={() => { setLanguage(lang.code); setOpen(false); }}

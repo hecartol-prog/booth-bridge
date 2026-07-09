@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { useI18n } from "@/lib/i18n";
 import { isPasswordAcceptable } from "@/utils/passwordStrength";
 import PasswordStrengthFeedback from "@/components/PasswordStrengthFeedback";
 
 export default function Register() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,17 +26,17 @@ export default function Register() {
     setError("");
 
     if (!email.trim()) {
-      setError("Please enter your email address.");
+      setError(t("auth.emailRequired"));
       return;
     }
 
     if (!isPasswordAcceptable(password)) {
-      setError("Password must be at least 8 characters.");
+      setError(t("auth.passwordTooShort"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.passwordsNoMatch"));
       return;
     }
 
@@ -44,11 +46,9 @@ export default function Register() {
         email: email.trim(),
         password,
       });
-      setVerificationMessage(
-        `We've sent a verification email to ${email.trim()}. Please verify your email before signing in.`
-      );
+      setVerificationMessage(t("auth.verifyEmailSent", { email: email.trim() }));
     } catch (err) {
-      setError(err?.message || "Registration failed");
+      setError(err?.message || t("auth.registrationFailed"));
     } finally {
       setLoading(false);
     }
@@ -58,22 +58,22 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Verify your email"
+        title={t("auth.verifyEmailTitle")}
         subtitle={verificationMessage}
         footer={
           <>
-            Already verified?{" "}
+            {t("auth.alreadyVerified")}{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">
-              Sign in
+              {t("auth.signIn")}
             </Link>
           </>
         }
       >
         <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-          Your account has been created. Verify your email, then sign in to complete your profile.
+          {t("auth.verifyEmailBody")}
         </div>
         <p className="text-sm text-muted-foreground mt-3">
-          After signing in you can scan a business card or enter your details manually.
+          {t("auth.verifyEmailHint")}
         </p>
       </AuthLayout>
     );
@@ -82,13 +82,13 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up with email and password — profile setup comes next"
+      title={t("auth.createAccount")}
+      subtitle={t("auth.registerSubtitleSetup")}
       footer={
         <>
-          Already have an account?{" "}
+          {t("auth.alreadyHaveAccount")}{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">
-            Log in
+            {t("auth.login")}
           </Link>
         </>
       }
@@ -101,7 +101,7 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("auth.email")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -118,7 +118,7 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("auth.password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -143,7 +143,7 @@ export default function Register() {
           <PasswordStrengthFeedback password={password} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">{t("auth.confirmPassword")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -170,10 +170,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              {t("auth.creatingAccount")}
             </>
           ) : (
-            "Create account"
+            t("auth.createAccount")
           )}
         </Button>
       </form>

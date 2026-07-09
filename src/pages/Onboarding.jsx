@@ -319,7 +319,7 @@ export default function Onboarding() {
     <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start sm:justify-center py-8 px-4">
       <div className="absolute top-4 right-4">
         <div className="bg-card border border-border rounded-lg shadow-sm">
-          <LanguageSwitcher />
+          <LanguageSwitcher variant="default" placement="bottom" />
         </div>
       </div>
       <div className="w-full max-w-md">

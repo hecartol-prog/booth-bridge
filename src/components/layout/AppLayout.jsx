@@ -150,7 +150,7 @@ function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogo
           <User className="w-4 h-4" />
           {t("nav.profile")}
         </Link>
-        <LanguageSwitcher />
+        <LanguageSwitcher variant="sidebar" placement="top" />
         <button
           type="button"
           onClick={onLogout}
@@ -261,14 +261,17 @@ export default function AppLayout() {
               Booth Bridge
             </span>
           </div>
-          <Link to="/notifications" className="relative p-1" aria-label={t("nav.notifications")}>
-            <Bell className="w-6 h-6" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
-                {unreadCount}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher compact variant="default" placement="bottom" />
+            <Link to="/notifications" className="relative p-1" aria-label={t("nav.notifications")}>
+              <Bell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[10px] flex items-center justify-center font-bold">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </header>
         <div className="flex-1 overflow-y-auto">
           <Outlet />
