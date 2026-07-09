@@ -3,7 +3,7 @@
  * Modular stages reusable for business cards, badges, catalogs, brochures, etc.
  */
 
-import { preprocessBusinessCardImage } from "@/utils/imagePreprocessing";
+import { preprocessBusinessCardImageSafe } from "@/utils/imagePreprocessing";
 import { uploadOcrScan } from "@/utils/assetPipeline";
 import { storage } from "@/api/storageClient";
 import {
@@ -152,7 +152,7 @@ export async function runDocumentIntelligencePipeline({
   logger.log("preprocessing", "start", { fileName: file.name, fileSize: file.size });
 
   try {
-    const preprocessed = await preprocessBusinessCardImage(file);
+    const preprocessed = await preprocessBusinessCardImageSafe(file);
     processedDataUrl = preprocessed.dataUrl;
     metrics.preprocessingMs = Date.now() - preprocessStart;
     metrics.preprocessing = preprocessed.metrics;

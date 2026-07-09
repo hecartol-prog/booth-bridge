@@ -12,19 +12,20 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null);
 
-  const checkUserAuth = useCallback(async () => {
+  const checkUserAuth = useCallback(async (options = {}) => {
+    const silent = options.silent === true;
     try {
-      setIsLoadingAuth(true);
+      if (!silent) setIsLoadingAuth(true);
       const currentUser = await auth.getCurrentUser();
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
-      setIsLoadingAuth(false);
+      if (!silent) setIsLoadingAuth(false);
       setAuthChecked(true);
       setAuthError(null);
     } catch (error) {
       console.error('User auth check failed:', error);
       setUser(null);
-      setIsLoadingAuth(false);
+      if (!silent) setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
 
@@ -78,7 +79,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.warn("ensureAppUser on auth state change failed:", error);
         }
-        await checkUserAuth();
+        await checkUserAuth({ silent: true });
       } else {
         setUser(null);
         setIsAuthenticated(false);

@@ -230,9 +230,9 @@ export default function Onboarding() {
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-    await runOcr(file);
     event.target.value = "";
+    if (!file || !file.size) return;
+    await runOcr(file);
   };
 
   const chooseManualProfile = () => {

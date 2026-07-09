@@ -3,10 +3,12 @@
  * Optimizes business card photos for vision models while preserving text legibility.
  */
 
-const DEFAULT_MAX_DIMENSION = 3840;
+const DEFAULT_MAX_DIMENSION = 2560;
 const TARGET_MAX_BYTES = 1_000_000;
-const MIN_JPEG_QUALITY = 0.72;
-const START_JPEG_QUALITY = 0.92;
+const MIN_JPEG_QUALITY = 0.68;
+const START_JPEG_QUALITY = 0.9;
+/** Skip pixel-level ops above this area (mobile canvas/memory limits). */
+const MAX_ENHANCE_PIXELS = 2_500_000;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -134,6 +136,82 @@ function cleanupBackground(ctx, width, height) {
   ctx.putImageData(imageData, 0, 0);
 }
 
+function applyEnhancements(ctx, width, height, steps) {
+  const pixels = width * height;
+  if (pixels > MAX_ENHANCE_PIXELS) {
+    steps.push("enhancement_skipped_size");
+    return;
+  }
+
+  try {
+    enhanceContrast(ctx, width, height);
+    steps.push("contrast_enhancement");
+    cleanupBackground(ctx, width, height);
+    steps.push("background_cleanup");
+    if (pixels <= 1_500_000) {
+      sharpen(ctx, width, height);
+      steps.push("adaptive_sharpening");
+    } else {
+      steps.push("sharpen_skipped_size");
+    }
+  } catch (error) {
+    steps.push("enhancement_skipped_error");
+    console.warn("[imagePreprocessing] enhancement skipped:", error);
+  }
+}
+
+/**
+ * Lightweight fallback for camera photos when full preprocessing fails.
+ * EXIF-aware resize + JPEG only (no pixel shaders).
+ */
+export async function preprocessBusinessCardImageLight(file, options = {}) {
+  const maxDimension = options.maxDimension ?? 2048;
+  const targetMaxBytes = options.targetMaxBytes ?? TARGET_MAX_BYTES;
+  const steps = ["light_mode"];
+
+  const started = Date.now();
+  const bitmap = await loadBitmap(file);
+  steps.push("exif_orientation");
+
+  const originalWidth = bitmap.width;
+  const originalHeight = bitmap.height;
+  const { width, height } = fitWithin(originalWidth, originalHeight, maxDimension);
+  if (width !== originalWidth || height !== originalHeight) steps.push("resize");
+
+  const { canvas, ctx } = drawToCanvas(bitmap, width, height);
+  bitmap.close?.();
+
+  let quality = options.quality ?? 0.85;
+  let dataUrl = canvas.toDataURL("image/jpeg", quality);
+  let outputBytes = estimateDataUrlBytes(dataUrl);
+
+  while (outputBytes > targetMaxBytes && quality > MIN_JPEG_QUALITY) {
+    quality = Math.round((quality - 0.05) * 100) / 100;
+    dataUrl = canvas.toDataURL("image/jpeg", quality);
+    outputBytes = estimateDataUrlBytes(dataUrl);
+    if (!steps.includes("quality_reduction")) steps.push("quality_reduction");
+  }
+
+  if (outputBytes > targetMaxBytes) {
+    throw new Error("Image is too large. Try a closer photo or use gallery upload.");
+  }
+
+  return {
+    dataUrl,
+    metrics: {
+      preprocessingMs: Date.now() - started,
+      originalBytes: file.size,
+      outputBytes,
+      originalWidth,
+      originalHeight,
+      outputWidth: width,
+      outputHeight: height,
+      jpegQuality: quality,
+      steps,
+      mode: "light",
+    },
+  };
+}
 function estimateDataUrlBytes(dataUrl) {
   const base64 = dataUrl.split(",")[1] || "";
   return Math.round((base64.length * 3) / 4);
@@ -163,14 +241,7 @@ export async function preprocessBusinessCardImage(file, options = {}) {
   const { canvas, ctx } = drawToCanvas(bitmap, width, height);
   bitmap.close?.();
 
-  enhanceContrast(ctx, width, height);
-  steps.push("contrast_enhancement");
-
-  cleanupBackground(ctx, width, height);
-  steps.push("background_cleanup");
-
-  sharpen(ctx, width, height);
-  steps.push("adaptive_sharpening");
+  applyEnhancements(ctx, width, height, steps);
 
   let quality = options.quality ?? START_JPEG_QUALITY;
   let dataUrl = canvas.toDataURL("image/jpeg", quality);
@@ -206,8 +277,18 @@ export async function preprocessBusinessCardImage(file, options = {}) {
   };
 }
 
+/** Try full preprocessing, fall back to light mode for camera/memory edge cases. */
+export async function preprocessBusinessCardImageSafe(file, options = {}) {
+  try {
+    return await preprocessBusinessCardImage(file, options);
+  } catch (error) {
+    console.warn("[imagePreprocessing] full preprocess failed, using light mode:", error);
+    return preprocessBusinessCardImageLight(file, options);
+  }
+}
+
 /** Backward-compatible alias used by RC9 callers. */
 export async function readCompressedImageAsDataUrl(file, options = {}) {
-  const { dataUrl } = await preprocessBusinessCardImage(file, options);
+  const { dataUrl } = await preprocessBusinessCardImageSafe(file, options);
   return dataUrl;
 }

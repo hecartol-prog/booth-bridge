@@ -34,3 +34,10 @@ dist-ssr
 exports/phase6/**/*.json
 !exports/phase6/.gitkeep
 .vercel
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

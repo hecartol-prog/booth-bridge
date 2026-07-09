@@ -4,4 +4,6 @@
 export {
   readCompressedImageAsDataUrl,
   preprocessBusinessCardImage,
+  preprocessBusinessCardImageLight,
+  preprocessBusinessCardImageSafe,
 } from "@/utils/imagePreprocessing";
