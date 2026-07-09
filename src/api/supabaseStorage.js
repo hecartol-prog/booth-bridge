@@ -23,12 +23,26 @@ function storageError(error, context) {
   throw new Error(`[storage] ${context}: ${msg}`);
 }
 
+/** Ensure the storage client has a JWT before RLS-protected uploads. */
+async function ensureStorageSession(supabase) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData.session?.access_token) return sessionData.session;
+
+  const { data: refreshed, error } = await supabase.auth.refreshSession();
+  if (error) storageError(error, "session refresh failed");
+  if (!refreshed.session?.access_token) {
+    storageError(new Error("Not authenticated"), "upload failed");
+  }
+  return refreshed.session;
+}
+
 /**
  * @param {File|Blob} file
  * @param {{ bucket: string, path: string, upsert?: boolean, contentType?: string }} options
  */
 export async function supabaseUpload(file, { bucket, path, upsert = true, contentType }) {
   const supabase = getSupabaseClient();
+  await ensureStorageSession(supabase);
   const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
     upsert,
     contentType: contentType || file.type || undefined,

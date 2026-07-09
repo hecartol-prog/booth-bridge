@@ -196,7 +196,8 @@ export default function Onboarding() {
     reader.readAsDataURL(file);
 
     try {
-      const me = await auth.getCurrentUser();
+      await auth.refresh();
+      const me = await auth.ensureAppUser();
       if (!me?.id) {
         throw new Error("You must be signed in to scan a business card.");
       }
@@ -207,6 +208,7 @@ export default function Onboarding() {
         scanType: "business_card",
         userId: me.id,
         skipStorage: false,
+        storageFallback: true,
         target: "onboarding",
       });
 
@@ -500,12 +502,18 @@ export default function Onboarding() {
                   {cardPreview && (
                     <img src={cardPreview} alt="Card" className="w-full max-h-36 object-contain rounded-lg border" />
                   )}
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="text-sm font-medium">
-                      {cardPreview ? t("onboarding.cardScanned") : t("onboarding.readyFill")}
-                    </span>
-                  </div>
+                  {!finishError ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span className="text-sm font-medium">
+                        {cardPreview ? t("onboarding.cardScanned") : t("onboarding.readyFill")}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Card photo captured. Enter your details below or try scanning again.
+                    </p>
+                  )}
                   {ocrConfidence !== null && (
                     <p className={`text-xs ${ocrConfidence < LOW_CONFIDENCE_THRESHOLD ? "text-amber-600" : "text-green-600"}`}>
                       OCR confidence: {ocrConfidence}%

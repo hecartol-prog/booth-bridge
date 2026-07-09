@@ -89,6 +89,7 @@ function legacyFlatFromVision(visionJson) {
  * @param {DocumentType} [params.documentType]
  * @param {string|null} [params.userId]
  * @param {boolean} [params.skipStorage]
+ * @param {boolean} [params.storageFallback] Continue OCR with inline image when upload fails.
  * @param {PipelineTarget} [params.target]
  * @param {(entry: import("@/pipeline/pipelineLogger").PipelineLogEntry) => void} [params.onLog]
  */
@@ -98,6 +99,7 @@ export async function runDocumentIntelligencePipeline({
   documentType = "business_card",
   userId = null,
   skipStorage = false,
+  storageFallback = false,
   target = "registration",
   onLog,
 }) {
@@ -195,16 +197,23 @@ export async function runDocumentIntelligencePipeline({
       metrics.storageUploadMs = Date.now() - uploadStart;
       const message = error instanceof Error ? error.message : String(error);
       logger.log("storage_upload", "error", { code: "STORAGE_UPLOAD_FAILED", message });
-      return failResult(
-        mode,
-        runId,
-        logger,
-        metrics,
-        started,
-        "storage_upload",
-        "STORAGE_UPLOAD_FAILED",
-        message
-      );
+      if (storageFallback) {
+        imageUrl = processedDataUrl;
+        logger.log("storage_upload", "skip", {
+          message: "Continuing with inline image after storage upload failure.",
+        });
+      } else {
+        return failResult(
+          mode,
+          runId,
+          logger,
+          metrics,
+          started,
+          "storage_upload",
+          "STORAGE_UPLOAD_FAILED",
+          message
+        );
+      }
     }
   } else {
     imageUrl = processedDataUrl;
