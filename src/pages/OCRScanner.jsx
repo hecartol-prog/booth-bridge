@@ -5,8 +5,7 @@ import { db } from "@/utils/dbClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import FieldReviewPanel from "@/components/ocr/FieldReviewPanel";
 import {
   ScanLine, Camera, Upload, CheckCircle2, Loader2, Edit, Save, X
 } from "lucide-react";
@@ -18,6 +17,36 @@ const SCAN_TYPES = [
   { id: "badge", label: "Event Badge", desc: "Scan trade show badges", icon: "🏷️" },
 ];
 
+const BUSINESS_CARD_FIELDS = [
+  { key: "full_name", label: "Full Name", alwaysShow: true },
+  { key: "position", label: "Position" },
+  { key: "company", label: "Company", alwaysShow: true },
+  { key: "email", label: "Email", alwaysShow: true },
+  { key: "secondary_email", label: "Secondary Email" },
+  { key: "phone", label: "Office Phone" },
+  { key: "mobile", label: "Mobile" },
+  { key: "website", label: "Website" },
+  { key: "address", label: "Address" },
+  { key: "city", label: "City" },
+  { key: "state", label: "State" },
+  { key: "postal_code", label: "Postal Code" },
+  { key: "country", label: "Country" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "wechat", label: "WeChat" },
+  { key: "whatsapp", label: "WhatsApp" },
+];
+
+const BADGE_FIELDS = [
+  { key: "full_name", label: "Full Name", alwaysShow: true },
+  { key: "company", label: "Company", alwaysShow: true },
+  { key: "position", label: "Position" },
+  { key: "country", label: "Country" },
+  { key: "badge_number", label: "Badge Number" },
+  { key: "booth_number", label: "Booth Number" },
+  { key: "event_name", label: "Event Name" },
+  { key: "industry", label: "Industry" },
+];
+
 export default function OCRScanner() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -25,13 +54,18 @@ export default function OCRScanner() {
   const fileRef = useRef(null);
   const captureRef = useRef(null);
   const [scanType, setScanType] = useState("business_card");
-  const [step, setStep] = useState("select"); // select | processing | review | saved
+  const [step, setStep] = useState("select");
   const [imageUrl, setImageUrl] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [fieldConfidence, setFieldConfidence] = useState(null);
+  const [validationFlags, setValidationFlags] = useState({});
   const [confidence, setConfidence] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [pipelineMode, setPipelineMode] = useState("ocr_ai");
+
+  const fields = scanType === "business_card" ? BUSINESS_CARD_FIELDS : BADGE_FIELDS;
 
   const processFile = async (file) => {
     setStep("processing");
@@ -56,9 +90,12 @@ export default function OCRScanner() {
         throw new Error(`[${stage}/${code}] ${result.error?.message || "OCR failed"}`);
       }
 
+      const { fieldConfidence: fc, validationFlags: vf, ...flatFields } = result.formFields;
       setImageUrl(result.storagePath);
-      setEditData({ ...result.formFields });
-      setConfidence(result.formFields.confidence || 75);
+      setEditData(flatFields);
+      setFieldConfidence(result.fieldConfidence || fc || null);
+      setValidationFlags(result.validationFlags || vf || {});
+      setConfidence(flatFields.confidence || 75);
       setFieldErrors({});
       setStep("review");
     } catch (err) {
@@ -75,7 +112,6 @@ export default function OCRScanner() {
   };
 
   const handleSave = async () => {
-    // Pre-save field validation
     const errors = {};
     if (editData?.email) {
       const r = validateFieldPattern(editData.email, "email");
@@ -126,32 +162,20 @@ export default function OCRScanner() {
     setLoading(false);
   };
 
-  const reset = () => { setStep("select"); setEditData(null); setImageUrl(null); setPreviewUrl(null); setConfidence(null); setFieldErrors({}); };
+  const reset = () => {
+    setStep("select");
+    setEditData(null);
+    setImageUrl(null);
+    setPreviewUrl(null);
+    setConfidence(null);
+    setFieldConfidence(null);
+    setValidationFlags({});
+    setFieldErrors({});
+  };
 
-  const confidenceColor = (c) => c >= 80 ? "text-green-600" : c >= 60 ? "text-amber-600" : "text-red-600";
-  const confidenceLabel = (c) => c >= 80 ? "High Confidence" : c >= 60 ? "Medium Confidence" : "Low — please verify fields";
-
-  const fields = scanType === "business_card" ? [
-    { key: "full_name", label: "Full Name" },
-    { key: "position", label: "Position" },
-    { key: "company", label: "Company" },
-    { key: "email", label: "Email" },
-    { key: "phone", label: "Phone" },
-    { key: "mobile", label: "Mobile" },
-    { key: "website", label: "Website" },
-    { key: "country", label: "Country" },
-    { key: "city", label: "City" },
-    { key: "linkedin", label: "LinkedIn" },
-  ] : [
-    { key: "full_name", label: "Full Name" },
-    { key: "company", label: "Company" },
-    { key: "position", label: "Position" },
-    { key: "country", label: "Country" },
-    { key: "badge_number", label: "Badge Number" },
-    { key: "booth_number", label: "Booth Number" },
-    { key: "event_name", label: "Event Name" },
-    { key: "industry", label: "Industry" },
-  ];
+  const confidenceColor = (c) => (c >= 95 ? "text-green-600" : c >= 80 ? "text-amber-600" : "text-red-600");
+  const confidenceLabel = (c) =>
+    c >= 95 ? "High Confidence" : c >= 80 ? "Review Suggested" : "Low — verify highlighted fields";
 
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto">
@@ -161,11 +185,10 @@ export default function OCRScanner() {
         </div>
         <div>
           <h1 className="text-xl font-display font-bold">OCR Scanner</h1>
-          <p className="text-xs text-muted-foreground">Scan business cards and badges instantly</p>
+          <p className="text-xs text-muted-foreground">Enterprise business card intelligence (RC10)</p>
         </div>
       </div>
 
-      {/* Step: Select */}
       {step === "select" && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">Choose what to scan:</p>
@@ -189,14 +212,14 @@ export default function OCRScanner() {
               onClick={() => setPipelineMode(PIPELINE_MODES.OCR_ONLY)}
               className={`flex-1 rounded-md border px-2 py-2 ${pipelineMode === PIPELINE_MODES.OCR_ONLY ? "border-primary bg-primary/5" : ""}`}
             >
-              OCR only
+              Vision only
             </button>
             <button
               type="button"
               onClick={() => setPipelineMode(PIPELINE_MODES.OCR_AI)}
               className={`flex-1 rounded-md border px-2 py-2 ${pipelineMode === PIPELINE_MODES.OCR_AI ? "border-primary bg-primary/5" : ""}`}
             >
-              OCR + AI
+              Vision + AI
             </button>
           </div>
 
@@ -212,24 +235,22 @@ export default function OCRScanner() {
         </div>
       )}
 
-      {/* Step: Processing */}
       {step === "processing" && (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
           <p className="font-semibold">Processing Image...</p>
-          <p className="text-sm text-muted-foreground mt-2">AI is extracting contact information</p>
+          <p className="text-sm text-muted-foreground mt-2">Preprocessing → vision → normalization → validation</p>
         </div>
       )}
 
-      {/* Step: Review */}
       {step === "review" && editData && (
         <div className="space-y-4">
-          <div className={`flex items-center gap-2 p-3 rounded-xl border ${confidence >= 80 ? "bg-green-50 border-green-200" : confidence >= 60 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"}`}>
-            <div className={`w-2 h-2 rounded-full ${confidence >= 80 ? "bg-green-500" : confidence >= 60 ? "bg-amber-500" : "bg-red-500"}`} />
+          <div className={`flex items-center gap-2 p-3 rounded-xl border ${confidence >= 95 ? "bg-green-50 border-green-200" : confidence >= 80 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"}`}>
+            <div className={`w-2 h-2 rounded-full ${confidence >= 95 ? "bg-green-500" : confidence >= 80 ? "bg-amber-500" : "bg-red-500"}`} />
             <p className={`text-sm font-medium ${confidenceColor(confidence)}`}>
-              {confidenceLabel(confidence)} ({confidence}%)
+              {confidenceLabel(confidence)} ({confidence}% avg)
             </p>
           </div>
 
@@ -240,26 +261,21 @@ export default function OCRScanner() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Edit className="w-4 h-4" /> Review and Edit Extracted Data
+                <Edit className="w-4 h-4" /> Review Extracted Data
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {fields.map(f => (
-                editData[f.key] !== undefined && (
-                  <div key={f.key}>
-                    <Label className="text-xs text-muted-foreground">{f.label}</Label>
-                    <Input
-                      value={editData[f.key] || ""}
-                      onChange={e => {
-                        setEditData(prev => ({ ...prev, [f.key]: e.target.value }));
-                        if (fieldErrors[f.key]) setFieldErrors(prev => ({ ...prev, [f.key]: null }));
-                      }}
-                      className={`mt-1 ${fieldErrors[f.key] ? "border-red-500 focus-visible:ring-red-400" : ""}`}
-                    />
-                    {fieldErrors[f.key] && <p className="text-xs text-red-500 mt-0.5">{fieldErrors[f.key]}</p>}
-                  </div>
-                )
-              ))}
+            <CardContent>
+              <FieldReviewPanel
+                fields={fields}
+                values={editData}
+                fieldConfidence={fieldConfidence}
+                validationFlags={validationFlags}
+                fieldErrors={fieldErrors}
+                onChange={(key, value) => {
+                  setEditData((prev) => ({ ...prev, [key]: value }));
+                  if (fieldErrors[key]) setFieldErrors((prev) => ({ ...prev, [key]: null }));
+                }}
+              />
             </CardContent>
           </Card>
 
@@ -275,7 +291,6 @@ export default function OCRScanner() {
         </div>
       )}
 
-      {/* Step: Saved */}
       {step === "saved" && (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">

@@ -58,7 +58,41 @@ async function syncAppUserRow(userId, fields) {
 
   if (Object.keys(patch).length === 0) return;
 
-  await supabase.from("user").upsert({ id: userId, ...patch }, { onConflict: "id" });
+  const { error } = await supabase.from("user").upsert({ id: userId, ...patch }, { onConflict: "id" });
+  if (error) throw error;
+}
+
+/** Ensure public.user exists for the authenticated auth.users id (required for profile FKs). */
+export async function ensureAppUserRow(userId) {
+  if (!userId) return;
+  const supabase = getSupabaseClient();
+
+  const { error: rpcError } = await supabase.rpc("ensure_app_user");
+  if (!rpcError) {
+    const { data: row, error: readError } = await supabase
+      .from("user")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!readError && row?.id) return;
+  }
+
+  const { error: upsertError } = await supabase
+    .from("user")
+    .upsert({ id: userId }, { onConflict: "id" });
+  if (upsertError) throw upsertError;
+
+  const { data: verified, error: verifyError } = await supabase
+    .from("user")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (verifyError) throw verifyError;
+  if (!verified?.id) {
+    throw new Error(
+      "Could not create your app user record. Please sign out, sign in again, and retry."
+    );
+  }
 }
 
 export async function supabaseGetCurrentUser() {
@@ -90,6 +124,7 @@ export async function supabaseLogin(email, password) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
+  await ensureAppUserRow(data.user.id);
   return mergeAppUser(data.user);
 }
 
@@ -141,6 +176,7 @@ export async function supabaseVerifyOtp(emailOrPayload, token) {
     type: "signup",
   });
   if (error) throw error;
+  if (data.user?.id) await ensureAppUserRow(data.user.id);
   return {
     access_token: data.session?.access_token,
     user: data.user ? await mergeAppUser(data.user) : null,

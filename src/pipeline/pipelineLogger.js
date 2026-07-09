@@ -17,8 +17,9 @@
 /**
  * @param {string} runId
  * @param {(entry: PipelineLogEntry) => void} [onLog]
+ * @param {string} [tag]
  */
-export function createPipelineLogger(runId, onLog) {
+export function createPipelineLogger(runId, onLog, tag = "rc9-pipeline") {
   /** @type {PipelineLogEntry[]} */
   const entries = [];
 
@@ -38,9 +39,9 @@ export function createPipelineLogger(runId, onLog) {
     entries.push(/** @type {PipelineLogEntry} */ (entry));
     const payload = JSON.stringify(entry);
     if (status === "error") {
-      console.error("[rc9-pipeline]", payload);
+      console.error(`[${tag}]`, payload);
     } else {
-      console.info("[rc9-pipeline]", payload);
+      console.info(`[${tag}]`, payload);
     }
     onLog?.(/** @type {PipelineLogEntry} */ (entry));
     return entry;
@@ -55,10 +56,10 @@ export function createPipelineLogger(runId, onLog) {
 }
 
 export function makePipelineError(stage, code, message, details = {}) {
-  const error = new Error(message);
-  error.name = "PipelineError";
-  error.stage = stage;
-  error.code = code;
-  error.details = details;
-  return error;
+  return Object.assign(new Error(message), {
+    name: "PipelineError",
+    stage,
+    code,
+    details,
+  });
 }

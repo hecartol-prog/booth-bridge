@@ -25,8 +25,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { APP_LOGO_URL } from "@/config/branding";
+import { requiresReview } from "@/pipeline/documentIntelligence/entityValidation";
 
-const LOW_CONFIDENCE_THRESHOLD = 70;
+const LOW_CONFIDENCE_THRESHOLD = 95;
 
 const INDUSTRIES = [
   "Aerospace & Defense",
@@ -106,6 +107,7 @@ export default function Onboarding() {
   const [cardPreview, setCardPreview] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrConfidence, setOcrConfidence] = useState(null);
+  const [fieldConfidenceMap, setFieldConfidenceMap] = useState({});
   const [uncertainFieldKeys, setUncertainFieldKeys] = useState([]);
   const [fieldsConfirmed, setFieldsConfirmed] = useState(false);
   const [finishError, setFinishError] = useState(null);
@@ -113,9 +115,16 @@ export default function Onboarding() {
   const uploadInputRef = useRef(null);
 
   const requiresFieldConfirmation = useMemo(
-    () => profileMethod === "scan" && (ocrConfidence || 0) < LOW_CONFIDENCE_THRESHOLD,
-    [profileMethod, ocrConfidence]
+    () => profileMethod === "scan" && uncertainFieldKeys.length > 0,
+    [profileMethod, uncertainFieldKeys]
   );
+
+  const fieldBorderClass = (key) => {
+    const score = fieldConfidenceMap[key];
+    if (score == null || !requiresReview(score)) return "";
+    if (score >= 80) return "border-amber-500";
+    return "border-red-500";
+  };
 
   useEffect(() => {
     auth.getCurrentUser().then((me) => {
@@ -134,21 +143,43 @@ export default function Onboarding() {
     setUploadingLogo(false);
   };
 
-  const applyOcrFields = (fields) => {
+  const applyOcrFields = (fields, fc = null) => {
     setFirstName(String(fields.firstName || "").trim());
     setLastName(String(fields.lastName || "").trim());
     setBuyerCompany(String(fields.company || "").trim());
     setEmail(String(fields.email || "").trim());
     setPhone(String(fields.phone || "").trim());
+    setMobile(String(fields.mobile || "").trim());
     setJobTitle(String(fields.jobTitle || "").trim());
+    setCompanyAddress(String(fields.companyAddress || "").trim());
     setCountry(String(fields.country || "").trim());
+    setWebsite(String(fields.website || "").trim());
+    setLinkedin(String(fields.linkedin || "").trim());
+
+    const confidenceMap = fc || fields.fieldConfidence || {};
+    setFieldConfidenceMap(confidenceMap);
 
     const confidence = Number.isFinite(fields.confidence) ? fields.confidence : 75;
     setOcrConfidence(confidence);
 
+    const keyMap = {
+      firstName: "first_name",
+      lastName: "last_name",
+      company: "company_name",
+      email: "email",
+      phone: "phone",
+      mobile: "mobile",
+      jobTitle: "job_title",
+      companyAddress: "address",
+      country: "country",
+      website: "website",
+      linkedin: "linkedin",
+    };
+
     const uncertain = [];
-    if (confidence < LOW_CONFIDENCE_THRESHOLD) {
-      uncertain.push("firstName", "lastName", "company", "email");
+    for (const [uiKey, ocrKey] of Object.entries(keyMap)) {
+      const score = confidenceMap[ocrKey] ?? confidenceMap[uiKey];
+      if (score == null || requiresReview(score)) uncertain.push(uiKey);
     }
     setUncertainFieldKeys(uncertain);
     setFieldsConfirmed(false);
@@ -187,7 +218,7 @@ export default function Onboarding() {
         );
       }
 
-      applyOcrFields(result.formFields);
+      applyOcrFields(result.formFields, result.fieldConfidence);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Card scan failed.";
       setFinishError(`${message} You can fill fields manually.`);
@@ -209,6 +240,7 @@ export default function Onboarding() {
     setScanStep("done");
     setCardPreview(null);
     setOcrConfidence(null);
+    setFieldConfidenceMap({});
     setUncertainFieldKeys([]);
     setFieldsConfirmed(false);
     setFinishError(null);
@@ -220,6 +252,7 @@ export default function Onboarding() {
     setScanStep("upload");
     setCardPreview(null);
     setOcrConfidence(null);
+    setFieldConfidenceMap({});
     setUncertainFieldKeys([]);
     setFieldsConfirmed(false);
     setFinishError(null);
@@ -247,7 +280,7 @@ export default function Onboarding() {
     setSaving(true);
     setFinishError(null);
     try {
-      const me = await auth.getCurrentUser();
+      const me = await auth.ensureAppUser();
 
       if (effectiveRole === "exhibitor") {
         let existing = [];
@@ -512,7 +545,7 @@ export default function Onboarding() {
                   <Input
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
-                    className={uncertainFieldKeys.includes("firstName") ? "border-amber-500" : ""}
+                    className={fieldBorderClass("firstName")}
                     required
                   />
                 </div>
@@ -521,20 +554,20 @@ export default function Onboarding() {
                   <Input
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
-                    className={uncertainFieldKeys.includes("lastName") ? "border-amber-500" : ""}
+                    className={fieldBorderClass("lastName")}
                     required
                   />
                 </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.jobTitle")}</Label>
-                  <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Procurement Manager" />
+                  <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} className={fieldBorderClass("jobTitle")} placeholder="Procurement Manager" />
                 </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.company")} *</Label>
                   <Input
                     value={buyerCompany}
                     onChange={e => setBuyerCompany(e.target.value)}
-                    className={uncertainFieldKeys.includes("company") ? "border-amber-500" : ""}
+                    className={fieldBorderClass("company")}
                     placeholder="Acme Corp"
                     required
                   />
@@ -554,29 +587,29 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <Label>Office Phone</Label>
-                  <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 555 0000" />
+                  <Input value={phone} onChange={e => setPhone(e.target.value)} className={fieldBorderClass("phone")} placeholder="+1 555 0000" />
                 </div>
                 <div>
                   <Label>Mobile</Label>
-                  <Input value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+1 555 0001" />
+                  <Input value={mobile} onChange={e => setMobile(e.target.value)} className={fieldBorderClass("mobile")} placeholder="+1 555 0001" />
                 </div>
                 <div className="col-span-2">
                   <Label>{t("auth.email")}</Label>
                   <Input
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className={uncertainFieldKeys.includes("email") ? "border-amber-500" : ""}
+                    className={fieldBorderClass("email")}
                     placeholder="you@company.com"
                     type="email"
                   />
                 </div>
                 <div className="col-span-2">
                   <Label>Company Address</Label>
-                  <Input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="123 Main St, New York, NY" />
+                  <Input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} className={fieldBorderClass("companyAddress")} placeholder="123 Main St, New York, NY" />
                 </div>
                 <div className="col-span-2">
                   <Label>Country</Label>
-                  <Input value={country} onChange={e => setCountry(e.target.value)} placeholder="United States" />
+                  <Input value={country} onChange={e => setCountry(e.target.value)} className={fieldBorderClass("country")} placeholder="United States" />
                 </div>
                 <div className="col-span-2">
                   <Label>Products / Interests</Label>
@@ -584,11 +617,11 @@ export default function Onboarding() {
                 </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.website")}</Label>
-                  <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://company.com" />
+                  <Input value={website} onChange={e => setWebsite(e.target.value)} className={fieldBorderClass("website")} placeholder="https://company.com" />
                 </div>
                 <div className="col-span-2">
                   <Label>{t("onboarding.linkedin")}</Label>
-                  <Input value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="linkedin.com/in/yourname" />
+                  <Input value={linkedin} onChange={e => setLinkedin(e.target.value)} className={fieldBorderClass("linkedin")} placeholder="linkedin.com/in/yourname" />
                 </div>
               </div>
 
@@ -601,7 +634,7 @@ export default function Onboarding() {
                     className="mt-0.5"
                   />
                   <span>
-                    OCR confidence is low. I reviewed and corrected highlighted fields before saving my profile.
+                    I reviewed and corrected highlighted fields (below 95% confidence) before saving my profile.
                   </span>
                 </label>
               )}

@@ -73,6 +73,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChange(async (session) => {
       if (session) {
+        try {
+          await auth.ensureAppUser();
+        } catch (error) {
+          console.warn("ensureAppUser on auth state change failed:", error);
+        }
         await checkUserAuth();
       } else {
         setUser(null);

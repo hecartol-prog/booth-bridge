@@ -133,6 +133,13 @@ export async function updateUserMetadata(fields) {
   return supabaseAuth.supabaseUpdateUserMetadata(fields);
 }
 
+export async function ensureAppUser() {
+  const user = await supabaseAuth.supabaseGetCurrentUser();
+  if (!user?.id) throw new Error("Not authenticated");
+  await supabaseAuth.ensureAppUserRow(user.id);
+  return user;
+}
+
 export function redirectToLogin(returnUrl) {
   return supabaseAuth.supabaseRedirectToLogin(returnUrl);
 }
@@ -179,6 +186,7 @@ export const auth = {
   resendOtp,
   requestPasswordReset,
   updateUserMetadata,
+  ensureAppUser,
   redirectToLogin,
   checkAppReady,
   adminLogin,

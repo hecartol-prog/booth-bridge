@@ -1,5 +1,5 @@
 /**
- * RC9 — map normalized OCR/AI output to BoothBridge form fields.
+ * RC10 — map normalized OCR/AI output to BoothBridge form fields.
  */
 
 function splitFullName(fullName) {
@@ -9,52 +9,97 @@ function splitFullName(fullName) {
   return { first: parts[0], last: parts.slice(1).join(" ") };
 }
 
+function pick(raw, ...keys) {
+  for (const key of keys) {
+    const val = raw[key];
+    if (val != null && String(val).trim()) return String(val).trim();
+  }
+  return "";
+}
+
+function overallConfidence(fieldConfidence, raw) {
+  if (fieldConfidence && Object.keys(fieldConfidence).length) {
+    const scores = Object.values(fieldConfidence).filter((n) => Number.isFinite(n));
+    if (scores.length) {
+      return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    }
+  }
+  return Number.isFinite(raw.confidence) ? Number(raw.confidence) : null;
+}
+
 /**
  * @param {Record<string, unknown>} raw
+ * @param {Record<string, number>|null} [fieldConfidence]
  * @returns {Record<string, string|number|null>}
  */
-export function mapToRegistrationFields(raw) {
+export function mapToRegistrationFields(raw, fieldConfidence = null) {
   if (!raw || typeof raw !== "object") {
     throw new Error("FIELD_MAPPING_EMPTY: No profile data to map.");
   }
 
-  const split = splitFullName(raw.full_name);
-  const firstName = String(raw.first_name || split.first || "").trim();
-  const lastName = String(raw.last_name || split.last || "").trim();
+  const split = splitFullName(pick(raw, "full_name", "fullName"));
+  const firstName = pick(raw, "first_name", "firstName") || split.first;
+  const lastName = pick(raw, "last_name", "lastName") || split.last;
+  const phone = pick(raw, "phone");
+  const mobile = pick(raw, "mobile");
+  const address = pick(raw, "address", "company_address", "companyAddress");
+  const city = pick(raw, "city");
+  const companyAddress = address
+    ? (city && !address.toLowerCase().includes(city.toLowerCase()) ? `${address}, ${city}` : address)
+    : city;
 
   return {
     firstName,
     lastName,
-    company: String(raw.company || "").trim(),
-    email: String(raw.email || "").trim(),
-    phone: String(raw.phone || raw.mobile || "").trim(),
-    jobTitle: String(raw.position || "").trim(),
-    country: String(raw.country || "").trim(),
-    confidence: Number.isFinite(raw.confidence) ? Number(raw.confidence) : null,
+    company: pick(raw, "company_name", "company"),
+    email: pick(raw, "email"),
+    phone,
+    mobile,
+    jobTitle: pick(raw, "job_title", "position", "jobTitle"),
+    companyAddress,
+    country: pick(raw, "country"),
+    website: pick(raw, "website"),
+    linkedin: pick(raw, "linkedin"),
+    wechat: pick(raw, "wechat"),
+    whatsapp: pick(raw, "whatsapp"),
+    confidence: overallConfidence(fieldConfidence, raw),
   };
 }
 
 /**
  * @param {Record<string, unknown>} raw
+ * @param {Record<string, number>|null} [fieldConfidence]
  * @returns {Record<string, string|number>}
  */
-export function mapToOcrScannerFields(raw) {
-  const split = splitFullName(raw.full_name);
+export function mapToOcrScannerFields(raw, fieldConfidence = null) {
+  const split = splitFullName(pick(raw, "full_name", "fullName"));
+  const first = pick(raw, "first_name", "firstName") || split.first;
+  const last = pick(raw, "last_name", "lastName") || split.last;
+
   return {
-    first_name: String(raw.first_name || split.first || "").trim(),
-    last_name: String(raw.last_name || split.last || "").trim(),
-    full_name: String(raw.full_name || `${split.first} ${split.last}`.trim()).trim(),
-    position: String(raw.position || "").trim(),
-    company: String(raw.company || "").trim(),
-    department: String(raw.department || "").trim(),
-    email: String(raw.email || "").trim(),
-    phone: String(raw.phone || "").trim(),
-    mobile: String(raw.mobile || "").trim(),
-    website: String(raw.website || "").trim(),
-    address: String(raw.address || "").trim(),
-    country: String(raw.country || "").trim(),
-    city: String(raw.city || "").trim(),
-    linkedin: String(raw.linkedin || "").trim(),
-    confidence: Number.isFinite(raw.confidence) ? Number(raw.confidence) : 75,
+    first_name: first,
+    last_name: last,
+    full_name: pick(raw, "full_name", "fullName") || `${first} ${last}`.trim(),
+    position: pick(raw, "job_title", "position"),
+    company: pick(raw, "company_name", "company"),
+    department: pick(raw, "department"),
+    email: pick(raw, "email"),
+    secondary_email: pick(raw, "secondary_email"),
+    phone: pick(raw, "phone"),
+    mobile: pick(raw, "mobile"),
+    fax: pick(raw, "fax"),
+    website: pick(raw, "website"),
+    address: pick(raw, "address"),
+    city: pick(raw, "city"),
+    state: pick(raw, "state"),
+    postal_code: pick(raw, "postal_code"),
+    country: pick(raw, "country"),
+    linkedin: pick(raw, "linkedin"),
+    wechat: pick(raw, "wechat"),
+    whatsapp: pick(raw, "whatsapp"),
+    line: pick(raw, "line"),
+    telegram: pick(raw, "telegram"),
+    industry: pick(raw, "industry"),
+    confidence: overallConfidence(fieldConfidence, raw) ?? 75,
   };
 }

@@ -18,6 +18,14 @@ import {
   BUSINESS_CARD_NORMALIZED_SCHEMA,
 } from "@/ai/prompts/businessCard/normalize";
 import {
+  rc10VisionExtractPrompt,
+  RC10_VISION_EXTRACT_SCHEMA,
+} from "@/ai/prompts/businessCard/rc10VisionExtract";
+import {
+  rc10StructureNormalizePrompt,
+  RC10_STRUCTURED_SCHEMA,
+} from "@/ai/prompts/businessCard/rc10StructureNormalize";
+import {
   businessCardExtractPrompt,
   BUSINESS_CARD_EXTRACT_SCHEMA,
   badgeExtractPrompt,
@@ -209,13 +217,14 @@ export async function extractBusinessCard(imageUrl, options = {}) {
 
 /**
  * OCR Scanner flow — include the uploaded image URL when available.
- * @param {{ scanType: 'business_card'|'badge', imageUrl?: string, file_url?: string, fileUrl?: string }} params
+ * @param {{ scanType: 'business_card'|'badge', imageUrl?: string, file_url?: string, fileUrl?: string, prompt?: string, response_json_schema?: Record<string, unknown>, pipelineStage?: string, model?: string }} params
  */
 export async function extractOcrScan(params, options = {}) {
   const prompt =
-    params.scanType === "business_card"
+    params.prompt ||
+    (params.scanType === "business_card"
       ? ocrScannerBusinessCardPrompt()
-      : ocrScannerBadgePrompt();
+      : ocrScannerBadgePrompt());
   const imageUrl = params.imageUrl || params.file_url || params.fileUrl || null;
 
   const response = await generate(
@@ -223,12 +232,62 @@ export async function extractOcrScan(params, options = {}) {
       prompt,
       ...(imageUrl ? { file_urls: [imageUrl] } : {}),
       add_context_from_internet: false,
-      response_json_schema: OCR_SCANNER_BUSINESS_CARD_SCHEMA,
+      response_json_schema: params.response_json_schema || OCR_SCANNER_BUSINESS_CARD_SCHEMA,
       pipeline_stage: params.pipelineStage || "ocr_extraction",
+      ...(params.model ? { model: params.model } : {}),
     },
     options
   );
 
+  if (!response.success) return response;
+  return unwrapAiResult(response);
+}
+
+/**
+ * RC10 Stage 1 — Vision model extracts verbatim text from business card image.
+ * @param {{ imageUrl?: string, file_url?: string, fileUrl?: string, model?: string, pipelineStage?: string }} params
+ */
+export async function extractRc10VisionText(params, options = {}) {
+  const imageUrl = params.imageUrl || params.file_url || params.fileUrl;
+  const response = await generate(
+    {
+      prompt: rc10VisionExtractPrompt(),
+      file_urls: imageUrl ? [imageUrl] : undefined,
+      response_json_schema: RC10_VISION_EXTRACT_SCHEMA,
+      pipeline_stage: params.pipelineStage || "vision_extraction",
+      model: params.model,
+    },
+    options
+  );
+  if (!response.success) return response;
+  return unwrapAiResult(response);
+}
+
+/**
+ * RC10 Stage 2 — LLM structures raw vision text into per-field confidence objects.
+ * @param {Record<string, unknown>} visionJson
+ * @param {{ model?: string, pipelineStage?: string, signal?: AbortSignal }} [options]
+ */
+export async function normalizeRc10BusinessCard(visionJson, options = {}) {
+  const payload = {
+    prompt: rc10StructureNormalizePrompt(),
+    messages: [
+      {
+        role: "user",
+        content: [
+          "Raw vision extraction:",
+          JSON.stringify(visionJson, null, 2),
+          "",
+          "Structure into the schema. Use null value and 0 confidence for missing fields.",
+        ].join("\n"),
+      },
+    ],
+    response_json_schema: RC10_STRUCTURED_SCHEMA,
+    pipeline_stage: options.pipelineStage || "ai_normalization",
+    model: options.model,
+  };
+
+  const response = await generate(payload, options);
   if (!response.success) return response;
   return unwrapAiResult(response);
 }
@@ -407,6 +466,8 @@ export const ai = {
   extractBusinessCard,
   extractBadge,
   extractOcrScan,
+  extractRc10VisionText,
+  normalizeRc10BusinessCard,
   normalizeBusinessCardProfile,
   summarize,
   classify,
