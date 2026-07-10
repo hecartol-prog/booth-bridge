@@ -150,6 +150,19 @@ export async function updateUserMetadata(fields) {
   return supabaseAuth.supabaseUpdateUserMetadata(fields);
 }
 
+export async function completeOnboarding({ user_role, profile_id }) {
+  return supabaseAuth.supabaseCompleteOnboarding({ user_role, profile_id });
+}
+
+export async function getAppUserOnboardingState(userId) {
+  return supabaseAuth.fetchAppUserOnboardingState(userId);
+}
+
+export async function refreshCurrentUser() {
+  await supabaseAuth.supabaseRefresh();
+  return supabaseAuth.supabaseGetCurrentUser();
+}
+
 export async function ensureAppUser() {
   const user = await supabaseAuth.supabaseGetCurrentUser();
   if (!user?.id) throw new Error("Not authenticated");
@@ -203,6 +216,9 @@ export const auth = {
   resendOtp,
   requestPasswordReset,
   updateUserMetadata,
+  completeOnboarding,
+  getAppUserOnboardingState,
+  refreshCurrentUser,
   ensureAppUser,
   redirectToLogin,
   checkAppReady,

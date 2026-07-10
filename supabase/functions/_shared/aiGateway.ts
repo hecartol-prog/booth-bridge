@@ -1,4 +1,5 @@
 import type { AiUsage } from "./envelope.ts";
+import { logAiObservability, serializeProviderException } from "./aiObservability.ts";
 
 export type AiGatewayName = "openrouter" | "openai";
 export type AiProviderName =
@@ -323,6 +324,8 @@ function createGatewayError(
     retryable: boolean;
     status?: number;
     attempts?: GatewayAttempt[];
+    providerResponseBody?: unknown;
+    providerStatus?: number;
   },
 ): Error {
   const error = new Error(message) as Error & {
@@ -333,6 +336,8 @@ function createGatewayError(
     gateway?: AiGatewayName;
     model?: string;
     attempts?: GatewayAttempt[];
+    providerResponseBody?: unknown;
+    providerStatus?: number;
   };
   error.code = params.code;
   error.retryable = params.retryable;
@@ -341,6 +346,8 @@ function createGatewayError(
   error.gateway = route.gateway;
   error.model = route.model;
   error.attempts = params.attempts;
+  error.providerResponseBody = params.providerResponseBody;
+  error.providerStatus = params.providerStatus ?? params.status;
   return error;
 }
 
@@ -349,19 +356,34 @@ function isAbortError(error: unknown): boolean {
   return error.name === "AbortError" || error.message.toLowerCase().includes("abort");
 }
 
-async function readErrorText(response: Response): Promise<string> {
-  const text = await response.text();
-  if (!text) return response.statusText || "Unknown provider error";
+async function readProviderErrorResponse(response: Response): Promise<{
+  message: string;
+  rawBody: string;
+  parsedBody: unknown;
+}> {
+  const rawBody = await response.text();
+  if (!rawBody) {
+    return {
+      message: response.statusText || "Unknown provider error",
+      rawBody: "",
+      parsedBody: null,
+    };
+  }
 
   try {
-    const parsed = JSON.parse(text) as Record<string, unknown>;
-    const message = parsed?.error && typeof parsed.error === "object"
-      ? String((parsed.error as Record<string, unknown>).message || text)
-      : String(parsed.message || text);
-    return message;
+    const parsedBody = JSON.parse(rawBody) as Record<string, unknown>;
+    const message = parsedBody?.error && typeof parsedBody.error === "object"
+      ? String((parsedBody.error as Record<string, unknown>).message || rawBody)
+      : String(parsedBody.message || rawBody);
+    return { message, rawBody, parsedBody };
   } catch {
-    return text;
+    return { message: rawBody, rawBody, parsedBody: rawBody };
   }
+}
+
+async function readErrorText(response: Response): Promise<string> {
+  const parsed = await readProviderErrorResponse(response);
+  return parsed.message;
 }
 
 function isRetryableResponse(status: number, message: string): boolean {
@@ -429,7 +451,8 @@ async function callChatCompletions(
     });
 
     if (!response.ok) {
-      const detail = await readErrorText(response);
+      const providerError = await readProviderErrorResponse(response);
+      const detail = providerError.message;
       const retryable = isRetryableResponse(response.status, detail);
       const code = response.status === 429
         ? "AI_RATE_LIMIT"
@@ -439,10 +462,26 @@ async function callChatCompletions(
         ? "AI_PROVIDER_UNAVAILABLE"
         : "AI_PROVIDER_ERROR";
 
+      logAiObservability("error", "provider_http_error", {
+        provider: route.provider,
+        gateway: route.gateway,
+        model: route.model,
+        status: response.status,
+        code,
+        message: detail,
+        openRouterResponseBody: providerError.parsedBody ?? providerError.rawBody,
+      });
+
       throw createGatewayError(
         `${route.provider} via ${route.gateway} failed (${response.status}): ${detail}`,
         route,
-        { code, retryable, status: response.status },
+        {
+          code,
+          retryable,
+          status: response.status,
+          providerResponseBody: providerError.parsedBody ?? providerError.rawBody,
+          providerStatus: response.status,
+        },
       );
     }
 
@@ -458,22 +497,45 @@ async function callChatCompletions(
       usage: normalizeUsage(payload?.usage),
     };
   } catch (error) {
-    if ((error as Error & { code?: string }).code) throw error;
+    if ((error as Error & { code?: string }).code) {
+      logAiObservability("error", "provider_call_failed", {
+        provider: route.provider,
+        gateway: route.gateway,
+        model: route.model,
+        ...serializeProviderException(error),
+      });
+      throw error;
+    }
 
     if (timedOut || isAbortError(error)) {
-      throw createGatewayError(
+      const timeoutError = createGatewayError(
         `${route.provider} via ${route.gateway} timed out after ${REQUEST_TIMEOUT_MS}ms.`,
         route,
         { code: "AI_TIMEOUT", retryable: true, status: 504 },
       );
+      logAiObservability("error", "provider_call_failed", {
+        provider: route.provider,
+        gateway: route.gateway,
+        model: route.model,
+        ...serializeProviderException(timeoutError),
+      });
+      throw timeoutError;
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    throw createGatewayError(
+    const unavailableError = createGatewayError(
       `${route.provider} via ${route.gateway} is unavailable: ${message}`,
       route,
       { code: "AI_PROVIDER_UNAVAILABLE", retryable: true, status: 503 },
     );
+    logAiObservability("error", "provider_call_failed", {
+      provider: route.provider,
+      gateway: route.gateway,
+      model: route.model,
+      ...serializeProviderException(error),
+      wrappedMessage: unavailableError.message,
+    });
+    throw unavailableError;
   } finally {
     clearTimeout(timer);
   }
@@ -558,7 +620,7 @@ export async function complete(req: CompletionRequest): Promise<CompletionResult
       attempts.push(attempt);
 
       const retryable = Boolean((error as Error & { retryable?: boolean }).retryable);
-      logStructured(
+      logAiObservability(
         !retryable || index === routes.length - 1 ? "error" : "warn",
         "provider_attempt_failed",
         {
@@ -571,15 +633,25 @@ export async function complete(req: CompletionRequest): Promise<CompletionResult
           attempt_number: index + 1,
           remaining_routes: routes.length - index - 1,
           code: (error as Error & { code?: string }).code || "AI_PROVIDER_ERROR",
+          ...serializeProviderException(error),
         },
       );
       if (!retryable || index === routes.length - 1) {
         const message = error instanceof Error ? error.message : String(error);
+        const enriched = error as Error & {
+          code?: string;
+          retryable?: boolean;
+          status?: number;
+          providerResponseBody?: unknown;
+          providerStatus?: number;
+        };
         throw createGatewayError(message, route, {
-          code: (error as Error & { code?: string }).code || "AI_PROVIDER_ERROR",
+          code: enriched.code || "AI_PROVIDER_ERROR",
           retryable,
-          status: (error as Error & { status?: number }).status,
+          status: enriched.status,
           attempts,
+          providerResponseBody: enriched.providerResponseBody,
+          providerStatus: enriched.providerStatus ?? enriched.status,
         });
       }
 

@@ -97,6 +97,17 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, [checkUserAuth]);
 
+  const applyUser = useCallback((nextUser) => {
+    setUser(nextUser);
+    setIsAuthenticated(!!nextUser);
+    setAuthChecked(true);
+    setAuthError(null);
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    return checkUserAuth({ silent: true });
+  }, [checkUserAuth]);
+
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
@@ -124,7 +135,9 @@ export const AuthProvider = ({ children }) => {
       logout,
       navigateToLogin,
       checkUserAuth,
-      checkAppState
+      checkAppState,
+      applyUser,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

@@ -22,6 +22,23 @@ export const EDGE_FUNCTIONS = {
 };
 
 /**
+ * Parse structured error payloads returned by Edge Functions on non-2xx responses.
+ * @param {unknown} error
+ */
+async function readEdgeErrorPayload(error) {
+  const err = error && typeof error === "object" ? /** @type {Record<string, unknown>} */ (error) : null;
+  const context = err?.context;
+  if (context && typeof context === "object" && "json" in context && typeof context.json === "function") {
+    try {
+      return await context.json();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
  * @param {string} name
  * @param {Record<string, unknown>} body
  * @param {{ signal?: AbortSignal }} [options]
@@ -34,12 +51,43 @@ async function invokeEdgeFunction(name, body, options = {}) {
   });
 
   if (error) {
-    const normalized = normalizeAiError(error, {
-      provider: "supabase",
-      code: "AI_EDGE_FUNCTION",
-    });
+    const edgePayload = await readEdgeErrorPayload(error);
+    const edgeMessage =
+      (edgePayload && typeof edgePayload === "object" && "message" in edgePayload && typeof edgePayload.message === "string"
+        ? edgePayload.message
+        : edgePayload && typeof edgePayload === "object" && edgePayload.error && typeof edgePayload.error === "object" && "message" in edgePayload.error
+        ? String(edgePayload.error.message)
+        : null) ||
+      (error instanceof Error ? error.message : "AI request failed");
+
+    const edgeCode =
+      (edgePayload && typeof edgePayload === "object" && "code" in edgePayload && typeof edgePayload.code === "string"
+        ? edgePayload.code
+        : edgePayload && typeof edgePayload === "object" && edgePayload.error && typeof edgePayload.error === "object" && "code" in edgePayload.error
+        ? String(edgePayload.error.code)
+        : "AI_EDGE_FUNCTION");
+
+    const normalized = normalizeAiError(
+      { message: edgeMessage, name: error instanceof Error ? error.name : "FunctionsHttpError" },
+      {
+        provider: "supabase",
+        code: edgeCode,
+      },
+    );
     normalized.context = "edge_function";
     normalized.function = name;
+    normalized.stage = edgePayload && typeof edgePayload === "object" && "stage" in edgePayload
+      ? edgePayload.stage
+      : null;
+    normalized.provider = edgePayload && typeof edgePayload === "object" && "provider" in edgePayload
+      ? edgePayload.provider
+      : null;
+    normalized.model = edgePayload && typeof edgePayload === "object" && "model" in edgePayload
+      ? edgePayload.model
+      : null;
+    normalized.details = edgePayload && typeof edgePayload === "object"
+      ? edgePayload.details ?? edgePayload
+      : null;
     throw normalized;
   }
 

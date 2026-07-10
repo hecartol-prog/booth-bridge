@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { auth } from "@/api/authClient";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,8 @@ import { useI18n } from "@/lib/i18n";
 
 export default function Login() {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const { applyUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,8 +39,9 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await auth.loginWithEmailPassword(email, password);
-      window.location.href = "/";
+      const loggedInUser = await auth.loginWithEmailPassword(email, password);
+      applyUser(loggedInUser);
+      navigate("/", { replace: true });
     } catch (err) {
       // Map common error codes to user-friendly messages
       const msg = err?.message || "";

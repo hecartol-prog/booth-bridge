@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth } from "@/api/authClient";
+import { useAuth } from "@/lib/AuthContext";
+import { isOnboardingComplete } from "@/api/appUserModel";
 import { runBusinessCardPipeline, PIPELINE_MODES } from "@/pipeline/businessCardPipeline";
 import { uploadCompanyLogo } from "@/utils/assetPipeline";
 import { storage } from "@/api/storageClient";
@@ -74,6 +77,8 @@ const INDUSTRIES = [
 
 export default function Onboarding() {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const { applyUser } = useAuth();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(null);
   const [profileMethod, setProfileMethod] = useState(null);
@@ -131,6 +136,30 @@ export default function Onboarding() {
       if (me?.email && !email) setEmail(me.email);
     }).catch(() => {});
   }, [email]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await auth.getCurrentUser();
+        if (!me?.id || cancelled) return;
+        if (isOnboardingComplete(me)) {
+          navigate("/", { replace: true });
+          return;
+        }
+        const row = await auth.getAppUserOnboardingState(me.id);
+        if (!cancelled && isOnboardingComplete(row)) {
+          await applyUser(await auth.refreshCurrentUser());
+          navigate("/", { replace: true });
+        }
+      } catch {
+        // Stay on onboarding when verification fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, applyUser]);
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
@@ -283,6 +312,7 @@ export default function Onboarding() {
     setFinishError(null);
     try {
       const me = await auth.ensureAppUser();
+      let refreshedUser;
 
       if (effectiveRole === "exhibitor") {
         let existing = [];
@@ -306,7 +336,7 @@ export default function Onboarding() {
             digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
           });
         }
-        await auth.updateUserMetadata({ user_role: "exhibitor", onboarded: true, profile_id: profile.id });
+        refreshedUser = await auth.completeOnboarding({ user_role: "exhibitor", profile_id: profile.id });
       } else {
         const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
         const buyerData = {
@@ -335,9 +365,10 @@ export default function Onboarding() {
         } else {
           profile = await db.BuyerProfile.create({ user_id: me.id, ...buyerData });
         }
-        await auth.updateUserMetadata({ user_role: "buyer", onboarded: true, profile_id: profile.id });
+        refreshedUser = await auth.completeOnboarding({ user_role: "buyer", profile_id: profile.id });
       }
-      window.location.href = "/";
+      applyUser(refreshedUser);
+      navigate("/", { replace: true });
     } catch (err) {
       setFinishError(err?.message || "Something went wrong. Please try again.");
       setSaving(false);

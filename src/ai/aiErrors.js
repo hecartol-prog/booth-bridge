@@ -25,9 +25,10 @@ export function normalizeAiError(error, context = {}) {
   const errRecord = error && typeof error === "object" ? /** @type {Record<string, unknown>} */ (error) : null;
   const message =
     err?.message ||
+    (typeof errRecord?.message === "string" ? errRecord.message : null) ||
     (typeof error === "string" ? error : "AI request failed");
 
-  let code = context.code || AI_ERROR_CODES.UNKNOWN;
+  let code = context.code || (typeof errRecord?.code === "string" ? errRecord.code : null) || AI_ERROR_CODES.UNKNOWN;
   const lower = message.toLowerCase();
 
   if (err?.name === "AbortError" || lower.includes("aborted")) {

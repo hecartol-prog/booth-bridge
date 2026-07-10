@@ -48,22 +48,42 @@ export function errorEnvelope(
   message: string,
   params: {
     code?: string;
+    stage?: string;
     provider?: string | null;
     model?: string | null;
     latency?: number;
     retryable?: boolean;
     details?: unknown;
     metadata?: Record<string, unknown>;
+    providerResponse?: unknown;
+    openRouterResponseBody?: unknown;
   } = {},
-): EdgeEnvelope<null> {
+): EdgeEnvelope<null> & {
+  stage: string;
+  code: string;
+  message: string;
+  details: unknown;
+  providerResponse?: unknown;
+  openRouterResponseBody?: unknown;
+} {
+  const code = params.code ?? "EDGE_FUNCTION_ERROR";
+  const stage = params.stage ?? "edge_function";
+  const details = params.details ?? null;
+
   return {
     success: false,
+    stage,
+    code,
+    message,
+    details,
+    providerResponse: params.providerResponse,
+    openRouterResponseBody: params.openRouterResponseBody,
     result: null,
     error: {
-      code: params.code ?? "EDGE_FUNCTION_ERROR",
+      code,
       message,
       retryable: params.retryable ?? false,
-      details: params.details,
+      details,
     },
     provider: params.provider ?? null,
     model: params.model ?? null,

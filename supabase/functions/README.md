@@ -90,6 +90,7 @@ Prompts are composed client-side and passed in `prompt`. Schemas are passed from
 | `ADMIN_PASSWORD` | Optional | Legacy admin login (env credential mode) |
 | `OPENROUTER_HTTP_REFERER` | Optional | OpenRouter attribution header |
 | `OPENROUTER_APP_NAME` | Optional | OpenRouter `X-Title` header |
+| `DEBUG_AI` | Optional | When `true`, edge failure `message` includes full provider/OpenRouter response body |
 
 Set secrets:
 

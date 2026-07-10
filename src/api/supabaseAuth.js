@@ -4,6 +4,7 @@
  */
 
 import { getSupabaseClient } from "@/api/supabaseClient";
+import { buildAppUserModel } from "@/api/appUserModel";
 import {
   buildOAuthRedirectTo,
   formatOAuthError,
@@ -17,30 +18,32 @@ function redirectPath(path = "/") {
   return buildOAuthRedirectTo(path);
 }
 
-/** Map Supabase auth user + public.user row to app user model */
+/** Lightweight read of onboarding fields from public.user (source of truth). */
+export async function fetchAppUserOnboardingState(userId) {
+  if (!userId) return null;
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("user")
+    .select("user_role, onboarded, profile_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Map Supabase auth user + public.user row to app user model. */
 export async function mergeAppUser(authUser) {
   if (!authUser) return null;
 
   const supabase = getSupabaseClient();
-  const { data: appRow } = await supabase
+  const { data: appRow, error } = await supabase
     .from("user")
-    .select("*")
+    .select("user_role, onboarded, profile_id")
     .eq("id", authUser.id)
     .maybeSingle();
+  if (error) throw error;
 
-  const meta = authUser.user_metadata || {};
-  const appMeta = authUser.app_metadata || {};
-  const roleFromClaims = (appMeta.role || "").toString().toLowerCase();
-
-  return {
-    id: authUser.id,
-    email: authUser.email,
-    role: roleFromClaims || "user",
-    user_role: appRow?.user_role || meta.user_role || null,
-    onboarded: appRow?.onboarded ?? meta.onboarded ?? false,
-    profile_id: appRow?.profile_id ?? meta.profile_id ?? null,
-    ...meta,
-  };
+  return buildAppUserModel(authUser, appRow);
 }
 
 export function isAdminRole(user) {
@@ -218,26 +221,48 @@ export async function supabaseUpdatePassword(newPassword) {
   if (error) throw error;
 }
 
-export async function supabaseUpdateUserMetadata(fields) {
+/**
+ * Persist onboarding-related app state to public.user only.
+ * Onboarding fields are NOT written to user_metadata (RC10.7 — avoids JWT staleness).
+ */
+export async function supabaseCompleteOnboarding({ user_role, profile_id }) {
   const supabase = getSupabaseClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   if (!userData.user) throw new Error("Not authenticated");
 
-  const metaPatch = {};
-  if (fields.user_role !== undefined) metaPatch.user_role = fields.user_role;
-  if (fields.onboarded !== undefined) metaPatch.onboarded = fields.onboarded;
-  if (fields.profile_id !== undefined) metaPatch.profile_id = fields.profile_id;
+  await syncAppUserRow(userData.user.id, {
+    user_role,
+    onboarded: true,
+    profile_id,
+  });
 
-  let updatedUser = userData.user;
-  if (Object.keys(metaPatch).length > 0) {
-    const { data, error } = await supabase.auth.updateUser({ data: metaPatch });
-    if (error) throw error;
-    updatedUser = data.user;
+  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+  if (refreshError) throw refreshError;
+
+  const authUser = refreshData.session?.user ?? userData.user;
+  return mergeAppUser(authUser);
+}
+
+/** @deprecated Prefer completeOnboarding — kept for backward-compatible call sites. */
+export async function supabaseUpdateUserMetadata(fields) {
+  const hasOnboardingFields =
+    fields.user_role !== undefined ||
+    fields.onboarded !== undefined ||
+    fields.profile_id !== undefined;
+
+  if (hasOnboardingFields) {
+    return supabaseCompleteOnboarding({
+      user_role: fields.user_role,
+      profile_id: fields.profile_id,
+    });
   }
 
-  await syncAppUserRow(userData.user.id, fields);
-  return mergeAppUser(updatedUser);
+  const supabase = getSupabaseClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!userData.user) throw new Error("Not authenticated");
+  return mergeAppUser(userData.user);
 }
 
 export async function supabaseLogout() {

@@ -6,6 +6,8 @@ import PageNotFound from "./lib/PageNotFound";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { I18nProvider } from "@/lib/i18n";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import OnboardedGuard from "@/components/OnboardedGuard";
 import { DebugConsoleGate } from "@/debug/DebugConsoleGate";
 import { SentryRouteTracker } from "@/monitoring/SentryRouteTracker";
 import { SentryUserBridge } from "@/monitoring/SentryUserBridge";
@@ -209,19 +211,6 @@ const AuthenticatedApp = () => {
     </Routes>
   );
 };
-
-function OnboardedGuard({ children }) {
-  const { user } = useAuth();
-  
-  // Admin role users AND admin-impersonating-user both skip onboarding
-  const isAdmin = (user?.role || "").toLowerCase() === "admin";
-  const isImpersonating = localStorage.getItem("bb_impersonate_as_user") === "true";
-  if (user && !isAdmin && !isImpersonating && (!user.onboarded || !user.user_role)) {
-    return <Navigate to="/onboarding" replace />;
-  }
-  
-  return children;
-}
 
 function App() {
   return (
