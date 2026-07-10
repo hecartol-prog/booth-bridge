@@ -8,6 +8,7 @@ import { isAiEnabled } from "@/config/backend";
 import * as aiGateway from "@/api/aiGateway";
 import { createAiResponse, extractTextResult, extractDocumentOutput } from "@/ai/aiResponse";
 import { AiClientError, normalizeAiError } from "@/ai/aiErrors";
+import { emitDebugEvent } from "@/debug/debugBridge";
 import {
   ocrScannerBusinessCardPrompt,
   ocrScannerBadgePrompt,
@@ -63,7 +64,7 @@ function providerName() {
 /**
  * @template T
  * @param {() => Promise<T>} fn
- * @param {{ requestId?: string, extractResult?: (raw: T) => * }} [options]
+ * @param {{ requestId?: string, requestSummary?: string, extractResult?: (raw: T) => * }} [options]
  */
 async function runAiRequest(fn, options = {}) {
   ensureAiEnabled();
@@ -74,7 +75,7 @@ async function runAiRequest(fn, options = {}) {
     const raw = await fn();
     const rawMetadata = raw && typeof raw === "object" ? raw : null;
     const result = options.extractResult ? options.extractResult(raw) : extractTextResult(raw);
-    return createAiResponse({
+    const response = createAiResponse({
       success: true,
       result,
       raw,
@@ -86,14 +87,31 @@ async function runAiRequest(fn, options = {}) {
       usage: rawMetadata && "usage" in rawMetadata ? rawMetadata.usage ?? null : null,
       metadata: { requestId: options.requestId || null },
     });
+    emitDebugEvent("ai", {
+      success: true,
+      latency: response.latency,
+      provider,
+      model: response.model,
+      usage: response.usage,
+      requestSummary: options.requestSummary || "ai-request",
+    });
+    return response;
   } catch (error) {
-    return createAiResponse({
+    const response = createAiResponse({
       success: false,
       error,
       provider,
       latency: Date.now() - started,
       metadata: { requestId: options.requestId || null },
     });
+    emitDebugEvent("ai", {
+      success: false,
+      latency: response.latency,
+      provider,
+      error,
+      requestSummary: options.requestSummary || "ai-request",
+    });
+    return response;
   } finally {
     if (options.requestId) activeRequests.delete(options.requestId);
   }

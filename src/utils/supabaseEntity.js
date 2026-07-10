@@ -5,6 +5,7 @@
 import { getSupabaseClient } from "@/api/supabaseClient";
 import { storage } from "@/api/storageClient";
 import { generateUUID } from "@/utils/supabaseQuery";
+import { sentryBreadcrumbs } from "@/monitoring/sentryBreadcrumbs";
 import {
   applyFilters,
   applySortAndLimit,
@@ -94,7 +95,11 @@ function ensureChannelSubscribed(tableName) {
         });
       }
     );
-    entry.channel.subscribe();
+    entry.channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        sentryBreadcrumbs.realtimeConnection({ table: tableName, status });
+      }
+    });
   }
   entry.refCount += 1;
   return entry;

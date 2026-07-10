@@ -7,3 +7,8 @@ export function isAiEnabled() {
 export function isSupabaseConfigured() {
   return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 }
+
+/** RC10.6 local debug flag — requires authenticated session (see debugGate.js) */
+export function isDebugMode() {
+  return import.meta.env.DEV && import.meta.env.VITE_DEBUG_MODE === "true";
+}

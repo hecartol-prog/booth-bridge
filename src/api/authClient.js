@@ -7,6 +7,8 @@
 
 import { getSupabaseClient } from "@/api/supabaseClient";
 import * as supabaseAuth from "@/api/supabaseAuth";
+import { sentryBreadcrumbs } from "@/monitoring/sentryBreadcrumbs";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 
 // ── Canonical public API ─────────────────────────────────────────────────────
 
@@ -16,10 +18,18 @@ export async function login(email, password) {
 }
 
 export async function loginWithEmailPassword(email, password) {
-  return supabaseAuth.supabaseLogin(email, password);
+  try {
+    const result = await supabaseAuth.supabaseLogin(email, password);
+    sentryBreadcrumbs.login(result?.id);
+    return result;
+  } catch (error) {
+    captureRuntimeError(error, { subsystem: "AUTH", category: "login_failure" });
+    throw error;
+  }
 }
 
 export function logout(redirectUrl) {
+  sentryBreadcrumbs.logout();
   supabaseAuth.supabaseLogout().then(() => {
     if (redirectUrl && typeof window !== "undefined") {
       window.location.href = redirectUrl;
@@ -28,7 +38,14 @@ export function logout(redirectUrl) {
 }
 
 export async function register(payload) {
-  return supabaseAuth.supabaseRegister(payload);
+  try {
+    const result = await supabaseAuth.supabaseRegister(payload);
+    sentryBreadcrumbs.register(payload?.email);
+    return result;
+  } catch (error) {
+    captureRuntimeError(error, { subsystem: "AUTH", category: "registration_failure" });
+    throw error;
+  }
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   type CompletionRequest,
   type CompletionResult,
 } from "./aiGateway.ts";
+import { captureEdgeException } from "./sentry.ts";
 
 export type AiHandlerOptions = {
   requireAuth?: boolean;
@@ -138,6 +139,17 @@ export async function handleAiRequest(
       latency_ms: Date.now() - started,
       attempt_count: Array.isArray(gatewayError.attempts) ? gatewayError.attempts.length : 0,
     }));
+
+    captureEdgeException(error, {
+      subsystem: "AI",
+      code,
+      status,
+      retryable,
+      provider: gatewayError.provider || getActiveProviderName() || null,
+      gateway: gatewayError.gateway || getActiveGatewayName() || null,
+      model: gatewayError.model || getDefaultModel() || null,
+      latency_ms: Date.now() - started,
+    });
 
     return jsonResponse(
       req,

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { auth } from '@/api/authClient';
+import { captureRuntimeError } from '@/monitoring/sentryErrors';
 
 const AuthContext = createContext(null);
 
@@ -24,6 +25,10 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
     } catch (error) {
       console.error('User auth check failed:', error);
+      captureRuntimeError(error, {
+        subsystem: 'AUTH',
+        category: error.status === 401 || error.status === 403 ? 'session_expired' : 'session_restore_failure',
+      });
       setUser(null);
       if (!silent) setIsLoadingAuth(false);
       setIsAuthenticated(false);
@@ -78,6 +83,7 @@ export const AuthProvider = ({ children }) => {
           await auth.ensureAppUser();
         } catch (error) {
           console.warn("ensureAppUser on auth state change failed:", error);
+          captureRuntimeError(error, { subsystem: "AUTH", category: "ensure_app_user_failure" });
         }
         await checkUserAuth({ silent: true });
       } else {

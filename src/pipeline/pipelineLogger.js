@@ -14,6 +14,17 @@
  * @property {Record<string, unknown>} [details]
  */
 
+/** @type {((entry: PipelineLogEntry) => void) | null} */
+let pipelineLogListener = null;
+
+/**
+ * Register a listener for pipeline log entries (used by debug console).
+ * @param {((entry: PipelineLogEntry) => void) | null} fn
+ */
+export function setPipelineLogListener(fn) {
+  pipelineLogListener = fn;
+}
+
 /**
  * @param {string} runId
  * @param {(entry: PipelineLogEntry) => void} [onLog]
@@ -44,6 +55,7 @@ export function createPipelineLogger(runId, onLog, tag = "rc9-pipeline") {
       console.info(`[${tag}]`, payload);
     }
     onLog?.(/** @type {PipelineLogEntry} */ (entry));
+    pipelineLogListener?.(/** @type {PipelineLogEntry} */ (entry));
     return entry;
   }
 

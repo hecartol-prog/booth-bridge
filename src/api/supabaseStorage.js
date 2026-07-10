@@ -5,6 +5,8 @@
 
 import { getSupabaseClient } from "@/api/supabaseClient";
 import { parseFileRef, toStorageRef } from "@/config/storageBuckets";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
+import { sentryBreadcrumbs } from "@/monitoring/sentryBreadcrumbs";
 
 function resolveRef(fileRef, options = {}) {
   const parsed = parseFileRef(fileRef, options);
@@ -20,6 +22,11 @@ function resolveRef(fileRef, options = {}) {
 
 function storageError(error, context) {
   const msg = error?.message || String(error);
+  captureRuntimeError(error, {
+    subsystem: "STORAGE",
+    category: "storage_failure",
+    metadata: { context },
+  });
   throw new Error(`[storage] ${context}: ${msg}`);
 }
 
@@ -31,6 +38,11 @@ async function ensureStorageSession(supabase) {
   const { data: refreshed, error } = await supabase.auth.refreshSession();
   if (error) storageError(error, "session refresh failed");
   if (!refreshed.session?.access_token) {
+    captureRuntimeError(new Error("Not authenticated"), {
+      subsystem: "AUTH",
+      category: "session_restoration_failure",
+      metadata: { context: "storage_upload" },
+    });
     storageError(new Error("Not authenticated"), "upload failed");
   }
   return refreshed.session;
@@ -48,6 +60,8 @@ export async function supabaseUpload(file, { bucket, path, upsert = true, conten
     contentType: contentType || file.type || undefined,
   });
   if (error) storageError(error, "upload failed");
+
+  sentryBreadcrumbs.storageUpload({ bucket, path: data.path });
 
   return {
     file_url: toStorageRef(bucket, data.path),

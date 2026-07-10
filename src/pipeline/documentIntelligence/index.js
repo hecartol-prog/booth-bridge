@@ -145,6 +145,11 @@ export async function runDocumentIntelligencePipeline({
     return failResult(mode, runId, logger, metrics, started, "pipeline", "MISSING_FILE", err.message);
   }
 
+  logger.log("image_selected", "ok", {
+    latencyMs: 0,
+    details: { fileName: file.name, fileSize: file.size },
+  });
+
   let imageUrl = null;
   let storagePath = null;
   let processedDataUrl = null;

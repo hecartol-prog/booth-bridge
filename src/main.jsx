@@ -2,6 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
+import { initSentry } from '@/monitoring/sentryInit'
+import { SentryErrorBoundary } from '@/monitoring/SentryErrorBoundary'
+
+initSentry()
 
 // Service Worker: unregister in dev, register in production
 if ('serviceWorker' in navigator) {
@@ -17,5 +21,7 @@ if ('serviceWorker' in navigator) {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <App />
+  <SentryErrorBoundary>
+    <App />
+  </SentryErrorBoundary>
 )

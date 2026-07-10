@@ -6,7 +6,9 @@ import PageNotFound from "./lib/PageNotFound";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { I18nProvider } from "@/lib/i18n";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { DebugConsoleGate } from "@/debug/DebugConsoleGate";
+import { SentryRouteTracker } from "@/monitoring/SentryRouteTracker";
+import { SentryUserBridge } from "@/monitoring/SentryUserBridge";
 
 // Auth pages
 import Login from "@/pages/Login";
@@ -227,7 +229,10 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
+            <SentryRouteTracker />
+            <SentryUserBridge />
             <AuthenticatedApp />
+            <DebugConsoleGate />
           </Router>
           <Toaster />
         </QueryClientProvider>

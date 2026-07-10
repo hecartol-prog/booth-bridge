@@ -24,6 +24,8 @@
     "src/ai/**/*.js",
     "src/components/**/*.jsx",
     "src/pages/**/*.jsx",
+    "src/monitoring/**/*.js",
+    "src/monitoring/**/*.jsx",
     "src/Layout.jsx"
   ],
   "exclude": [
