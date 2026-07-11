@@ -1,8 +1,8 @@
 import { test as setup } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { exhibitorCreds, hasExhibitorCreds } from '../helpers/env';
-import { loginWithEmail } from '../helpers/auth';
+import { exhibitorCreds, hasExhibitorCreds } from './helpers/env';
+import { loginWithEmail } from './helpers/auth';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const authFile = path.join(__dirname, '..', 'playwright', '.auth', 'exhibitor.json');

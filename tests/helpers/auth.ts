@@ -1,5 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function gotoPath(page: Page, path: string) {
+  return page.goto(path, { waitUntil: 'domcontentloaded' });
+}
+
 export async function waitForAuthBootstrap(page: Page) {
   await page.waitForLoadState('domcontentloaded');
 
@@ -18,9 +22,13 @@ export async function waitForAuthBootstrap(page: Page) {
   );
 }
 
-export async function loginWithEmail(page: Page, email: string, password: string) {
-  await page.goto('/login');
+export async function gotoApp(page: Page, path: string) {
+  await gotoPath(page, path);
   await waitForAuthBootstrap(page);
+}
+
+export async function loginWithEmail(page: Page, email: string, password: string) {
+  await gotoApp(page, '/login');
 
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
@@ -31,8 +39,7 @@ export async function loginWithEmail(page: Page, email: string, password: string
 }
 
 export async function loginAsAdmin(page: Page, email: string, password: string) {
-  await page.goto('/admin-login');
-  await waitForAuthBootstrap(page);
+  await gotoApp(page, '/admin-login');
 
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
@@ -54,5 +61,5 @@ export async function logoutFromApp(page: Page) {
     localStorage.clear();
     sessionStorage.clear();
   });
-  await page.goto('/login');
+  await gotoPath(page, '/login');
 }

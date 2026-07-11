@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { waitForAuthBootstrap } from '../helpers/auth';
+import { gotoApp, gotoPath } from '../helpers/auth';
 
 test.describe('Admin login', () => {
   test('renders secure admin login page', async ({ page }) => {
-    await page.goto('/admin-login');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/admin-login');
 
     await expect(page.getByRole('heading', { name: /boothbridge administration/i })).toBeVisible();
     await expect(page.getByLabel('Email Address')).toBeVisible();
@@ -13,7 +12,7 @@ test.describe('Admin login', () => {
   });
 
   test('rejects invalid admin credentials', async ({ page }) => {
-    await page.goto('/admin-login');
+    await gotoPath(page, '/admin-login');
     await page.getByLabel('Email Address').fill('not-an-admin@example.com');
     await page.getByLabel('Password').fill('wrong-password-123');
     await page.getByRole('button', { name: /secure sign in/i }).click();
@@ -23,8 +22,7 @@ test.describe('Admin login', () => {
   });
 
   test('redirects unauthenticated users from admin routes', async ({ page }) => {
-    await page.goto('/admin');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/admin');
     await expect(page).toHaveURL(/\/admin-login/);
   });
 });

@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { waitForAuthBootstrap } from '../helpers/auth';
+import { gotoApp } from '../helpers/auth';
 
 test.describe('Register page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/register');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/register');
   });
 
   test('renders registration form', async ({ page }) => {
@@ -30,7 +29,7 @@ test.describe('Register page', () => {
     await page.getByLabel('Confirm Password').fill('short');
     await page.getByRole('button', { name: /create account/i }).click();
 
-    await expect(page.getByText(/at least 8 characters/i)).toBeVisible();
+    await expect(page.getByText('Password must be at least 8 characters.')).toBeVisible();
   });
 
   test('links back to login', async ({ page }) => {

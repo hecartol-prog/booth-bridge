@@ -1,17 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { waitForAuthBootstrap } from '../helpers/auth';
+import { gotoApp, gotoPath } from '../helpers/auth';
 
 test.describe('App shell', () => {
   test('loads the login page with correct document title', async ({ page }) => {
-    await page.goto('/login');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/login');
 
     await expect(page).toHaveTitle(/Booth Bridge/i);
     await expect(page.locator('#root')).toBeVisible();
   });
 
   test('serves the web app manifest', async ({ page }) => {
-    const response = await page.goto('/manifest.json');
+    const response = await gotoPath(page, '/manifest.json');
     expect(response?.ok()).toBeTruthy();
   });
 
@@ -19,8 +18,7 @@ test.describe('App shell', () => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
 
-    await page.goto('/login');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/login');
 
     const criticalErrors = errors.filter(
       (message) =>

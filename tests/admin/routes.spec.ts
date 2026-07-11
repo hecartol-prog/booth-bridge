@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { waitForAuthBootstrap } from '../helpers/auth';
+import { gotoApp, waitForAuthBootstrap } from '../helpers/auth';
 import { adminRoutes } from '../helpers/routes';
 
 test.describe('Admin route smoke', () => {
   for (const route of adminRoutes) {
     test(`loads ${route.path}`, async ({ page }) => {
-      await page.goto(route.path);
-      await waitForAuthBootstrap(page);
+      await gotoApp(page, route.path);
 
       await expect(page).not.toHaveURL(/\/admin-login/);
       await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible();
@@ -16,8 +15,7 @@ test.describe('Admin route smoke', () => {
 
 test.describe('Admin navigation', () => {
   test('sidebar navigates between operational sections', async ({ page }) => {
-    await page.goto('/admin');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/admin');
 
     const sections = [
       { link: /^users$/i, heading: /user management/i },

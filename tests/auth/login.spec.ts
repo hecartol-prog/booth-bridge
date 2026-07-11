@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { waitForAuthBootstrap } from '../helpers/auth';
+import { waitForAuthBootstrap, gotoApp } from '../helpers/auth';
 import { publicAuthPaths } from '../helpers/routes';
 
 test.describe('Login page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/login');
   });
 
   test('renders the login form', async ({ page }) => {
@@ -34,7 +33,10 @@ test.describe('Login page', () => {
     await page.getByRole('link', { name: /create one/i }).click();
     await expect(page).toHaveURL(/\/register/);
 
-    await page.goto('/login');
+    await page.getByRole('link', { name: /log in/i }).click();
+    await expect(page).toHaveURL(/\/login/);
+    await waitForAuthBootstrap(page);
+
     await page.getByRole('link', { name: /forgot password/i }).click();
     await expect(page).toHaveURL(/\/forgot-password/);
   });
@@ -52,8 +54,7 @@ test.describe('Login page', () => {
 test.describe('Public auth routes', () => {
   for (const route of publicAuthPaths) {
     test(`loads ${route.path}`, async ({ page }) => {
-      await page.goto(route.path);
-      await waitForAuthBootstrap(page);
+      await gotoApp(page, route.path);
       await expect(page.getByRole('heading', { name: route.heading })).toBeVisible();
     });
   }

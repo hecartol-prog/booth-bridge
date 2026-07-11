@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { waitForAuthBootstrap } from '../helpers/auth';
+import { gotoApp, waitForAuthBootstrap } from '../helpers/auth';
 import { exhibitorRoutes } from '../helpers/routes';
 
 test.describe('Exhibitor route smoke', () => {
   for (const route of exhibitorRoutes) {
     test(`loads ${route.path}`, async ({ page }) => {
-      await page.goto(route.path);
-      await waitForAuthBootstrap(page);
+      await gotoApp(page, route.path);
 
       await expect(page).not.toHaveURL(/\/login/);
       await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible();
@@ -16,8 +15,7 @@ test.describe('Exhibitor route smoke', () => {
 
 test.describe('Exhibitor navigation', () => {
   test('sidebar links navigate to key pages', async ({ page }) => {
-    await page.goto('/');
-    await waitForAuthBootstrap(page);
+    await gotoApp(page, '/');
 
     const navTargets = [
       { link: /my qr/i, heading: /my qr code/i },
