@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useCallback } from "react";
 import { db } from "@/utils/dbClient";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 import { getPendingScans, removeSyncedScan } from "@/utils/offlineScanQueue";
 import {
   getPendingVisitorActions,
@@ -54,7 +55,12 @@ async function syncScans() {
 
       await removeSyncedScan(scan.id);
       synced++;
-    } catch (_) {
+    } catch (error) {
+      captureRuntimeError(error, {
+        subsystem: "NETWORK",
+        category: "offline_scan_sync_failure",
+        metadata: { scanId: scan.id, targetId: scan.targetId },
+      });
       failed++;
     }
   }
@@ -148,7 +154,12 @@ async function syncVisitorActions() {
 
       await removeSyncedVisitorAction(action.id);
       synced++;
-    } catch (_) {
+    } catch (error) {
+      captureRuntimeError(error, {
+        subsystem: "NETWORK",
+        category: "offline_visitor_sync_failure",
+        metadata: { actionId: action.id, actionType: action.actionType },
+      });
       failed++;
     }
   }

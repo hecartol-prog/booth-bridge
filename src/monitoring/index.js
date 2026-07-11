@@ -6,3 +6,4 @@ export { syncSentryUser, clearSentryUser } from "@/monitoring/sentryUser";
 export { SentryErrorBoundary } from "@/monitoring/SentryErrorBoundary";
 export { SentryRouteTracker } from "@/monitoring/SentryRouteTracker";
 export { SentryUserBridge } from "@/monitoring/SentryUserBridge";
+export { installAppInstrumentation } from "@/monitoring/installAppInstrumentation";

@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { APP_LOGO_URL } from "@/config/branding";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 import { requiresReview } from "@/pipeline/documentIntelligence/entityValidation";
 
 const LOW_CONFIDENCE_THRESHOLD = 95;
@@ -165,11 +166,21 @@ export default function Onboarding() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadingLogo(true);
-    const me = await auth.getCurrentUser();
-    const { file_url } = await uploadCompanyLogo(file, me?.id || "onboarding");
-    setLogo(file_url);
-    setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
-    setUploadingLogo(false);
+    try {
+      const me = await auth.getCurrentUser();
+      const { file_url } = await uploadCompanyLogo(file, me?.id || "onboarding");
+      setLogo(file_url);
+      setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "STORAGE",
+        category: "logo_upload_failure",
+        component: "Onboarding",
+      });
+      setFinishError(err instanceof Error ? err.message : "Logo upload failed. Please try again.");
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   const applyOcrFields = (fields, fc = null) => {
@@ -251,6 +262,11 @@ export default function Onboarding() {
 
       applyOcrFields(result.formFields, result.fieldConfidence);
     } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "OCR",
+        category: "onboarding_ocr_failure",
+        component: "Onboarding",
+      });
       const message = err instanceof Error ? err.message : "Card scan failed.";
       setFinishError(`${message} You can fill fields manually.`);
     } finally {
@@ -370,6 +386,12 @@ export default function Onboarding() {
       applyUser(refreshedUser);
       navigate("/", { replace: true });
     } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "PROFILE",
+        category: "onboarding_finish_failure",
+        component: "Onboarding",
+        metadata: { role: effectiveRole },
+      });
       setFinishError(err?.message || "Something went wrong. Please try again.");
       setSaving(false);
     }

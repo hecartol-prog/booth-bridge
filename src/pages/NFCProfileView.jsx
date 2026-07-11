@@ -8,6 +8,7 @@ import {
   UserPlus, Loader2, CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 
 // Standalone page: /nfc/:userId — opened when someone taps an NFC badge
 export default function NFCProfileView() {
@@ -64,9 +65,24 @@ export default function NFCProfileView() {
       });
       setSaved(true);
       toast({ title: "Contact saved!", description: `${profile.display_name} added to your connections.` });
-    } catch {
-      toast({ title: "Already saved", description: "This contact is already in your network." });
-      setSaved(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const isDuplicate = /duplicate|unique|already exists/i.test(message);
+      if (isDuplicate) {
+        toast({ title: "Already saved", description: "This contact is already in your network." });
+        setSaved(true);
+      } else {
+        captureRuntimeError(err, {
+          subsystem: "PROFILE",
+          category: "connection_save_failure",
+          component: "NFCProfileView",
+        });
+        toast({
+          title: "Save failed",
+          description: message || "Could not save contact. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
     setSaving(false);
   };

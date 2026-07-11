@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { validateFieldPattern } from "@/utils/securitySanitizer";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 
 const SCAN_TYPES = [
   { id: "business_card", label: "Business Card", desc: "Scan paper business cards", icon: "🪪" },
@@ -99,6 +100,12 @@ export default function OCRScanner() {
       setFieldErrors({});
       setStep("review");
     } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "OCR",
+        category: "ocr_scan_failure",
+        component: "OCRScanner",
+        metadata: { scanType, pipelineMode },
+      });
       const description = err instanceof Error ? err.message : "Could not process image. Please try again.";
       toast({ title: "OCR failed", description, variant: "destructive" });
       setStep("select");
@@ -156,6 +163,12 @@ export default function OCRScanner() {
       toast({ title: "Contact saved!", description: `${editData.full_name || editData.company || "Contact"} added.` });
       setStep("saved");
     } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "PROFILE",
+        category: "contact_save_failure",
+        component: "OCRScanner",
+        metadata: { scanType },
+      });
       const message = err instanceof Error ? err.message : "Save failed";
       toast({ title: "Save failed", description: message, variant: "destructive" });
     }

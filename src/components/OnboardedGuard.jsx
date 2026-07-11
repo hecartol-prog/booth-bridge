@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/api/authClient";
 import { isOnboardingComplete } from "@/api/appUserModel";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 
 function OnboardingSpinner() {
   return (
@@ -53,8 +54,13 @@ export default function OnboardedGuard({ children }) {
         }
 
         setGateState("redirect");
-      } catch {
-        if (!cancelled) setGateState("redirect");
+      } catch (error) {
+        captureRuntimeError(error, {
+          subsystem: "PROFILE",
+          category: "onboarding_state_check_failure",
+          component: "OnboardedGuard",
+        });
+        if (!cancelled) setGateState("allow");
       }
     })();
 

@@ -55,7 +55,12 @@ export async function register(payload) {
  */
 export async function resetPassword(emailOrPayload, newPassword) {
   if (typeof emailOrPayload === "string") {
-    return requestPasswordReset(emailOrPayload);
+    try {
+      return await requestPasswordReset(emailOrPayload);
+    } catch (error) {
+      captureRuntimeError(error, { subsystem: "AUTH", category: "password_reset_request_failure" });
+      throw error;
+    }
   }
   const payload =
     emailOrPayload && typeof emailOrPayload === "object"
@@ -68,7 +73,12 @@ export async function resetPassword(emailOrPayload, newPassword) {
     resetToken: payload.resetToken,
     newPassword: payload.newPassword,
   });
-  return supabaseAuth.supabaseCompletePasswordReset(resetPayload);
+  try {
+    return await supabaseAuth.supabaseCompletePasswordReset(resetPayload);
+  } catch (error) {
+    captureRuntimeError(error, { subsystem: "AUTH", category: "password_reset_complete_failure" });
+    throw error;
+  }
 }
 
 export async function updatePassword(newPassword) {
@@ -151,7 +161,12 @@ export async function updateUserMetadata(fields) {
 }
 
 export async function completeOnboarding({ user_role, profile_id }) {
-  return supabaseAuth.supabaseCompleteOnboarding({ user_role, profile_id });
+  try {
+    return await supabaseAuth.supabaseCompleteOnboarding({ user_role, profile_id });
+  } catch (error) {
+    captureRuntimeError(error, { subsystem: "AUTH", category: "complete_onboarding_failure" });
+    throw error;
+  }
 }
 
 export async function getAppUserOnboardingState(userId) {
@@ -164,10 +179,15 @@ export async function refreshCurrentUser() {
 }
 
 export async function ensureAppUser() {
-  const user = await supabaseAuth.supabaseGetCurrentUser();
-  if (!user?.id) throw new Error("Not authenticated");
-  await supabaseAuth.ensureAppUserRow(user.id);
-  return user;
+  try {
+    const user = await supabaseAuth.supabaseGetCurrentUser();
+    if (!user?.id) throw new Error("Not authenticated");
+    await supabaseAuth.ensureAppUserRow(user.id);
+    return user;
+  } catch (error) {
+    captureRuntimeError(error, { subsystem: "AUTH", category: "ensure_app_user_failure" });
+    throw error;
+  }
 }
 
 export function redirectToLogin(returnUrl) {
@@ -180,7 +200,20 @@ export async function checkAppReady() {
 
 /** @returns {Promise<{ data?: { success?: boolean } }>} */
 export async function adminLogin(email, password) {
-  return supabaseAuth.supabaseAdminLogin(email, password);
+  try {
+    const result = await supabaseAuth.supabaseAdminLogin(email, password);
+    if (!result?.data?.success) {
+      captureRuntimeError("Admin login failed", {
+        subsystem: "AUTH",
+        category: "admin_login_failure",
+        level: "warning",
+      });
+    }
+    return result;
+  } catch (error) {
+    captureRuntimeError(error, { subsystem: "AUTH", category: "admin_login_failure" });
+    throw error;
+  }
 }
 
 export function isAdminSession() {

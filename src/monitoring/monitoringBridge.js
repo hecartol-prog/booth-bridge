@@ -108,17 +108,22 @@ export function installMonitoringBridge() {
   });
 
   onDebugEvent("pipeline", (payload) => {
-    const data = /** @type {{ stageKey?: string, entry?: { status?: string, error?: string } }} */ (payload);
+    const data = /** @type {{ stageKey?: string, entry?: { status?: string, message?: string, error?: string, code?: string } }} */ (payload);
     const stage = data.stageKey || "pipeline";
     const status = data.entry?.status;
-    if (status === "RUNNING") sentryBreadcrumbs.ocrStarted({ stage });
-    else if (status === "PASS") sentryBreadcrumbs.ocrFinished({ stage });
-    else if (status === "FAILED") {
-      sentryBreadcrumbs.ocrFailed({ stage, error: data.entry?.error });
-      captureRuntimeError(data.entry?.error || `OCR stage failed: ${stage}`, {
+    const isRunning = status === "start" || status === "RUNNING";
+    const isPass = status === "ok" || status === "PASS";
+    const isFailure = status === "error" || status === "FAILED";
+    const errorMessage = data.entry?.message || data.entry?.error;
+
+    if (isRunning) sentryBreadcrumbs.ocrStarted({ stage });
+    else if (isPass) sentryBreadcrumbs.ocrFinished({ stage });
+    else if (isFailure) {
+      sentryBreadcrumbs.ocrFailed({ stage, error: errorMessage });
+      captureRuntimeError(errorMessage || `OCR stage failed: ${stage}`, {
         subsystem: "OCR",
         category: "ocr_failure",
-        metadata: { stage },
+        metadata: { stage, code: data.entry?.code },
       });
     }
   });

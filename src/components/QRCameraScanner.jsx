@@ -2,17 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Camera, CameraOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Dynamically load jsQR from CDN
-let jsQR = null;
-const loadJsQR = () =>
-  new Promise((resolve) => {
-    if (jsQR) return resolve(jsQR);
-    if (window.jsQR) { jsQR = window.jsQR; return resolve(jsQR); }
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-    script.onload = () => { jsQR = window.jsQR; resolve(jsQR); };
-    document.head.appendChild(script);
-  });
+import { loadJsQR } from "@/utils/loadJsQR";
 
 export default function QRCameraScanner({ onScan }) {
   const videoRef = useRef(null);
@@ -62,17 +52,18 @@ export default function QRCameraScanner({ onScan }) {
     setStatus("idle");
   };
 
-  const scanLoop = () => {
+  const scanLoop = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || !jsQR) return;
+    const qr = await loadJsQR();
+    if (!video || !canvas || !qr) return;
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
       const ctx = canvas.getContext("2d");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      const code = qr(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: "dontInvert",
       });
       if (code?.data) {

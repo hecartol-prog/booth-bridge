@@ -3,9 +3,11 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import { initSentry } from '@/monitoring/sentryInit'
+import { installAppInstrumentation } from '@/monitoring/installAppInstrumentation'
 import { SentryErrorBoundary } from '@/monitoring/SentryErrorBoundary'
 
 initSentry()
+installAppInstrumentation()
 
 // Service Worker: unregister in dev, register in production
 if ('serviceWorker' in navigator) {

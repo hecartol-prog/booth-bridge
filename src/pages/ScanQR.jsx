@@ -10,6 +10,8 @@ import { useToast } from "@/components/ui/use-toast";
 import DigitalBooth from "./DigitalBooth";
 import { enqueueScan, getPendingCount } from "@/utils/offlineScanQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
+import { loadJsQR } from "@/utils/loadJsQR";
 import { validateQRPayload } from "@/utils/securitySanitizer";
 
 export default function ScanQR() {
@@ -26,6 +28,7 @@ export default function ScanQR() {
   const [pendingCount, setPendingCount] = useState(0);
 
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const detectorRef = useRef(null);
   const animFrameRef = useRef(null);
@@ -110,10 +113,39 @@ export default function ScanQR() {
         };
         animFrameRef.current = requestAnimationFrame(detect);
       } else {
-        setCameraError("Live QR detection not supported on this browser. Use code entry below.");
-        setScanning(false);
+        const qr = await loadJsQR();
+        if (!qr) {
+          setCameraError("Live QR detection not supported on this browser. Use code entry below.");
+          setScanning(false);
+          stopCamera();
+          return;
+        }
+        const scanWithJsQR = async () => {
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          if (!video || !canvas || video.readyState < 2) {
+            animFrameRef.current = requestAnimationFrame(scanWithJsQR);
+            return;
+          }
+          const ctx = canvas.getContext("2d");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = qr(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code?.data) {
+            stopCamera();
+            handleScan(code.data);
+            return;
+          }
+          animFrameRef.current = requestAnimationFrame(scanWithJsQR);
+        };
+        animFrameRef.current = requestAnimationFrame(scanWithJsQR);
       }
     } catch (err) {
+      captureRuntimeError(err, { subsystem: "UI", category: "camera_access_denied", component: "ScanQR" });
       setCameraError("Camera access denied. Please allow camera permissions and try again.");
       setScanning(false);
     }
@@ -205,8 +237,12 @@ export default function ScanQR() {
         });
       }
     } catch (networkErr) {
-      // Network failed mid-attempt — queue for later sync
-      console.warn("Connection record failed, queuing for offline sync:", networkErr);
+      captureRuntimeError(networkErr, {
+        subsystem: "NETWORK",
+        category: "connection_track_failure",
+        component: "ScanQR",
+        metadata: { targetId, offlineQueued: true },
+      });
       await enqueueScan({
         targetId,
         targetRole,
@@ -264,6 +300,7 @@ export default function ScanQR() {
           {cameraActive ? (
             <>
               <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+              <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-48 border-2 border-white/70 rounded-xl relative">
                   <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
