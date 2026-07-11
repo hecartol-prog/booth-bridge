@@ -384,7 +384,8 @@ export default function Onboarding() {
         refreshedUser = await auth.completeOnboarding({ user_role: "buyer", profile_id: profile.id });
       }
       applyUser(refreshedUser);
-      navigate("/", { replace: true });
+      window.location.href = "/";
+      return;
     } catch (err) {
       captureRuntimeError(err, {
         subsystem: "PROFILE",

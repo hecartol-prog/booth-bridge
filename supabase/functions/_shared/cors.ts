@@ -1,6 +1,6 @@
 const DEFAULT_METHODS = "POST, OPTIONS";
 const DEFAULT_HEADERS =
-  "authorization, x-client-info, apikey, content-type, x-requested-with";
+  "authorization, x-client-info, apikey, content-type, x-requested-with, baggage, sentry-trace";
 
 function parseAllowedOrigins(): string[] {
   const raw =
