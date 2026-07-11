@@ -160,7 +160,18 @@ export function resolveClientMessage(
   details: unknown,
   providerResponseBody: unknown,
 ): string {
-  if (!isDebugAiEnabled()) return message;
+  const lower = message.toLowerCase();
+  const friendlyTimeout =
+    lower.includes("timed out") ||
+    lower.includes("timeout") ||
+    (lower.includes("aborted") && /300\d{2}/.test(message));
+
+  if (!isDebugAiEnabled()) {
+    if (friendlyTimeout) {
+      return "AI processing took too long. Please try again or enter your details manually.";
+    }
+    return message;
+  }
 
   const parts = [message];
   if (providerResponseBody != null) {

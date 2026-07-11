@@ -65,7 +65,7 @@ const state = {
     provider: "supabase",
     model: null,
     visionModel: import.meta.env.VITE_RC10_VISION_MODEL || "qwen/qwen-2.5-vl-72b-instruct",
-    textModel: import.meta.env.VITE_RC10_NORMALIZE_MODEL || "qwen/qwen-2.5-72b-instruct",
+    textModel: import.meta.env.VITE_RC10_NORMALIZE_MODEL || "qwen/qwen-2.5-7b-instruct",
     lastLatency: null,
     avgLatency: null,
     latencies: [],

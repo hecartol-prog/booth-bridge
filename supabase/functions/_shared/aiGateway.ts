@@ -81,9 +81,10 @@ const OPENAI_BASE_URL = "https://api.openai.com/v1";
 const GATEWAY_VERSION = Deno.env.get("AI_GATEWAY_VERSION") || "rc9";
 /** RC9 production model — OpenRouter Qwen 2.5 VL 72B Instruct (vision + text). */
 const RC9_PRODUCTION_MODEL = "qwen/qwen-2.5-vl-72b-instruct";
-const MAX_REQUEST_TIMEOUT_MS = 60000;
+const MAX_REQUEST_TIMEOUT_MS = 120000;
 const MIN_REQUEST_TIMEOUT_MS = 1000;
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+/** Vision + large OpenRouter models often exceed 30s; 60s default reduces false timeouts. */
+const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
 const DEFAULT_OPENROUTER_PROVIDER_ORDER: AiProviderName[] = ["qwen"];
 
 function resolveRequestTimeoutMs(): number {
@@ -637,16 +638,24 @@ export async function complete(req: CompletionRequest): Promise<CompletionResult
         },
       );
       if (!retryable || index === routes.length - 1) {
-        const message = error instanceof Error ? error.message : String(error);
         const enriched = error as Error & {
           code?: string;
           retryable?: boolean;
           status?: number;
           providerResponseBody?: unknown;
           providerStatus?: number;
+          attempts?: GatewayAttempt[];
         };
+
+        // Preserve gateway errors (e.g. AI_TIMEOUT) instead of re-wrapping with a raw AbortError message.
+        if (enriched.code) {
+          enriched.attempts = attempts;
+          throw enriched;
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
         throw createGatewayError(message, route, {
-          code: enriched.code || "AI_PROVIDER_ERROR",
+          code: "AI_PROVIDER_ERROR",
           retryable,
           status: enriched.status,
           attempts,

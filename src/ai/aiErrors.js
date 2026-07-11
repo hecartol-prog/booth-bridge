@@ -30,11 +30,14 @@ export function normalizeAiError(error, context = {}) {
 
   let code = context.code || (typeof errRecord?.code === "string" ? errRecord.code : null) || AI_ERROR_CODES.UNKNOWN;
   const lower = message.toLowerCase();
+  const hasExplicitCode = Boolean(
+    context.code || (typeof errRecord?.code === "string" && errRecord.code !== AI_ERROR_CODES.UNKNOWN),
+  );
 
-  if (err?.name === "AbortError" || lower.includes("aborted")) {
-    code = AI_ERROR_CODES.CANCELLED;
-  } else if (lower.includes("timeout") || lower.includes("timed out")) {
+  if (lower.includes("timeout") || lower.includes("timed out")) {
     code = AI_ERROR_CODES.TIMEOUT;
+  } else if (!hasExplicitCode && (err?.name === "AbortError" || lower.includes("aborted"))) {
+    code = AI_ERROR_CODES.CANCELLED;
   } else if (lower.includes("rate limit") || lower.includes("429")) {
     code = AI_ERROR_CODES.RATE_LIMIT;
   } else if (

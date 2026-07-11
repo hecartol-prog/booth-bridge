@@ -27,7 +27,7 @@ import { ocrScannerBadgePrompt } from "@/ai/prompts/businessCard/ocrScanner";
 export const RC10_VISION_MODEL =
   import.meta.env.VITE_RC10_VISION_MODEL || "qwen/qwen-2.5-vl-72b-instruct";
 export const RC10_NORMALIZE_MODEL =
-  import.meta.env.VITE_RC10_NORMALIZE_MODEL || "qwen/qwen-2.5-72b-instruct";
+  import.meta.env.VITE_RC10_NORMALIZE_MODEL || "qwen/qwen-2.5-7b-instruct";
 
 /**
  * @param {string} dataUrl
