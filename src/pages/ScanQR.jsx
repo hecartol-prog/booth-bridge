@@ -87,12 +87,25 @@ export default function ScanQR() {
   const startCamera = async () => {
     setCameraError("");
     setScanning(true);
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setCameraError("Camera not available. Your browser or connection may not support camera access. Use the code entry below.");
+      setScanning(false);
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", "");
+        video.muted = true;
+        await video.play();
       }
       setCameraActive(true);
 
@@ -145,8 +158,18 @@ export default function ScanQR() {
         animFrameRef.current = requestAnimationFrame(scanWithJsQR);
       }
     } catch (err) {
-      captureRuntimeError(err, { subsystem: "UI", category: "camera_access_denied", component: "ScanQR" });
-      setCameraError("Camera access denied. Please allow camera permissions and try again.");
+      let message = "Camera access denied. Please allow camera permissions and try again.";
+      if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        message = "No camera found on this device. Use the code entry below.";
+      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+        message = "Camera is in use by another app. Close it and try again, or use the code entry below.";
+      } else if (err.name === "OverconstrainedError") {
+        message = "Could not access rear camera. Try again or use the code entry below.";
+      } else if (err.name === "TypeError") {
+        message = "Camera requires HTTPS. Use the code entry below.";
+      }
+      captureRuntimeError(err, { subsystem: "UI", category: "camera_access_failure", component: "ScanQR", metadata: { errorName: err.name } });
+      setCameraError(message);
       setScanning(false);
     }
   };

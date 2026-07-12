@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { runBusinessCardPipeline, PIPELINE_MODES } from "@/pipeline/businessCardPipeline";
 import { db } from "@/utils/dbClient";
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import FieldReviewPanel from "@/components/ocr/FieldReviewPanel";
 import {
-  ScanLine, Camera, Upload, CheckCircle2, Loader2, Edit, Save, X
+  ScanLine, Camera, Upload, CheckCircle2, Loader2, Edit, Save, X,
+  SwitchCamera, AlertCircle, RotateCcw
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { validateFieldPattern } from "@/utils/securitySanitizer";
@@ -48,14 +49,23 @@ const BADGE_FIELDS = [
   { key: "industry", label: "Industry" },
 ];
 
+/**
+ * Check if the browser supports getUserMedia in a secure context.
+ */
+function supportsGetUserMedia() {
+  return !!(navigator?.mediaDevices?.getUserMedia);
+}
+
 export default function OCRScanner() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileRef = useRef(null);
-  const captureRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
   const [scanType, setScanType] = useState("business_card");
-  const [step, setStep] = useState("select");
+  const [step, setStep] = useState("select"); // select | camera | processing | review | saved
   const [imageUrl, setImageUrl] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [editData, setEditData] = useState(null);
@@ -66,7 +76,204 @@ export default function OCRScanner() {
   const [loading, setLoading] = useState(false);
   const [pipelineMode, setPipelineMode] = useState("ocr_ai");
 
+  // Camera state
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [facingMode, setFacingMode] = useState("environment");
+  const [useNativeFallback, setUseNativeFallback] = useState(false);
+
   const fields = scanType === "business_card" ? BUSINESS_CARD_FIELDS : BADGE_FIELDS;
+
+  // ── Camera lifecycle ─────────────────────────────────────────────────
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+  }, []);
+
+  // Cleanup camera on unmount
+  useEffect(() => () => stopCamera(), [stopCamera]);
+
+  const startCamera = useCallback(async (requestedFacing) => {
+    const facing = requestedFacing || facingMode;
+    setCameraError("");
+    setCameraStarting(true);
+
+    // Guard: secure context / browser support
+    if (!supportsGetUserMedia()) {
+      setCameraError("Camera not available. Your browser or connection may not support camera access. Try uploading an image instead.");
+      setCameraStarting(false);
+      setUseNativeFallback(true);
+      captureRuntimeError(new Error("getUserMedia not supported"), {
+        subsystem: "UI",
+        category: "camera_unsupported",
+        component: "OCRScanner",
+        metadata: { isSecure: window.isSecureContext, hasMediaDevices: !!navigator?.mediaDevices },
+      });
+      return;
+    }
+
+    try {
+      // Stop any existing stream before requesting a new one
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+
+      const constraints = {
+        video: {
+          facingMode: facing,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+
+      const video = videoRef.current;
+      if (!video) {
+        setCameraError("Camera initialization failed. Please try again or upload an image.");
+        setCameraStarting(false);
+        stopCamera();
+        return;
+      }
+
+      video.srcObject = stream;
+      video.setAttribute("playsinline", "");
+      video.setAttribute("muted", "");
+      video.muted = true;
+
+      // Wait for video to be ready and playing
+      await new Promise((resolve, reject) => {
+        const onLoaded = () => {
+          video.removeEventListener("loadedmetadata", onLoaded);
+          video.play().then(resolve).catch(reject);
+        };
+        video.addEventListener("loadedmetadata", onLoaded);
+        // Timeout fallback in case loadedmetadata never fires
+        setTimeout(() => {
+          video.removeEventListener("loadedmetadata", onLoaded);
+          video.play().then(resolve).catch(reject);
+        }, 3000);
+      });
+
+      setCameraActive(true);
+      setCameraStarting(false);
+      setFacingMode(facing);
+    } catch (err) {
+      stopCamera();
+      setCameraStarting(false);
+
+      // Provide user-friendly error messages based on error type
+      let message;
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        message = "Camera permission denied. Please allow camera access in your browser settings and try again.";
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        message = "No camera found on this device. Please upload an image instead.";
+      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+        message = "Camera is already in use by another app. Please close other apps using the camera and try again.";
+      } else if (err.name === "OverconstrainedError") {
+        // Retry with relaxed constraints (e.g., front camera if rear not available)
+        if (facing === "environment") {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            streamRef.current = stream;
+            videoRef.current.srcObject = stream;
+            videoRef.current.setAttribute("playsinline", "");
+            videoRef.current.muted = true;
+            await videoRef.current.play();
+            setCameraActive(true);
+            setFacingMode("user");
+            toast({ title: "Using front camera", description: "Rear camera not available.", variant: "default" });
+            return;
+          } catch (retryErr) {
+            message = "Could not access any camera. Please upload an image instead.";
+          }
+        } else {
+          message = "Camera settings not supported. Please upload an image instead.";
+        }
+      } else if (err.name === "TypeError") {
+        message = "Camera requires a secure connection (HTTPS). Please make sure you are using https://www.boothbridge.app";
+        setUseNativeFallback(true);
+      } else {
+        message = "Could not start camera. Please try again or upload an image instead.";
+      }
+
+      setCameraError(message);
+
+      captureRuntimeError(err, {
+        subsystem: "UI",
+        category: "camera_access_failure",
+        component: "OCRScanner",
+        metadata: { errorName: err.name, facingMode: facing },
+      });
+    }
+  }, [facingMode, stopCamera, toast]);
+
+  const toggleCamera = async () => {
+    const next = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(next);
+    if (cameraActive) {
+      stopCamera();
+      // Small delay to ensure old stream is fully released
+      await new Promise(r => setTimeout(r, 300));
+    }
+    await startCamera(next);
+  };
+
+  // ── Capture frame from video ─────────────────────────────────────────
+
+  const captureFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState < 2) {
+      toast({ title: "Camera not ready", description: "Please wait a moment and try again.", variant: "destructive" });
+      return null;
+    }
+
+    // Use the maximum available resolution from the video stream
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    canvas.width = vw;
+    canvas.height = vh;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, vw, vh);
+
+    // Convert canvas to a Blob (File-like object) for the pipeline
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], `ocr-capture-${Date.now()}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+          resolve(file);
+        },
+        "image/jpeg",
+        0.92
+      );
+    });
+  }, [toast]);
+
+  const handleCapture = async () => {
+    const file = await captureFrame();
+    if (!file) return;
+    stopCamera();
+    await processFile(file);
+  };
+
+  // ── Pipeline (unchanged) ─────────────────────────────────────────────
 
   const processFile = async (file) => {
     setStep("processing");
@@ -116,7 +323,11 @@ export default function OCRScanner() {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
+    // Reset input so the same file can be selected again
+    e.target.value = "";
   };
+
+  // ── Save (unchanged) ─────────────────────────────────────────────────
 
   const handleSave = async () => {
     const errors = {};
@@ -176,6 +387,7 @@ export default function OCRScanner() {
   };
 
   const reset = () => {
+    stopCamera();
     setStep("select");
     setEditData(null);
     setImageUrl(null);
@@ -184,11 +396,15 @@ export default function OCRScanner() {
     setFieldConfidence(null);
     setValidationFlags({});
     setFieldErrors({});
+    setCameraError("");
+    setUseNativeFallback(false);
   };
 
   const confidenceColor = (c) => (c >= 95 ? "text-green-600" : c >= 80 ? "text-amber-600" : "text-red-600");
   const confidenceLabel = (c) =>
     c >= 95 ? "High Confidence" : c >= 80 ? "Review Suggested" : "Low — verify highlighted fields";
+
+  // ── Render ───────────────────────────────────────────────────────────
 
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto">
@@ -202,6 +418,7 @@ export default function OCRScanner() {
         </div>
       </div>
 
+      {/* ── Step: Select scan type ─────────────────────────────────── */}
       {step === "select" && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">Choose what to scan:</p>
@@ -236,28 +453,181 @@ export default function OCRScanner() {
             </button>
           </div>
 
-          <input type="file" accept="image/*" capture="environment" ref={captureRef} className="hidden" onChange={handleFileChange} />
+          {/* Hidden file input for gallery upload fallback */}
           <input type="file" accept="image/*" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-          <Button onClick={() => captureRef.current?.click()} className="w-full" size="lg">
-            <Camera className="w-5 h-5 mr-2" /> Take Photo
-          </Button>
-          <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full">
-            <Upload className="w-4 h-4 mr-2" /> Upload from Gallery
-          </Button>
+          {useNativeFallback ? (
+            /* Native camera fallback for browsers without getUserMedia */
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              ref={(el) => { if (el) fileRef.current = el; }}
+              onChange={(e) => { handleFileChange(e); setStep("select"); }}
+            />
+          ) : null}
+
+          <div className="space-y-2">
+            {/* Primary: in-app camera */}
+            {!useNativeFallback && (
+              <Button
+                onClick={() => { setStep("camera"); startCamera(); }}
+                className="w-full"
+                size="lg"
+              >
+                <Camera className="w-5 h-5 mr-2" /> Take Photo
+              </Button>
+            )}
+
+            {/* Native fallback: capture input trigger */}
+            {useNativeFallback && (
+              <Button
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.capture = "environment";
+                  input.onchange = (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) processFile(file);
+                  };
+                  input.click();
+                }}
+                className="w-full"
+                size="lg"
+              >
+                <Camera className="w-5 h-5 mr-2" /> Take Photo
+              </Button>
+            )}
+
+            {/* Gallery upload */}
+            <Button
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              className="w-full"
+            >
+              <Upload className="w-4 h-4 mr-2" /> Upload from Gallery
+            </Button>
+          </div>
         </div>
       )}
 
+      {/* ── Step: In-app camera ────────────────────────────────────── */}
+      {step === "camera" && (
+        <div className="space-y-3">
+          {/* Camera viewfinder */}
+          <div className="w-full aspect-[4/3] bg-black rounded-xl overflow-hidden relative">
+            {cameraActive ? (
+              <>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  playsInline
+                  muted
+                  autoPlay
+                />
+                <canvas ref={canvasRef} className="hidden" />
+
+                {/* Capture overlay guide — card-shaped frame */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-[85%] h-[60%] border-2 border-white/60 rounded-lg relative">
+                    {/* Corner markers */}
+                    <div className="absolute top-0 left-0 w-5 h-5 border-t-3 border-l-3 border-white rounded-tl-md" />
+                    <div className="absolute top-0 right-0 w-5 h-5 border-t-3 border-r-3 border-white rounded-tr-md" />
+                    <div className="absolute bottom-0 left-0 w-5 h-5 border-b-3 border-l-3 border-white rounded-bl-md" />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 border-b-3 border-r-3 border-white rounded-br-md" />
+                    {/* Hint text */}
+                    <div className="absolute -bottom-8 left-0 right-0 text-center">
+                      <p className="text-white/80 text-xs font-medium drop-shadow-lg">
+                        Position the {scanType === "business_card" ? "card" : "badge"} within the frame
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top-right: close button */}
+                <button
+                  onClick={reset}
+                  className="absolute top-3 left-3 bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Top-right: switch camera */}
+                <button
+                  onClick={toggleCamera}
+                  className="absolute top-3 right-3 bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center"
+                >
+                  <SwitchCamera className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              /* Camera not yet active */
+              <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                {cameraStarting ? (
+                  <>
+                    <Loader2 className="w-10 h-10 animate-spin mb-2" />
+                    <p className="text-sm opacity-70">Starting camera...</p>
+                  </>
+                ) : cameraError ? (
+                  <>
+                    <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
+                    <p className="text-sm text-red-300 px-6 text-center">{cameraError}</p>
+                    <button
+                      onClick={reset}
+                      className="mt-4 flex items-center gap-1 text-xs text-white/70 hover:text-white"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Go back
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          {/* Camera error message (below viewfinder) */}
+          {cameraError && cameraActive && (
+            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              {cameraError}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={reset} className="flex-1">
+              <X className="w-4 h-4 mr-1" /> Back
+            </Button>
+            <Button
+              onClick={handleCapture}
+              disabled={!cameraActive || loading}
+              className="flex-1"
+              size="lg"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4 mr-1" />
+              )}
+              Capture
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step: Processing ───────────────────────────────────────── */}
       {step === "processing" && (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
           <p className="font-semibold">Processing Image...</p>
-          <p className="text-sm text-muted-foreground mt-2">Preprocessing → vision → normalization → validation</p>
+          <p className="text-sm text-muted-foreground mt-2">Preprocessing, vision, normalization, validation</p>
         </div>
       )}
 
+      {/* ── Step: Review extracted data ────────────────────────────── */}
       {step === "review" && editData && (
         <div className="space-y-4">
           <div className={`flex items-center gap-2 p-3 rounded-xl border ${confidence >= 95 ? "bg-green-50 border-green-200" : confidence >= 80 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"}`}>
@@ -304,6 +674,7 @@ export default function OCRScanner() {
         </div>
       )}
 
+      {/* ── Step: Saved ────────────────────────────────────────────── */}
       {step === "saved" && (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
