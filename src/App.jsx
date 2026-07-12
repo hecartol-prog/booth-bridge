@@ -207,7 +207,7 @@ const AuthenticatedApp = () => {
         <Route path="ocr-review" element={<AdminOCRReview />} />
       </Route>
 
-      <Route path="*" element={user ? <PageNotFound /> : <Navigate to="/login" replace />} />
+      <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
