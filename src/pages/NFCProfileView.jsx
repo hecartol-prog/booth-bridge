@@ -23,12 +23,18 @@ export default function NFCProfileView() {
   const pathParts = window.location.pathname.split("/");
   const targetUserId = pathParts[pathParts.length - 1];
 
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId);
+
   useEffect(() => {
-    if (!targetUserId) return;
+    if (!targetUserId || !isValidUuid) {
+      setLoading(false);
+      return;
+    }
     db.NFCProfile.filter({ user_id: targetUserId })
       .then(list => setProfile(list[0] || null))
+      .catch(() => setProfile(null))
       .finally(() => setLoading(false));
-  }, [targetUserId]);
+  }, [targetUserId, isValidUuid]);
 
   // Log NFC interaction
   useEffect(() => {

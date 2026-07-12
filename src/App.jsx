@@ -184,6 +184,7 @@ const AuthenticatedApp = () => {
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="exhibitors" element={<AdminExhibitors />} />
         <Route path="products" element={<AdminProducts />} />
