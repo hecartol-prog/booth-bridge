@@ -21,6 +21,7 @@ const OCR_EXTRACT_PROMPT =
 
 Deno.serve((req) =>
   handleAiRequest(req, {
+    requireAuth: false,
     buildRequest: (body): CompletionRequest => {
       const mode = typeof body.mode === "string" ? body.mode : "ocr_ai";
       const ocrJson = body.ocr_json || body.ocrJson;
