@@ -3,7 +3,49 @@ import { handleCors, jsonResponse } from "../_shared/cors.ts";
 import { errorEnvelope, successEnvelope } from "../_shared/envelope.ts";
 import { isAdminUser } from "../_shared/auth.ts";
 
-const ADMIN_ROLES_ENV = ["admin", "superadmin", "systemadmin", "supportadmin"];
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX_ATTEMPTS = 10;
+const rateLimitAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function getRequestIp(req: Request): string {
+  return (req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown")
+    .split(",")[0]
+    .trim() || "unknown";
+}
+
+function checkRateLimit(req: Request, started: number): Response | null {
+  const ip = getRequestIp(req);
+  const now = Date.now();
+  const current = rateLimitAttempts.get(ip);
+
+  if (current && current.resetAt <= now) {
+    rateLimitAttempts.delete(ip);
+  }
+
+  const entry = rateLimitAttempts.get(ip) || {
+    count: 0,
+    resetAt: now + RATE_LIMIT_WINDOW_MS,
+  };
+
+  if (entry.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+    return jsonResponse(
+      req,
+      errorEnvelope("Too many attempts. Try again later.", {
+        code: "RATE_LIMITED",
+        latency: Date.now() - started,
+      }),
+      429,
+    );
+  }
+
+  entry.count += 1;
+  rateLimitAttempts.set(ip, entry);
+  return null;
+}
+
+function clearRateLimit(req: Request) {
+  rateLimitAttempts.delete(getRequestIp(req));
+}
 
 Deno.serve(async (req) => {
   const cors = handleCors(req);
@@ -16,6 +58,9 @@ Deno.serve(async (req) => {
   const started = Date.now();
 
   try {
+    const rateLimited = checkRateLimit(req, started);
+    if (rateLimited) return rateLimited;
+
     const { email, password } = await req.json() as { email?: string; password?: string };
 
     if (!email || !password) {
@@ -40,36 +85,6 @@ Deno.serve(async (req) => {
           latency: Date.now() - started,
         }),
         500,
-      );
-    }
-
-    const adminEmail = Deno.env.get("ADMIN_EMAIL");
-    const adminPassword = Deno.env.get("ADMIN_PASSWORD");
-
-    if (adminEmail && adminPassword) {
-      const valid =
-        email.trim().toLowerCase() === adminEmail.trim().toLowerCase() &&
-        password === adminPassword;
-
-      if (!valid) {
-        return jsonResponse(
-          req,
-          errorEnvelope("Invalid admin credentials.", {
-            code: "AI_AUTHENTICATION",
-            latency: Date.now() - started,
-          }),
-          401,
-        );
-      }
-
-      return jsonResponse(
-        req,
-        successEnvelope({
-          result: { success: true, mode: "env_credentials" },
-          provider: "supabase",
-          latency: Date.now() - started,
-          metadata: { roles: ADMIN_ROLES_ENV },
-        }),
       );
     }
 
@@ -101,6 +116,8 @@ Deno.serve(async (req) => {
         }),
       );
     }
+
+    clearRateLimit(req);
 
     return jsonResponse(
       req,
