@@ -1,13 +1,11 @@
 // @ts-nocheck
 "use client";
-import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
 const Toaster = ({
+  theme = "system",
   ...props
 }) => {
-  const { theme = "system" } = useTheme()
-
   return (
     (<Sonner
       theme={theme}

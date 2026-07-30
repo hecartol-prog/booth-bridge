@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Inspired by react-hot-toast library
+// Lightweight toast state helper
 import { useState, useEffect } from "react";
 
 const TOAST_LIMIT = 20;
