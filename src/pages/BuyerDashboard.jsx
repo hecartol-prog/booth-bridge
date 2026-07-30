@@ -95,7 +95,7 @@ export default function BuyerDashboard() {
     { label: t("dashboard.savedBooths"), value: savedBooths.length, icon: Building2, color: "text-primary", path: "/saved-booths" },
     { label: t("dashboard.savedProducts"), value: savedProducts.length, icon: Package, color: "text-purple-600", path: "/my-library" },
     { label: t("dashboard.requestsSent"), value: rfis.length, icon: FileText, color: "text-amber-600", path: "/my-rfis" },
-    { label: "Projects", value: projects.length, icon: FolderPlus, color: "text-green-600", path: "/workspace/compare" },
+    { label: t("dashboard.projects"), value: projects.length, icon: FolderPlus, color: "text-green-600", path: "/workspace/compare" },
   ];
 
   const activeProjects = projects.filter(p => p.status === "active");
@@ -115,23 +115,23 @@ export default function BuyerDashboard() {
       </div>
 
       {/* Primary CTAs — 3 capture methods */}
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-3 gap-2 mb-3">
         <Link to="/scan">
           <Card className="p-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer h-full text-center">
             <Camera className="w-5 h-5 mb-1 mx-auto" />
-            <p className="font-bold text-xs">QR Scan</p>
+            <p className="font-bold text-xs">{t("dashboard.qrScan")}</p>
           </Card>
         </Link>
         <Link to="/nfc">
           <Card className="p-3 hover:shadow-md transition-shadow cursor-pointer h-full text-center bg-blue-600 text-white hover:bg-blue-700">
             <Nfc className="w-5 h-5 mb-1 mx-auto" />
-            <p className="font-bold text-xs">NFC Tap</p>
+            <p className="font-bold text-xs">{t("dashboard.nfcTap")}</p>
           </Card>
         </Link>
         <Link to="/ocr-scanner">
           <Card className="p-3 hover:shadow-md transition-shadow cursor-pointer h-full text-center bg-purple-600 text-white hover:bg-purple-700">
             <ScanLine className="w-5 h-5 mb-1 mx-auto" />
-            <p className="font-bold text-xs">OCR Scan</p>
+            <p className="font-bold text-xs">{t("dashboard.ocrScan")}</p>
           </Card>
         </Link>
       </div>
@@ -143,21 +143,21 @@ export default function BuyerDashboard() {
           <div className="flex items-center gap-3">
             <FolderPlus className="w-6 h-6 text-primary" />
             <div>
-              <p className="font-bold text-sm">New Sourcing Project</p>
-              <p className="text-xs text-muted-foreground">Organize suppliers, compare, track</p>
+              <p className="font-bold text-sm">{t("dashboard.newSourcingProject")}</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.newSourcingProjectSubtitle")}</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
         {stats.map(stat => (
           <Link key={stat.label} to={stat.path}>
             <Card className="p-3 text-center hover:shadow-md transition-shadow cursor-pointer">
               <stat.icon className={`w-4 h-4 mx-auto mb-1 ${stat.color}`} />
               <p className="text-xl font-display font-bold">{stat.value}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">{stat.label}</p>
+              <p className="text-xs text-muted-foreground leading-tight">{stat.label}</p>
             </Card>
           </Link>
         ))}
@@ -176,9 +176,9 @@ export default function BuyerDashboard() {
         <Card className="mb-4">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-heading">Active Projects</CardTitle>
+              <CardTitle className="text-sm font-heading">{t("dashboard.activeProjects")}</CardTitle>
               <Link to="/workspace/compare" className="text-xs text-primary hover:underline flex items-center gap-1">
-                Compare <SlidersHorizontal className="w-3 h-3" />
+                {t("dashboard.compare")} <SlidersHorizontal className="w-3 h-3" />
               </Link>
             </div>
           </CardHeader>
@@ -220,7 +220,7 @@ export default function BuyerDashboard() {
                   <div className="flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-primary shrink-0" />
                     <div>
-                      <p className="text-sm font-medium">{booth.exhibitor_company || "Exhibitor"}</p>
+                      <p className="text-sm font-medium">{booth.exhibitor_company || t("dashboard.exhibitor")}</p>
                       <p className="text-xs text-muted-foreground">
                         {booth.booth_number && `${t("dashboard.booth")} ${booth.booth_number}`}
                         {booth.event_name && ` · ${booth.event_name}`}

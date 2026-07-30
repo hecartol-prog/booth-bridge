@@ -34,46 +34,46 @@ import { requiresReview } from "@/pipeline/documentIntelligence/entityValidation
 const LOW_CONFIDENCE_THRESHOLD = 95;
 
 const INDUSTRIES = [
-  "Aerospace & Defense",
-  "Agriculture & Farming",
-  "Automotive",
-  "Biotechnology",
-  "Chemicals",
-  "Construction & Real Estate",
-  "Consumer Goods & Retail",
-  "Education & Training",
-  "Energy & Utilities",
-  "Environmental Services",
-  "Fashion & Apparel",
-  "Finance & Banking",
-  "Food & Beverage",
-  "Government & Public Sector",
-  "Healthcare & Medical",
-  "Hospitality & Tourism",
-  "Information Technology",
-  "Insurance",
-  "Legal & Compliance",
-  "Logistics & Supply Chain",
-  "Machinery & Industrial Equipment",
-  "Manufacturing",
-  "Marketing & Advertising",
-  "Media & Entertainment",
-  "Mining & Metals",
-  "Non-Profit & NGO",
-  "Oil & Gas",
-  "Packaging",
-  "Pharmaceuticals",
-  "Professional Services",
-  "Real Estate",
-  "Renewable Energy",
-  "Research & Development",
-  "Semiconductor & Electronics",
-  "Software & SaaS",
-  "Telecommunications",
-  "Textiles",
-  "Transportation",
-  "Wholesale & Distribution",
-  "Other",
+  { value: "Aerospace & Defense", labelKey: "onboarding.industries.aerospaceDefense" },
+  { value: "Agriculture & Farming", labelKey: "onboarding.industries.agricultureFarming" },
+  { value: "Automotive", labelKey: "onboarding.industries.automotive" },
+  { value: "Biotechnology", labelKey: "onboarding.industries.biotechnology" },
+  { value: "Chemicals", labelKey: "onboarding.industries.chemicals" },
+  { value: "Construction & Real Estate", labelKey: "onboarding.industries.constructionRealEstate" },
+  { value: "Consumer Goods & Retail", labelKey: "onboarding.industries.consumerGoodsRetail" },
+  { value: "Education & Training", labelKey: "onboarding.industries.educationTraining" },
+  { value: "Energy & Utilities", labelKey: "onboarding.industries.energyUtilities" },
+  { value: "Environmental Services", labelKey: "onboarding.industries.environmentalServices" },
+  { value: "Fashion & Apparel", labelKey: "onboarding.industries.fashionApparel" },
+  { value: "Finance & Banking", labelKey: "onboarding.industries.financeBanking" },
+  { value: "Food & Beverage", labelKey: "onboarding.industries.foodBeverage" },
+  { value: "Government & Public Sector", labelKey: "onboarding.industries.governmentPublicSector" },
+  { value: "Healthcare & Medical", labelKey: "onboarding.industries.healthcareMedical" },
+  { value: "Hospitality & Tourism", labelKey: "onboarding.industries.hospitalityTourism" },
+  { value: "Information Technology", labelKey: "onboarding.industries.informationTechnology" },
+  { value: "Insurance", labelKey: "onboarding.industries.insurance" },
+  { value: "Legal & Compliance", labelKey: "onboarding.industries.legalCompliance" },
+  { value: "Logistics & Supply Chain", labelKey: "onboarding.industries.logisticsSupplyChain" },
+  { value: "Machinery & Industrial Equipment", labelKey: "onboarding.industries.machineryIndustrialEquipment" },
+  { value: "Manufacturing", labelKey: "onboarding.industries.manufacturing" },
+  { value: "Marketing & Advertising", labelKey: "onboarding.industries.marketingAdvertising" },
+  { value: "Media & Entertainment", labelKey: "onboarding.industries.mediaEntertainment" },
+  { value: "Mining & Metals", labelKey: "onboarding.industries.miningMetals" },
+  { value: "Non-Profit & NGO", labelKey: "onboarding.industries.nonProfitNgo" },
+  { value: "Oil & Gas", labelKey: "onboarding.industries.oilGas" },
+  { value: "Packaging", labelKey: "onboarding.industries.packaging" },
+  { value: "Pharmaceuticals", labelKey: "onboarding.industries.pharmaceuticals" },
+  { value: "Professional Services", labelKey: "onboarding.industries.professionalServices" },
+  { value: "Real Estate", labelKey: "onboarding.industries.realEstate" },
+  { value: "Renewable Energy", labelKey: "onboarding.industries.renewableEnergy" },
+  { value: "Research & Development", labelKey: "onboarding.industries.researchDevelopment" },
+  { value: "Semiconductor & Electronics", labelKey: "onboarding.industries.semiconductorElectronics" },
+  { value: "Software & SaaS", labelKey: "onboarding.industries.softwareSaas" },
+  { value: "Telecommunications", labelKey: "onboarding.industries.telecommunications" },
+  { value: "Textiles", labelKey: "onboarding.industries.textiles" },
+  { value: "Transportation", labelKey: "onboarding.industries.transportation" },
+  { value: "Wholesale & Distribution", labelKey: "onboarding.industries.wholesaleDistribution" },
+  { value: "Other", labelKey: "onboarding.industries.other" },
 ];
 
 export default function Onboarding() {
@@ -177,7 +177,7 @@ export default function Onboarding() {
         category: "logo_upload_failure",
         component: "Onboarding",
       });
-      setFinishError(err instanceof Error ? err.message : "Logo upload failed. Please try again.");
+      setFinishError(err instanceof Error ? err.message : t("onboarding.errors.logoUploadFailed"));
     } finally {
       setUploadingLogo(false);
     }
@@ -239,7 +239,7 @@ export default function Onboarding() {
       await auth.refresh();
       const me = await auth.ensureAppUser();
       if (!me?.id) {
-        throw new Error("You must be signed in to scan a business card.");
+        throw new Error(t("onboarding.errors.signInRequiredScan"));
       }
 
       const result = await runBusinessCardPipeline({
@@ -256,7 +256,7 @@ export default function Onboarding() {
         const stage = result.error?.stage || "pipeline";
         const code = result.error?.code || "PIPELINE_FAILED";
         throw new Error(
-          `[${stage}/${code}] ${result.error?.message || "Could not extract card details. Please enter details manually."}`
+          `[${stage}/${code}] ${result.error?.message || t("onboarding.errors.extractFailed")}`
         );
       }
 
@@ -267,8 +267,8 @@ export default function Onboarding() {
         category: "onboarding_ocr_failure",
         component: "Onboarding",
       });
-      const message = err instanceof Error ? err.message : "Card scan failed.";
-      setFinishError(`${message} You can fill fields manually.`);
+      const message = err instanceof Error ? err.message : t("onboarding.errors.cardScanFailed");
+      setFinishError(`${message} ${t("onboarding.errors.fillManually")}`);
     } finally {
       setOcrLoading(false);
       setScanStep("done");
@@ -309,17 +309,17 @@ export default function Onboarding() {
   const handleFinish = async () => {
     const effectiveRole = role || (step === 4 ? "buyer" : step === 2 && !role ? null : null);
     if (!effectiveRole) {
-      setFinishError("Please select a role to continue.");
+      setFinishError(t("onboarding.errors.selectRole"));
       return;
     }
 
     if (effectiveRole === "buyer") {
       if (!firstName.trim() || !lastName.trim() || !buyerCompany.trim()) {
-        setFinishError("Please complete first name, last name, and company.");
+        setFinishError(t("onboarding.errors.completeBuyerRequired"));
         return;
       }
       if (requiresFieldConfirmation && !fieldsConfirmed) {
-        setFinishError("Please confirm the highlighted OCR fields before saving your profile.");
+        setFinishError(t("onboarding.errors.confirmHighlightedFields"));
         return;
       }
     }
@@ -393,7 +393,7 @@ export default function Onboarding() {
         component: "Onboarding",
         metadata: { role: effectiveRole },
       });
-      setFinishError(err?.message || "Something went wrong. Please try again.");
+      setFinishError(err?.message || t("onboarding.errors.generic"));
       setSaving(false);
     }
   };
@@ -469,17 +469,17 @@ export default function Onboarding() {
           {step === 2 && role === "buyer" && (
             <motion.div key="step2-method" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
               <div className="text-center mb-2">
-                <h2 className="text-lg font-heading font-semibold">Complete your profile</h2>
+                <h2 className="text-lg font-heading font-semibold">{t("onboarding.completeProfile")}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Scan your business card or enter your details manually.
+                  {t("onboarding.completeProfileSubtitle")}
                 </p>
               </div>
               <Button type="button" className="w-full h-12 font-medium" onClick={chooseScanProfile}>
                 <ScanLine className="w-4 h-4 mr-2" />
-                Scan Business Card
+                {t("onboarding.scanBusinessCard")}
               </Button>
               <Button type="button" variant="outline" className="w-full h-12" onClick={chooseManualProfile}>
-                Complete Manually
+                {t("onboarding.completeManually")}
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => setStep(1)}>
                 {t("onboarding.back")}
@@ -520,7 +520,7 @@ export default function Onboarding() {
                     onClick={() => cameraInputRef.current?.click()}
                   >
                     {ocrLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
-                    Capture Card Photo
+                    {t("onboarding.captureCardPhoto")}
                   </Button>
                   <Button
                     type="button"
@@ -530,7 +530,7 @@ export default function Onboarding() {
                     onClick={() => uploadInputRef.current?.click()}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Upload Card Image
+                    {t("onboarding.uploadCardImage")}
                   </Button>
                 </div>
               )}
@@ -538,7 +538,7 @@ export default function Onboarding() {
               {scanStep === "scanning" && (
                 <div className="flex flex-col items-center gap-4 py-8">
                   {cardPreview && (
-                    <img src={cardPreview} alt="Card" className="w-full max-h-40 object-contain rounded-lg border" />
+                    <img src={cardPreview} alt={t("onboarding.cardImageAlt")} className="w-full max-h-40 object-contain rounded-lg border" />
                   )}
                   <div className="flex items-center gap-2 text-primary">
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -554,7 +554,7 @@ export default function Onboarding() {
               {scanStep === "done" && (
                 <div className="flex flex-col items-center gap-4 py-4">
                   {cardPreview && (
-                    <img src={cardPreview} alt="Card" className="w-full max-h-36 object-contain rounded-lg border" />
+                    <img src={cardPreview} alt={t("onboarding.cardImageAlt")} className="w-full max-h-36 object-contain rounded-lg border" />
                   )}
                   {!finishError ? (
                     <div className="flex items-center gap-2 text-green-600">
@@ -565,12 +565,12 @@ export default function Onboarding() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground text-center">
-                      Card photo captured. Enter your details below or try scanning again.
+                      {t("onboarding.scanFallback")}
                     </p>
                   )}
                   {ocrConfidence !== null && (
                     <p className={`text-xs ${ocrConfidence < LOW_CONFIDENCE_THRESHOLD ? "text-amber-600" : "text-green-600"}`}>
-                      OCR confidence: {ocrConfidence}%
+                      {t("onboarding.ocrConfidence", { confidence: ocrConfidence })}
                     </p>
                   )}
                 </div>
@@ -603,7 +603,7 @@ export default function Onboarding() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>First Name *</Label>
+                  <Label>{t("onboarding.firstName")} *</Label>
                   <Input
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
@@ -612,7 +612,7 @@ export default function Onboarding() {
                   />
                 </div>
                 <div>
-                  <Label>Last Name *</Label>
+                  <Label>{t("onboarding.lastName")} *</Label>
                   <Input
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
@@ -642,17 +642,17 @@ export default function Onboarding() {
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
                       {INDUSTRIES.map(ind => (
-                        <SelectItem key={ind} value={ind}>{ind}</SelectItem>
+                        <SelectItem key={ind.value} value={ind.value}>{t(ind.labelKey)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Office Phone</Label>
+                  <Label>{t("onboarding.officePhone")}</Label>
                   <Input value={phone} onChange={e => setPhone(e.target.value)} className={fieldBorderClass("phone")} placeholder="+1 555 0000" />
                 </div>
                 <div>
-                  <Label>Mobile</Label>
+                  <Label>{t("onboarding.mobile")}</Label>
                   <Input value={mobile} onChange={e => setMobile(e.target.value)} className={fieldBorderClass("mobile")} placeholder="+1 555 0001" />
                 </div>
                 <div className="col-span-2">
@@ -666,15 +666,15 @@ export default function Onboarding() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label>Company Address</Label>
+                  <Label>{t("onboarding.companyAddress")}</Label>
                   <Input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} className={fieldBorderClass("companyAddress")} placeholder="123 Main St, New York, NY" />
                 </div>
                 <div className="col-span-2">
-                  <Label>Country</Label>
+                  <Label>{t("onboarding.country")}</Label>
                   <Input value={country} onChange={e => setCountry(e.target.value)} className={fieldBorderClass("country")} placeholder="United States" />
                 </div>
                 <div className="col-span-2">
-                  <Label>Products / Interests</Label>
+                  <Label>{t("onboarding.productsInterests")}</Label>
                   <Input value={productsOfInterest} onChange={e => setProductsOfInterest(e.target.value)} placeholder="e.g. Solar panels, EV batteries, LED lighting" />
                 </div>
                 <div className="col-span-2">
@@ -696,7 +696,7 @@ export default function Onboarding() {
                     className="mt-0.5"
                   />
                   <span>
-                    I reviewed and corrected highlighted fields (below 95% confidence) before saving my profile.
+                    {t("onboarding.reviewHighlightedFields")}
                   </span>
                 </label>
               )}
@@ -738,7 +738,7 @@ export default function Onboarding() {
                 <Label>{t("onboarding.companyLogo")}</Label>
                 {logo ? (
                   <div className="relative w-20 h-20 mt-2">
-                    <img src={logoPreviewUrl || logo} className="w-20 h-20 rounded-lg object-cover" alt="Logo" />
+                    <img src={logoPreviewUrl || logo} className="w-20 h-20 rounded-lg object-cover" alt={t("onboarding.logoAlt")} />
                     <button onClick={() => { setLogo(null); setLogoPreviewUrl(null); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
                       <X className="w-3 h-3" />
                     </button>

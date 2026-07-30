@@ -46,17 +46,17 @@ export default function Login() {
       // Map common error codes to user-friendly messages
       const msg = err?.message || "";
       if (!navigator.onLine) {
-        setError("No internet connection. Please check your network and try again.");
+        setError(t("auth.errors.offline"));
       } else if (msg.toLowerCase().includes("invalid") || msg.toLowerCase().includes("credentials") || msg.toLowerCase().includes("password")) {
-        setError("Invalid email or password. Please try again.");
+        setError(t("auth.errors.invalidCredentials"));
       } else if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no user")) {
-        setError("No account found with this email. Please register first.");
+        setError(t("auth.errors.noAccount"));
       } else if (msg.toLowerCase().includes("timeout") || msg.toLowerCase().includes("network")) {
-        setError("Network timeout. Please check your connection and try again.");
+        setError(t("auth.errors.networkTimeout"));
       } else if (msg.toLowerCase().includes("too many") || msg.toLowerCase().includes("rate limit")) {
-        setError("Too many login attempts. Please wait a moment and try again.");
+        setError(t("auth.errors.rateLimited"));
       } else {
-        setError(msg || "Login failed. Please try again.");
+        setError(msg || t("auth.errors.generic"));
       }
     } finally {
       setLoading(false);
@@ -125,8 +125,8 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

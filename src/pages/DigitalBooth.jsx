@@ -20,16 +20,17 @@ import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { cacheWrite, cacheRead } from "@/utils/visitorCache";
 import { db, addSupplierToProject } from "@/utils/dbClient";
 import { storage } from "@/api/storageClient";
+import { useI18n } from "@/lib/i18n";
 
-const catalogTypeLabels = {
-  company_profile: "Company Profile",
-  product_catalog: "Product Catalog",
-  new_collection: "New Collection",
-  factory_presentation: "Factory",
-  certificates: "Certificates",
-  price_list: "Price List",
-  video: "Video",
-  other: "Document",
+const catalogTypeLabelKeys = {
+  company_profile: "booth.catalogTypes.company_profile",
+  product_catalog: "booth.catalogTypes.product_catalog",
+  new_collection: "booth.catalogTypes.new_collection",
+  factory_presentation: "booth.catalogTypes.factory_presentation",
+  certificates: "booth.catalogTypes.certificates",
+  price_list: "booth.catalogTypes.price_list",
+  video: "booth.catalogTypes.video",
+  other: "booth.catalogTypes.other",
 };
 
 const catalogTypeIcons = {
@@ -45,6 +46,7 @@ const catalogTypeIcons = {
 
 export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -237,7 +239,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       }
       setSaveDialog(false);
       setAssignProjectId("");
-      toast({ title: "Booth saved!", description: `${profile?.company_name} added to your saved booths.` });
+      toast({
+        title: t("booth.toast.boothSaved"),
+        description: t("booth.toast.boothSavedDescription", { company: profile?.company_name || "" }),
+      });
     },
   });
 
@@ -256,7 +261,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       });
       setSaveDialog(false);
       await refreshPending();
-      toast({ title: "Saved Offline", description: "Booth saved locally — will sync when you're back online." });
+      toast({
+        title: t("booth.toast.savedOffline"),
+        description: t("booth.toast.boothSavedOfflineDescription"),
+      });
       return;
     }
     saveBoothMutation.mutate();
@@ -285,7 +293,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       });
       setRfiDialog(false);
       setRfiMessage("");
-      toast({ title: "Request sent!", description: "The exhibitor will be notified." });
+      toast({
+        title: t("booth.toast.requestSent"),
+        description: t("booth.toast.requestSentDescription"),
+      });
     },
   });
 
@@ -304,7 +315,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       setRfiDialog(false);
       setRfiMessage("");
       await refreshPending();
-      toast({ title: "RFI Queued Offline", description: "Your request will be sent when you're back online." });
+      toast({
+        title: t("booth.toast.rfiQueuedOffline"),
+        description: t("booth.toast.rfiQueuedOfflineDescription"),
+      });
       return;
     }
     rfiMutation.mutate();
@@ -389,7 +403,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {profile.booth_number && (
                 <Badge className="bg-white/20 text-white border-0 text-xs">
-                  <MapPin className="w-3 h-3 mr-1" /> Booth {profile.booth_number}
+                  <MapPin className="w-3 h-3 mr-1" /> {t("booth.booth")} {profile.booth_number}
                 </Badge>
               )}
               {profile.event_name && (
@@ -405,23 +419,23 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 
       {/* Primary CTAs for buyers */}
       {isBuyer && (
-        <div className="px-4 -mt-4 flex gap-2">
+        <div className="px-4 -mt-4 flex flex-col sm:flex-row gap-2">
           <Button
-            className="flex-1 shadow-lg"
+            className="flex-1 shadow-lg whitespace-normal h-auto min-h-9 py-2"
             onClick={() => savedBooth ? null : setSaveDialog(true)}
             variant={savedBooth ? "outline" : "default"}
           >
             {savedBooth ? (
-              <><BookmarkCheck className="w-4 h-4 mr-2 text-primary" /> Saved</>
+              <><BookmarkCheck className="w-4 h-4 mr-2 text-primary" /> {t("booth.saved")}</>
             ) : (
-              <><Bookmark className="w-4 h-4 mr-2" /> Save Booth</>
+              <><Bookmark className="w-4 h-4 mr-2" /> {t("booth.saveBooth")}</>
             )}
           </Button>
-          <Button variant="outline" className="flex-1 shadow-lg" onClick={() => setRfiDialog(true)}>
-            <FileText className="w-4 h-4 mr-2" /> Send Request
+          <Button variant="outline" className="flex-1 shadow-lg whitespace-normal h-auto min-h-9 py-2" onClick={() => setRfiDialog(true)}>
+            <FileText className="w-4 h-4 mr-2" /> {t("booth.sendRequest")}
           </Button>
-          <Button variant="outline" className="flex-1 shadow-lg" onClick={() => navigate("/meetings")}>
-            <Calendar className="w-4 h-4 mr-2" /> Schedule Meeting
+          <Button variant="outline" className="flex-1 shadow-lg whitespace-normal h-auto min-h-9 py-2" onClick={() => navigate("/meetings")}>
+            <Calendar className="w-4 h-4 mr-2" /> {t("booth.scheduleMeeting")}
           </Button>
         </div>
       )}
@@ -429,7 +443,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       <div className="px-4 mt-4 space-y-4">
         {/* Contact Info */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Contact</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">{t("booth.contact")}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {profile.digital_card?.email && (
               <a href={`mailto:${profile.digital_card.email}`} className="flex items-center gap-2 text-sm hover:text-primary">
@@ -448,7 +462,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
             )}
             {profile.digital_card?.linkedin && (
               <a href={profile.digital_card.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary">
-                <ExternalLink className="w-4 h-4 text-muted-foreground" /> LinkedIn Profile
+                <ExternalLink className="w-4 h-4 text-muted-foreground" /> {t("booth.linkedinProfile")}
               </a>
             )}
           </CardContent>
@@ -466,17 +480,17 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" /> Catalogs &amp; Documents
+                    <FileText className="w-4 h-4 text-primary" /> {t("booth.catalogsDocuments")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {docs.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
                       <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-xs">No documents shared yet</p>
+                      <p className="text-xs">{t("booth.noDocuments")}</p>
                       {isOwnBooth && (
                         <a href="/catalog-library" className="text-xs text-primary hover:underline mt-1 block">
-                          <Plus className="w-3 h-3 inline mr-0.5" />Upload catalogs
+                          <Plus className="w-3 h-3 inline mr-0.5" />{t("booth.uploadCatalogs")}
                         </a>
                       )}
                     </div>
@@ -492,7 +506,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
                               </div>
                               <div>
                                 <p className="text-sm font-medium">{cat.title}</p>
-                                <p className="text-xs text-muted-foreground">{catalogTypeLabels[cat.type]}</p>
+                                <p className="text-xs text-muted-foreground">{t(catalogTypeLabelKeys[cat.type] || "booth.catalogTypes.other")}</p>
                               </div>
                             </div>
                             <Button size="sm" variant="ghost" onClick={() => handleDownload(cat)}>
@@ -510,17 +524,17 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Film className="w-4 h-4 text-primary" /> Videos
+                    <Film className="w-4 h-4 text-primary" /> {t("booth.videos")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {videos.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
                       <Video className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-xs">No videos shared yet</p>
+                      <p className="text-xs">{t("booth.noVideos")}</p>
                       {isOwnBooth && (
                         <a href="/catalog-library" className="text-xs text-primary hover:underline mt-1 block">
-                          <Plus className="w-3 h-3 inline mr-0.5" />Upload a video
+                          <Plus className="w-3 h-3 inline mr-0.5" />{t("booth.uploadVideo")}
                         </a>
                       )}
                     </div>
@@ -534,7 +548,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
                             </div>
                             <div>
                               <p className="text-sm font-medium">{cat.title}</p>
-                              <p className="text-xs text-muted-foreground">Video</p>
+                              <p className="text-xs text-muted-foreground">{t("booth.catalogTypes.video")}</p>
                             </div>
                           </div>
                           <Button size="sm" variant="ghost" onClick={() => handleDownload(cat)}>
@@ -555,7 +569,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" /> Products ({products.length})
+                <Package className="w-4 h-4 text-primary" /> {t("booth.products")} ({products.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -585,38 +599,38 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       <Dialog open={saveDialog} onOpenChange={setSaveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save {profile.company_name}</DialogTitle>
+            <DialogTitle>{t("booth.saveTitle", { company: profile.company_name })}</DialogTitle>
           </DialogHeader>
           {!isOnline && (
             <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
-              You're offline — this will be saved locally and synced later.
+              {t("booth.offlineSaveNotice")}
             </p>
           )}
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium mb-1 block">Status</label>
+              <label className="text-sm font-medium mb-1 block">{t("booth.status")}</label>
               <Select value={saveStatus} onValueChange={setSaveStatus}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="interested">Interested</SelectItem>
-                  <SelectItem value="follow_up">Follow Up</SelectItem>
-                  <SelectItem value="request_quotation">Request Quotation</SelectItem>
-                  <SelectItem value="sample_requested">Sample Requested</SelectItem>
-                  <SelectItem value="supplier_approved">Supplier Approved</SelectItem>
+                  <SelectItem value="interested">{t("booth.saveStatuses.interested")}</SelectItem>
+                  <SelectItem value="follow_up">{t("booth.saveStatuses.follow_up")}</SelectItem>
+                  <SelectItem value="request_quotation">{t("booth.saveStatuses.request_quotation")}</SelectItem>
+                  <SelectItem value="sample_requested">{t("booth.saveStatuses.sample_requested")}</SelectItem>
+                  <SelectItem value="supplier_approved">{t("booth.saveStatuses.supplier_approved")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Notes</label>
-              <Textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder="Add notes about this supplier..." rows={3} />
+              <label className="text-sm font-medium mb-1 block">{t("booth.notes")}</label>
+              <Textarea value={saveNotes} onChange={e => setSaveNotes(e.target.value)} placeholder={t("booth.notesPlaceholder")} rows={3} />
             </div>
             {activeProjects.length > 0 && (
               <div>
-                <label className="text-sm font-medium mb-1 block">Add to Project (optional)</label>
+                <label className="text-sm font-medium mb-1 block">{t("booth.addToProjectOptional")}</label>
                 <Select value={assignProjectId} onValueChange={setAssignProjectId}>
-                  <SelectTrigger><SelectValue placeholder="Select a project..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("booth.selectProject")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value={null}>{t("booth.none")}</SelectItem>
                     {activeProjects.map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.project_name}</SelectItem>
                     ))}
@@ -626,10 +640,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSaveDialog(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleSaveBooth} disabled={saveBoothMutation.isPending}>
               {saveBoothMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Bookmark className="w-4 h-4 mr-2" />}
-              {isOnline ? "Save Booth" : "Save Offline"}
+              {isOnline ? t("booth.saveBooth") : t("booth.saveOffline")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -642,36 +656,36 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       <Dialog open={rfiDialog} onOpenChange={setRfiDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send Request to {profile.company_name}</DialogTitle>
+            <DialogTitle>{t("booth.sendRequestTo", { company: profile.company_name })}</DialogTitle>
           </DialogHeader>
           {!isOnline && (
             <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
-              You're offline — this request will be queued and sent when you're back online.
+              {t("booth.offlineRequestNotice")}
             </p>
           )}
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium mb-1 block">Request Type</label>
+              <label className="text-sm font-medium mb-1 block">{t("booth.requestType")}</label>
               <Select value={rfiType} onValueChange={setRfiType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="brochure">Request Catalog</SelectItem>
-                  <SelectItem value="price_list">Request Quotation</SelectItem>
-                  <SelectItem value="sample">Request Samples</SelectItem>
-                  <SelectItem value="call_me">Request Meeting</SelectItem>
+                  <SelectItem value="brochure">{t("booth.requestCatalog")}</SelectItem>
+                  <SelectItem value="price_list">{t("booth.requestQuotation")}</SelectItem>
+                  <SelectItem value="sample">{t("booth.requestSamples")}</SelectItem>
+                  <SelectItem value="call_me">{t("booth.requestMeeting")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Message (optional)</label>
-              <Textarea value={rfiMessage} onChange={e => setRfiMessage(e.target.value)} placeholder="Add details about your request..." rows={3} />
+              <label className="text-sm font-medium mb-1 block">{t("booth.messageOptional")}</label>
+              <Textarea value={rfiMessage} onChange={e => setRfiMessage(e.target.value)} placeholder={t("booth.messagePlaceholder")} rows={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRfiDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRfiDialog(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleSubmitRfi} disabled={rfiMutation.isPending}>
               {rfiMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {isOnline ? "Send Request" : "Queue Request"}
+              {isOnline ? t("booth.sendRequest") : t("booth.queueRequest")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -683,6 +697,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
 // ── SaveProductCard ──────────────────────────────────────────────────────────
 
 function SaveProductCard({ product, resolvedImageUrl, user, exhibitorUserId, profile, isBuyer, isOnline, queryClient, toast, onOfflineSave }) {
+  const { t } = useI18n();
   const { data: isSaved } = useQuery({
     queryKey: ["saved-product-check", user?.id, product.id],
     queryFn: async () => {
@@ -706,7 +721,7 @@ function SaveProductCard({ product, resolvedImageUrl, user, exhibitorUserId, pro
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["saved-product-check", user?.id, product.id] });
       queryClient.invalidateQueries({ queryKey: ["saved-products"] });
-      toast({ title: "Product saved!", description: product.title });
+      toast({ title: t("booth.toast.productSaved"), description: product.title });
     },
   });
 
@@ -724,7 +739,10 @@ function SaveProductCard({ product, resolvedImageUrl, user, exhibitorUserId, pro
         productImageUrl: product.image_url,
       });
       if (onOfflineSave) onOfflineSave();
-      toast({ title: "Saved Offline", description: `${product.title} queued — will sync when online.` });
+      toast({
+        title: t("booth.toast.savedOffline"),
+        description: t("booth.toast.productSavedOfflineDescription", { product: product.title }),
+      });
       return;
     }
     saveMutation.mutate();
@@ -745,6 +763,7 @@ function SaveProductCard({ product, resolvedImageUrl, user, exhibitorUserId, pro
       {isBuyer && (
         <button
           onClick={handleSave}
+          aria-label={isSaved ? t("booth.saved") : t("booth.saveBooth")}
           className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center"
         >
           {isSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}

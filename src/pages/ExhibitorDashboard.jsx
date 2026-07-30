@@ -108,13 +108,13 @@ export default function ExhibitorDashboard() {
     { title: t("dashboard.pending"), value: pending.length, icon: TrendingUp, color: "text-amber-500" },
     { title: t("dashboard.openRFIs"), value: pendingRfis.length, icon: Inbox, color: "text-red-500" },
     { title: t("dashboard.meetings"), value: meetings.length, icon: Calendar, color: "text-green-500" },
-    { title: "Catalogue Views", value: totalCatalogueViews, icon: FileText, color: "text-violet-500" },
-    { title: "Business Cards Collected", value: businessCardsCollected, icon: CreditCard, color: "text-teal-500" },
+    { title: t("dashboard.catalogueViews"), value: totalCatalogueViews, icon: FileText, color: "text-violet-500" },
+    { title: t("dashboard.businessCardsCollected"), value: businessCardsCollected, icon: CreditCard, color: "text-teal-500" },
   ];
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold">{t("dashboard.dashboard")}</h1>
           {profile && (
@@ -123,10 +123,10 @@ export default function ExhibitorDashboard() {
             </p>
           )}
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Link to="/setup-wizard">
             <Button size="sm" variant="outline">
-              <Wand2 className="w-4 h-4 mr-1.5" /> Setup Wizard
+              <Wand2 className="w-4 h-4 mr-1.5" /> {t("dashboard.setupWizard")}
             </Button>
           </Link>
           {accepted.length > 0 && (
@@ -135,7 +135,7 @@ export default function ExhibitorDashboard() {
               variant="outline"
               onClick={() => exportLeadsCSV({ connections: accepted, rfis, meetings })}
             >
-              <Download className="w-4 h-4 mr-1.5" /> Export CSV
+              <Download className="w-4 h-4 mr-1.5" /> {t("dashboard.exportCsv")}
             </Button>
           )}
         </div>
@@ -205,14 +205,14 @@ export default function ExhibitorDashboard() {
           const score = calculateLeadScore(ints);
           const temp = getLeadTemperature(score);
           const conn = accepted.find(c => c.buyer_user_id === buyerId);
-          return { buyerId, score, temp, name: conn?.buyer_name || "Unknown", company: conn?.buyer_company || "" };
+          return { buyerId, score, temp, name: conn?.buyer_name || t("dashboard.unknown"), company: conn?.buyer_company || "" };
         }).sort((a, b) => b.score - a.score);
 
         return (
           <Card className="mb-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-heading flex items-center gap-2">
-                <Flame className="w-4 h-4 text-red-500" /> Lead Scores
+                <Flame className="w-4 h-4 text-red-500" /> {t("dashboard.leadScores")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -225,7 +225,7 @@ export default function ExhibitorDashboard() {
                     </div>
                     <div className={`ml-4 flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${lead.temp.bg} ${lead.temp.color} ${lead.temp.border} shrink-0`}>
                       <span>{lead.temp.emoji}</span>
-                      <span>{lead.score} pts</span>
+                      <span>{lead.score} {t("dashboard.pointsAbbrev")}</span>
                       <span className="opacity-70">· {lead.temp.label}</span>
                     </div>
                   </div>
@@ -241,7 +241,7 @@ export default function ExhibitorDashboard() {
         <Card className="mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-heading flex items-center gap-2">
-              <FileText className="w-4 h-4 text-violet-500" /> Catalogue Views
+              <FileText className="w-4 h-4 text-violet-500" /> {t("dashboard.catalogueViews")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -260,7 +260,7 @@ export default function ExhibitorDashboard() {
                   </div>
                   <div className="text-right shrink-0 ml-4">
                     <p className="text-sm font-bold text-violet-600">{c.download_count || 0}</p>
-                    <p className="text-xs text-muted-foreground">views</p>
+                    <p className="text-xs text-muted-foreground">{t("dashboard.views")}</p>
                   </div>
                 </div>
               ))}

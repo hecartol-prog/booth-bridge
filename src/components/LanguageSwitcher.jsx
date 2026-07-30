@@ -17,7 +17,7 @@ export default function LanguageSwitcher({
   variant = "default",
   placement = "bottom",
 }) {
-  const { language, setLanguage, SUPPORTED_LANGUAGES } = useI18n();
+  const { language, setLanguage, t, SUPPORTED_LANGUAGES } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -41,7 +41,7 @@ export default function LanguageSwitcher({
         onClick={() => setOpen(v => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Select language"
+        aria-label={t("language.selectLanguage")}
         className={`flex items-center rounded-lg transition-colors ${VARIANT_STYLES[variant]} ${buttonSize} ${sidebarLayout}`}
       >
         <Globe className="w-4 h-4 shrink-0" />
@@ -51,7 +51,7 @@ export default function LanguageSwitcher({
       {open && (
         <div
           role="listbox"
-          aria-label="Language options"
+          aria-label={t("language.options")}
           className={`${PLACEMENT_STYLES[placement]} z-50 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px] py-1 max-h-[min(320px,70vh)] overflow-y-auto`}
         >
           {SUPPORTED_LANGUAGES.map(lang => (
@@ -66,9 +66,10 @@ export default function LanguageSwitcher({
                   ? "bg-primary/10 text-primary font-semibold"
                   : "hover:bg-muted text-foreground"
               }`}
+              aria-label={t(`language.${lang.code}`)}
             >
               <span className="text-base leading-none">{lang.flag}</span>
-              <span>{lang.label}</span>
+              <span>{t(`language.${lang.code}`) || lang.label}</span>
               {language === lang.code && (
                 <span className="ml-auto text-primary text-xs">✓</span>
               )}

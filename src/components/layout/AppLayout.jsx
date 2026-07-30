@@ -19,14 +19,14 @@ import { APP_LOGO_URL } from "@/config/branding";
 const exhibitorNav = [
   { path: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
   { path: "/qr", icon: QrCode, labelKey: "nav.myQR" },
-  { path: "/connections", icon: Users, labelKey: "nav.leads" },
+  { path: "/connections", icon: Users, labelKey: "nav.connections" },
   { path: "/rfi-inbox", icon: Inbox, labelKey: "nav.rfiInbox" },
   { path: "/catalog-library", icon: Library, labelKey: "nav.catalogs" },
   { path: "/products", icon: Package, labelKey: "nav.products" },
   { path: "/meetings", icon: Calendar, labelKey: "nav.meetings" },
   { path: "/business-card", icon: CreditCard, labelKey: "nav.myCard" },
   { path: "/events", icon: CalendarDays, labelKey: "nav.events" },
-  { path: "/lead-intelligence", icon: Flame, labelKey: "nav.leads" },
+  { path: "/lead-intelligence", icon: Flame, labelKey: "nav.leadIntelligence" },
   { path: "/analytics", icon: BarChart3, labelKey: "nav.analytics" },
   { path: "/premium-booth", icon: Crown, labelKey: "nav.premium" },
   { path: "/nfc", icon: Nfc, labelKey: "nav.nfc" },
@@ -57,6 +57,7 @@ const IMPERSONATE_KEY = "bb_impersonate_as_user";
 const IMPERSONATE_ROLE_KEY = "bb_impersonate_role";
 
 function AdminRoleSwitcher({ user }) {
+  const { t } = useI18n();
   const isImpersonating = localStorage.getItem(IMPERSONATE_KEY) === "true";
 
   const switchToUserMode = async (userRole) => {
@@ -78,7 +79,7 @@ function AdminRoleSwitcher({ user }) {
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-colors mb-1"
       >
         <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-        <span className="flex-1 text-left">Exit User Preview</span>
+        <span className="flex-1 text-left">{t("nav.exitUserPreview")}</span>
       </button>
     );
   }
@@ -88,19 +89,19 @@ function AdminRoleSwitcher({ user }) {
       <DropdownMenuTrigger asChild>
         <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sidebar-accent/60 text-sidebar-primary border border-sidebar-border hover:bg-sidebar-accent transition-colors mb-1">
           <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-          <span className="flex-1 text-left">Admin Controls</span>
+          <span className="flex-1 text-left">{t("nav.adminControls")}</span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-60" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-52">
         <DropdownMenuItem onClick={() => switchToUserMode("exhibitor")}>
-          <LayoutDashboard className="w-4 h-4 mr-2" /> Preview as Exhibitor
+          <LayoutDashboard className="w-4 h-4 mr-2" /> {t("nav.previewAsExhibitor")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => switchToUserMode("buyer")}>
-          <Search className="w-4 h-4 mr-2" /> Preview as Buyer
+          <Search className="w-4 h-4 mr-2" /> {t("nav.previewAsBuyer")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => { window.location.href = "/admin"; }}>
-          <ShieldCheck className="w-4 h-4 mr-2" /> Go to Admin Panel
+          <ShieldCheck className="w-4 h-4 mr-2" /> {t("nav.goToAdminPanel")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -123,7 +124,7 @@ function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogo
             }`}
           >
             <item.icon className="w-4 h-4 shrink-0" />
-            {t(item.labelKey)}
+            <span className="min-w-0 truncate">{t(item.labelKey)}</span>
           </Link>
         ))}
       </nav>
@@ -226,7 +227,7 @@ export default function AppLayout() {
                   Booth Bridge
                 </span>
               </div>
-              <button type="button" onClick={() => setMobileOpen(false)}>
+              <button type="button" onClick={() => setMobileOpen(false)} aria-label={t("nav.closeMenu")}>
                 <X className="w-5 h-5 text-white" />
               </button>
             </div>
@@ -250,7 +251,7 @@ export default function AppLayout() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            aria-label="Open menu"
+            aria-label={t("nav.openMenu")}
             className="p-1"
           >
             <Menu className="w-6 h-6" />
