@@ -48,7 +48,7 @@ export async function mergeAppUser(authUser) {
 
 export function isAdminRole(user) {
   if (!user) return false;
-  const role = (user.role || "").toLowerCase();
+  const role = (user.app_metadata?.role || user.role || "").toString().toLowerCase();
   return ADMIN_ROLES.has(role);
 }
 
@@ -267,7 +267,6 @@ export async function supabaseUpdateUserMetadata(fields) {
 
 export async function supabaseLogout() {
   const supabase = getSupabaseClient();
-  sessionStorage.removeItem("bb_admin_authed");
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

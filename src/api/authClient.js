@@ -216,14 +216,6 @@ export async function adminLogin(email, password) {
   }
 }
 
-export function isAdminSession() {
-  return sessionStorage.getItem("bb_admin_authed") === "true";
-}
-
-export function clearAdminSession() {
-  sessionStorage.removeItem("bb_admin_authed");
-}
-
 // ── Default export ─────────────────────────────────────────────────────────
 
 export const auth = {
@@ -256,6 +248,4 @@ export const auth = {
   redirectToLogin,
   checkAppReady,
   adminLogin,
-  isAdminSession,
-  clearAdminSession,
 };

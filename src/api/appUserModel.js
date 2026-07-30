@@ -40,6 +40,7 @@ export function buildAppUserModel(authUser, appRow) {
     ...profileMeta,
     id: authUser.id,
     email: authUser.email,
+    app_metadata: appMeta,
     role: roleFromClaims || "user",
     user_role: appRow?.user_role ?? null,
     onboarded: appRow?.onboarded ?? false,

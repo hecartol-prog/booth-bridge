@@ -79,13 +79,17 @@ const navGroups = [
 
 const ADMIN_ROLES = new Set(["admin", "superadmin", "systemadmin", "supportadmin"]);
 
+function getJwtAdminRole(user) {
+  return (user?.app_metadata?.role || user?.role || "").toString().toLowerCase();
+}
+
 export default function AdminLayout() {
   const { user, authChecked, isLoadingAuth } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState({});
 
-  const isAdminAuthed = ADMIN_ROLES.has((user?.role || "").toLowerCase());
+  const isAdminAuthed = ADMIN_ROLES.has(getJwtAdminRole(user));
   if (!authChecked || isLoadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-slate-500">
