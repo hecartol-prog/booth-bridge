@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 const TICKET_PRIORITIES = ["low", "medium", "high", "critical"];
 const TICKET_STATUSES = ["open", "in_progress", "resolved", "closed"];
+const SUPPORT_SEARCH_LIMIT = 50;
 
 const PRIORITY_COLORS = {
   low: "bg-slate-100 text-slate-600",
@@ -200,11 +201,11 @@ export default function EventSupportCenter() {
   const [ticketFilter, setTicketFilter] = useState("all");
   const { tickets, addTicket, updateTicket } = useTickets();
 
-  const { data: users = [] } = useQuery({ queryKey: ["esc-users"], queryFn: () => db.User.list() });
-  const { data: exhibitors = [] } = useQuery({ queryKey: ["esc-exhibitors"], queryFn: () => db.ExhibitorProfile.list() });
-  const { data: products = [] } = useQuery({ queryKey: ["esc-products"], queryFn: () => db.Product.list() });
-  const { data: nfcProfiles = [] } = useQuery({ queryKey: ["esc-nfc"], queryFn: () => db.NFCProfile.list() });
-  const { data: meetings = [] } = useQuery({ queryKey: ["esc-meetings"], queryFn: () => db.Meeting.list() });
+  const { data: users = [] } = useQuery({ queryKey: ["esc-users"], queryFn: () => db.User.list("-created_date", SUPPORT_SEARCH_LIMIT) });
+  const { data: exhibitors = [] } = useQuery({ queryKey: ["esc-exhibitors"], queryFn: () => db.ExhibitorProfile.list("-created_date", SUPPORT_SEARCH_LIMIT) });
+  const { data: products = [] } = useQuery({ queryKey: ["esc-products"], queryFn: () => db.Product.list("-created_date", SUPPORT_SEARCH_LIMIT) });
+  const { data: nfcProfiles = [] } = useQuery({ queryKey: ["esc-nfc"], queryFn: () => db.NFCProfile.list("-created_date", SUPPORT_SEARCH_LIMIT) });
+  const { data: meetings = [] } = useQuery({ queryKey: ["esc-meetings"], queryFn: () => db.Meeting.list("-created_date", SUPPORT_SEARCH_LIMIT) });
 
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
