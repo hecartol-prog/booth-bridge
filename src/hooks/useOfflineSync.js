@@ -23,16 +23,11 @@ async function syncScans() {
   for (const scan of pending) {
     try {
       const { targetId, scannedByUserId, scannedByName } = scan;
-      const existing = await db.Connection.filter({
-        exhibitor_user_id: targetId,
-        buyer_user_id: scannedByUserId,
-      });
+      const exProfiles = await db.ExhibitorProfile.filter({ user_id: targetId });
+      const exProfile = exProfiles[0];
 
-      if (existing.length === 0) {
-        const exProfiles = await db.ExhibitorProfile.filter({ user_id: targetId });
-        const exProfile = exProfiles[0];
-
-        await db.Connection.create({
+      await db.Connection.upsert(
+        {
           exhibitor_user_id: targetId,
           buyer_user_id: scannedByUserId,
           status: "accepted",
@@ -42,16 +37,17 @@ async function syncScans() {
           booth_number: exProfile?.booth_number || "",
           event_name: exProfile?.event_name || "",
           buyer_name: scannedByName,
-        });
+        },
+        { onConflict: "exhibitor_user_id,buyer_user_id" }
+      );
 
-        await db.Notification.create({
-          user_id: targetId,
-          type: "connection_accepted",
-          title: "Booth Visit (Synced)",
-          message: `${scannedByName} visited your digital booth (synced from offline).`,
-          from_user_name: scannedByName,
-        });
-      }
+      await db.Notification.create({
+        user_id: targetId,
+        type: "connection_accepted",
+        title: "Booth Visit (Synced)",
+        message: `${scannedByName} visited your digital booth (synced from offline).`,
+        from_user_name: scannedByName,
+      });
 
       await removeSyncedScan(scan.id);
       synced++;

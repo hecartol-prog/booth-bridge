@@ -55,20 +55,23 @@ export default function NFCProfileView() {
   }, [profile, user]);
 
   const handleSaveContact = async () => {
-    if (!user || !profile) return;
+    if (!user || !profile || saving) return;
     setSaving(true);
     try {
-      await db.Connection.create({
-        exhibitor_user_id: targetUserId,
-        buyer_user_id: user.id,
-        status: "accepted",
-        initiated_by: "nfc",
-        exhibitor_name: profile.display_name || "",
-        exhibitor_company: profile.company || "",
-        booth_number: profile.booth_number || "",
-        event_name: profile.event_name || "",
-        buyer_name: user.full_name,
-      });
+      await db.Connection.upsert(
+        {
+          exhibitor_user_id: targetUserId,
+          buyer_user_id: user.id,
+          status: "accepted",
+          initiated_by: "nfc",
+          exhibitor_name: profile.display_name || "",
+          exhibitor_company: profile.company || "",
+          booth_number: profile.booth_number || "",
+          event_name: profile.event_name || "",
+          buyer_name: user.full_name,
+        },
+        { onConflict: "exhibitor_user_id,buyer_user_id" }
+      );
       setSaved(true);
       toast({ title: "Contact saved!", description: `${profile.display_name} added to your connections.` });
     } catch (err) {
@@ -89,8 +92,9 @@ export default function NFCProfileView() {
           variant: "destructive",
         });
       }
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) return (

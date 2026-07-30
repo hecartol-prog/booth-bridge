@@ -230,16 +230,11 @@ export default function ScanQR() {
 
     // ── ONLINE PATH ──────────────────────────────────────────────────
     try {
-      const existing = await db.Connection.filter({
-        exhibitor_user_id: targetId,
-        buyer_user_id: user.id,
-      });
+      const exProfiles = await db.ExhibitorProfile.filter({ user_id: targetId });
+      const exProfile = exProfiles[0];
 
-      if (existing.length === 0) {
-        const exProfiles = await db.ExhibitorProfile.filter({ user_id: targetId });
-        const exProfile = exProfiles[0];
-
-        await db.Connection.create({
+      await db.Connection.upsert(
+        {
           exhibitor_user_id: targetId,
           buyer_user_id: user.id,
           status: "accepted",
@@ -249,16 +244,17 @@ export default function ScanQR() {
           booth_number: exProfile?.booth_number || "",
           event_name: exProfile?.event_name || "",
           buyer_name: user.full_name,
-        });
+        },
+        { onConflict: "exhibitor_user_id,buyer_user_id" }
+      );
 
-        await db.Notification.create({
-          user_id: targetId,
-          type: "connection_accepted",
-          title: "Booth Visit",
-          message: `${user.full_name} visited your digital booth.`,
-          from_user_name: user.full_name,
-        });
-      }
+      await db.Notification.create({
+        user_id: targetId,
+        type: "connection_accepted",
+        title: "Booth Visit",
+        message: `${user.full_name} visited your digital booth.`,
+        from_user_name: user.full_name,
+      });
     } catch (networkErr) {
       captureRuntimeError(networkErr, {
         subsystem: "NETWORK",

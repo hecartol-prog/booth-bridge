@@ -173,6 +173,13 @@ export function makeSupabaseEntity(entityName, tableName, options = {}) {
       return resolveAssetPayload(data);
     },
 
+    async upsert(payload, { onConflict = "id" } = {}) {
+      const record = prepareWritePayload(payload);
+      const { data, error } = await from().upsert(record, { onConflict }).select("*").single();
+      assertNoError(error, `upsert ${entityName}`);
+      return resolveAssetPayload(data);
+    },
+
     async update(id, payload) {
       const { data, error } = await from()
         .update(payload)
