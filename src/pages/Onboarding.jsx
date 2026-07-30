@@ -328,6 +328,7 @@ export default function Onboarding() {
     setFinishError(null);
     try {
       const me = await auth.ensureAppUser();
+      const currentUserName = /** @type {{ full_name?: string, email?: string }} */ (me).full_name || me.email || "";
       let refreshedUser;
 
       if (effectiveRole === "exhibitor") {
@@ -349,7 +350,7 @@ export default function Onboarding() {
             booth_number: boothNumber,
             event_name: eventName,
             logo_url: logo || "",
-            digital_card: { name: me.full_name, email: me.email, title: "Exhibitor" },
+            digital_card: { name: currentUserName, email: me.email, title: "Exhibitor" },
           });
         }
         refreshedUser = await auth.completeOnboarding({ user_role: "exhibitor", profile_id: profile.id });
@@ -363,7 +364,7 @@ export default function Onboarding() {
           company_address: companyAddress || "",
           country: country || "",
           digital_card: {
-            name: fullName || me.full_name,
+            name: fullName || currentUserName,
             email: email || me.email,
             title: jobTitle,
             phone,
