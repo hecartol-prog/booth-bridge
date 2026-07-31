@@ -13,9 +13,11 @@ import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { captureRuntimeError } from "@/monitoring/sentryErrors";
 import { loadJsQR } from "@/utils/loadJsQR";
 import { validateQRPayload } from "@/utils/securitySanitizer";
+import { useI18n } from "@/lib/i18n";
 
 export default function ScanQR() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { toast } = useToast();
   const [manualId, setManualId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -37,11 +39,11 @@ export default function ScanQR() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      toast({ title: "Back Online", description: "Connection restored. Syncing offline scans..." });
+      toast({ title: t("scanQr.backOnline"), description: t("scanQr.connectionRestored") });
     };
     const handleOffline = () => {
       setIsOnline(false);
-      toast({ title: "Offline Mode Active", description: "Scans will be saved locally and synced when reconnected.", variant: "destructive" });
+      toast({ title: t("scanQr.offlineModeActive"), description: t("scanQr.offlineDescription"), variant: "destructive" });
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -49,7 +51,7 @@ export default function ScanQR() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [toast]);
+  }, [toast, t]);
 
   // Refresh pending count on mount and after each scan
   const refreshPendingCount = useCallback(async () => {
@@ -62,11 +64,18 @@ export default function ScanQR() {
   // Background sync — runs when back online
   useOfflineSync({
     onSyncComplete: (count) => {
-      toast({ title: `${count} offline scan${count > 1 ? "s" : ""} synced`, description: "All queued booth visits have been uploaded." });
+      toast({
+        title: t("scanQr.offlineScansSynced", { count }),
+        description: t("scanQr.offlineScansSyncedDescription"),
+      });
       refreshPendingCount();
     },
     onSyncError: (count) => {
-      toast({ title: "Sync partially failed", description: `${count} scan(s) could not be synced. Will retry.`, variant: "destructive" });
+      toast({
+        title: t("scanQr.syncPartiallyFailed"),
+        description: t("scanQr.scansCouldNotSync", { count }),
+        variant: "destructive",
+      });
     },
   });
 
@@ -89,7 +98,7 @@ export default function ScanQR() {
     setScanning(true);
 
     if (!navigator?.mediaDevices?.getUserMedia) {
-      setCameraError("Camera not available. Your browser or connection may not support camera access. Use the code entry below.");
+      setCameraError(t("scanQr.cameraUnavailable"));
       setScanning(false);
       return;
     }
@@ -128,7 +137,7 @@ export default function ScanQR() {
       } else {
         const qr = await loadJsQR();
         if (!qr) {
-          setCameraError("Live QR detection not supported on this browser. Use code entry below.");
+          setCameraError(t("scanQr.liveDetectionUnsupported"));
           setScanning(false);
           stopCamera();
           return;
@@ -158,15 +167,15 @@ export default function ScanQR() {
         animFrameRef.current = requestAnimationFrame(scanWithJsQR);
       }
     } catch (err) {
-      let message = "Camera access denied. Please allow camera permissions and try again.";
+      let message = t("scanQr.cameraDenied");
       if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        message = "No camera found on this device. Use the code entry below.";
+        message = t("scanQr.noCamera");
       } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-        message = "Camera is in use by another app. Close it and try again, or use the code entry below.";
+        message = t("scanQr.cameraInUse");
       } else if (err.name === "OverconstrainedError") {
-        message = "Could not access rear camera. Try again or use the code entry below.";
+        message = t("scanQr.rearCameraFailed");
       } else if (err.name === "TypeError") {
-        message = "Camera requires HTTPS. Use the code entry below.";
+        message = t("scanQr.httpsRequired");
       }
       captureRuntimeError(err, { subsystem: "UI", category: "camera_access_failure", component: "ScanQR", metadata: { errorName: err.name } });
       setCameraError(message);
@@ -182,7 +191,7 @@ export default function ScanQR() {
     // Security: validate QR payload before any processing
     const qrCheck = validateQRPayload(rawCode);
     if (!qrCheck.valid) {
-      setErrorMsg(qrCheck.reason || "Invalid or unreadable scan format. Please try again.");
+      setErrorMsg(qrCheck.reason || t("scanQr.invalidScan"));
       return;
     }
     const code = qrCheck.sanitized;
@@ -190,7 +199,7 @@ export default function ScanQR() {
     const parts = code.split(":");
     // Format: boothbridge:connect:userId:role
     if (parts.length !== 4 || parts[0] !== "boothbridge") {
-      setErrorMsg("Invalid code format. Please scan or enter an exhibitor QR code.");
+      setErrorMsg(t("scanQr.invalidCodeFormat"));
       return;
     }
 
@@ -198,7 +207,7 @@ export default function ScanQR() {
     const targetRole = parts[3];
 
     if (targetRole !== "exhibitor") {
-      setErrorMsg("This QR code doesn't belong to an exhibitor booth.");
+      setErrorMsg(t("scanQr.notExhibitor"));
       return;
     }
 
@@ -221,8 +230,8 @@ export default function ScanQR() {
       });
       await refreshPendingCount();
       toast({
-        title: "Scan Saved Offline",
-        description: "Booth visit saved locally. Will sync when you're back online.",
+        title: t("scanQr.scanSavedOffline"),
+        description: t("scanQr.scanSavedOfflineDescription"),
       });
       setProcessing(false);
       return;
@@ -251,8 +260,8 @@ export default function ScanQR() {
       await db.Notification.create({
         user_id: targetId,
         type: "connection_accepted",
-        title: "Booth Visit",
-        message: `${user.full_name} visited your digital booth.`,
+        title: t("scanQr.notificationTitle"),
+        message: t("scanQr.notificationMessage", { name: user.full_name }),
         from_user_name: user.full_name,
       });
     } catch (networkErr) {
@@ -271,8 +280,8 @@ export default function ScanQR() {
       });
       await refreshPendingCount();
       toast({
-        title: "Saved for Later Sync",
-        description: "Booth visit queued — will sync when connection stabilises.",
+        title: t("scanQr.savedForLaterSync"),
+        description: t("scanQr.savedForLaterSyncDescription"),
         variant: "destructive",
       });
     } finally {
@@ -297,20 +306,20 @@ export default function ScanQR() {
       {!isOnline && (
         <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
           <WifiOff className="w-4 h-4 shrink-0" />
-          Offline Mode — scans are saved locally and will sync automatically.
+          {t("scanQr.offlineBanner")}
         </div>
       )}
 
       {isOnline && pendingCount > 0 && (
         <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium">
           <CloudUpload className="w-4 h-4 shrink-0 animate-pulse" />
-          Syncing {pendingCount} offline scan{pendingCount > 1 ? "s" : ""}…
+          {t("scanQr.syncingScans", { count: pendingCount })}
         </div>
       )}
 
-      <h1 className="text-2xl font-display font-bold mb-2">Visit a Booth</h1>
+      <h1 className="text-2xl font-display font-bold mb-2">{t("scanQr.visitBooth")}</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        Scan an exhibitor's QR code to instantly access their digital booth, catalogs, and products.
+        {t("scanQr.visitBoothSubtitle")}
       </p>
 
       {/* Camera scanner */}
@@ -328,12 +337,12 @@ export default function ScanQR() {
                   <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg" />
                 </div>
               </div>
-              <button onClick={stopCamera} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg">Stop</button>
+              <button onClick={stopCamera} className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg">{t("scanQr.stop")}</button>
             </>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-white">
               <Camera className="w-12 h-12 opacity-50 mb-2" />
-              <p className="text-sm opacity-70">Camera preview</p>
+              <p className="text-sm opacity-70">{t("scanQr.cameraPreview")}</p>
             </div>
           )}
         </div>
@@ -343,13 +352,13 @@ export default function ScanQR() {
         {!cameraActive ? (
           <Button onClick={startCamera} disabled={scanning} className="w-full max-w-xs">
             {scanning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
-            {scanning ? "Starting camera..." : "Start Camera Scanner"}
+            {scanning ? t("scanQr.startingCamera") : t("scanQr.startCameraScanner")}
           </Button>
         ) : (
           <p className="text-xs text-muted-foreground mt-2">
             {processing ? (
-              <span className="flex items-center justify-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Processing scan…</span>
-            ) : "Point camera at a BoothBridge QR code"}
+              <span className="flex items-center justify-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> {t("scanQr.processingScan")}</span>
+            ) : t("scanQr.pointCamera")}
           </p>
         )}
       </Card>
@@ -358,11 +367,11 @@ export default function ScanQR() {
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Link2 className="w-5 h-5 text-primary" />
-          <h2 className="font-heading font-semibold">Enter Booth Code</h2>
+          <h2 className="font-heading font-semibold">{t("scanQr.enterBoothCode")}</h2>
         </div>
         <div className="space-y-3">
           <div>
-            <Label>Booth Code</Label>
+            <Label>{t("scanQr.boothCode")}</Label>
             <Input
               value={manualId}
               onChange={e => setManualId(e.target.value)}
@@ -377,8 +386,8 @@ export default function ScanQR() {
             disabled={!manualId || processing}
           >
             {processing
-              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
-              : <><Building2 className="w-4 h-4 mr-2" /> Open Digital Booth</>
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("scanQr.processing")}</>
+              : <><Building2 className="w-4 h-4 mr-2" /> {t("scanQr.openDigitalBooth")}</>
             }
           </Button>
 

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bell, Users, Inbox, Calendar, CheckCheck, Camera } from "lucide-react";
 import { format } from "date-fns";
+import { useI18n } from "@/lib/i18n";
 
 const typeIcons = {
   connection_request: Users,
@@ -19,6 +20,7 @@ const typeIcons = {
 };
 
 export default function Notifications() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -41,20 +43,20 @@ export default function Notifications() {
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-bold">Notifications</h1>
+        <h1 className="text-2xl font-display font-bold">{t("notifications.title")}</h1>
         {unreadCount > 0 && (
           <Button size="sm" variant="outline" onClick={() => markReadMutation.mutate()}>
-            <CheckCheck className="w-4 h-4 mr-1" /> Mark all read
+            <CheckCheck className="w-4 h-4 mr-1" /> {t("notifications.markAllRead")}
           </Button>
         )}
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+        <div className="text-center py-12 text-muted-foreground">{t("common.loading")}</div>
       ) : notifications.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Bell className="w-12 h-12 mx-auto mb-3" />
-          <p>No notifications yet</p>
+          <p>{t("notifications.noNotifications")}</p>
         </div>
       ) : (
         <div className="space-y-2">

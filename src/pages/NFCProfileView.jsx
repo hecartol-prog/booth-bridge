@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { captureRuntimeError } from "@/monitoring/sentryErrors";
+import { useI18n } from "@/lib/i18n";
 
 // Standalone page: /nfc/:userId — opened when someone taps an NFC badge
 export default function NFCProfileView() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { toast } = useToast();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -73,12 +75,15 @@ export default function NFCProfileView() {
         { onConflict: "exhibitor_user_id,buyer_user_id" }
       );
       setSaved(true);
-      toast({ title: "Contact saved!", description: `${profile.display_name} added to your connections.` });
+      toast({
+        title: t("nfcProfile.contactSaved"),
+        description: t("nfcProfile.contactSavedDescription", { name: profile.display_name || "" }),
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const isDuplicate = /duplicate|unique|already exists/i.test(message);
       if (isDuplicate) {
-        toast({ title: "Already saved", description: "This contact is already in your network." });
+        toast({ title: t("nfcProfile.alreadySaved"), description: t("nfcProfile.alreadySavedDescription") });
         setSaved(true);
       } else {
         captureRuntimeError(err, {
@@ -87,8 +92,8 @@ export default function NFCProfileView() {
           component: "NFCProfileView",
         });
         toast({
-          title: "Save failed",
-          description: message || "Could not save contact. Please try again.",
+          title: t("nfcProfile.saveFailed"),
+          description: message || t("nfcProfile.saveFailedDescription"),
           variant: "destructive",
         });
       }
@@ -107,8 +112,8 @@ export default function NFCProfileView() {
     <div className="min-h-screen flex items-center justify-center p-6 text-center">
       <div>
         <Nfc className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-        <p className="font-semibold">Profile not found</p>
-        <p className="text-sm text-muted-foreground mt-1">This NFC badge hasn't been activated yet.</p>
+        <p className="font-semibold">{t("nfcProfile.profileNotFound")}</p>
+        <p className="text-sm text-muted-foreground mt-1">{t("nfcProfile.badgeInactive")}</p>
       </div>
     </div>
   );
@@ -130,11 +135,11 @@ export default function NFCProfileView() {
           {profile.country && (
             <p className="text-white/70 text-sm mt-1 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5" /> {profile.country}
-              {profile.booth_number && ` · Booth ${profile.booth_number}`}
+              {profile.booth_number && ` · ${t("nfcProfile.booth")} ${profile.booth_number}`}
             </p>
           )}
           <div className="mt-4 pt-4 border-t border-white/20">
-            <span className="text-[10px] text-white/40 font-mono">Powered by BoothBridge NFC</span>
+            <span className="text-[10px] text-white/40 font-mono">{t("nfcProfile.poweredBy")}</span>
           </div>
         </div>
 
@@ -183,23 +188,23 @@ export default function NFCProfileView() {
             disabled={saved || saving || !user}
           >
             {saved ? (
-              <><CheckCircle2 className="w-4 h-4 mr-2" /> Contact Saved</>
+              <><CheckCircle2 className="w-4 h-4 mr-2" /> {t("nfcProfile.contactSavedButton")}</>
             ) : saving ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("nfcProfile.saving")}</>
             ) : (
-              <><UserPlus className="w-4 h-4 mr-2" /> Save Contact</>
+              <><UserPlus className="w-4 h-4 mr-2" /> {t("nfcProfile.saveContact")}</>
             )}
           </Button>
           {profile.whatsapp && (
             <Button variant="outline" className="w-full" asChild>
               <a href={`https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="w-4 h-4 mr-2 text-green-600" /> Send WhatsApp
+                <MessageCircle className="w-4 h-4 mr-2 text-green-600" /> {t("nfcProfile.sendWhatsApp")}
               </a>
             </Button>
           )}
           {!user && (
             <p className="text-center text-xs text-muted-foreground mt-3">
-              <a href="/login" className="text-primary underline">Log in</a> to save this contact to BoothBridge.
+              <a href="/login" className="text-primary underline">{t("nfcProfile.login")}</a> {t("nfcProfile.loginPrompt")}
             </p>
           )}
         </div>

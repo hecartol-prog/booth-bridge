@@ -287,8 +287,11 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       await db.Notification.create({
         user_id: exhibitorUserId,
         type: "rfi_received",
-        title: "New Request Received",
-        message: `${user.full_name} sent a ${rfiType.replace(/_/g, " ")} request.`,
+        title: t("booth.notification.newRequestReceived"),
+        message: t("booth.notification.requestReceivedMessage", {
+          name: user.full_name,
+          type: rfiType.replace(/_/g, " "),
+        }),
         from_user_name: user.full_name,
       });
       setRfiDialog(false);

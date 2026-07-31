@@ -14,8 +14,10 @@ import {
   Building2, Briefcase, Clock, Star
 } from "lucide-react";
 import { format } from "date-fns";
+import { useI18n } from "@/lib/i18n";
 
 export default function Connections() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -84,8 +86,8 @@ export default function Connections() {
     await db.Notification.create({
       user_id: notifUserId,
       type: "connection_accepted",
-      title: "Connection Accepted!",
-      message: `${user.full_name} accepted your connection request.`,
+      title: t("connections.connectionAcceptedTitle"),
+      message: t("connections.connectionAcceptedMessage", { name: user.full_name }),
       from_user_name: user.full_name,
     });
   };
@@ -106,9 +108,9 @@ export default function Connections() {
     const connRfis = allRfis.filter(r => r.connection_id === conn.id);
     const connMeetings = allMeetings.filter(m => m.connection_id === conn.id);
     const score = connMedia.length * 1 + connRfis.length * 2 + connMeetings.length * 3;
-    if (score >= 5) return { label: "High", color: "bg-green-100 text-green-700" };
-    if (score >= 2) return { label: "Medium", color: "bg-amber-100 text-amber-700" };
-    return { label: "Low", color: "bg-secondary text-secondary-foreground" };
+    if (score >= 5) return { label: t("connections.high"), color: "bg-green-100 text-green-700" };
+    if (score >= 2) return { label: t("connections.medium"), color: "bg-amber-100 text-amber-700" };
+    return { label: t("connections.low"), color: "bg-secondary text-secondary-foreground" };
   };
 
   const pending = connections.filter(c => c.status === "pending");
@@ -121,21 +123,26 @@ export default function Connections() {
            (company || "").toLowerCase().includes(search.toLowerCase());
   });
 
+  const boothLabel = (conn) =>
+    isExhibitor
+      ? conn.buyer_company
+      : `${conn.exhibitor_company} · ${t("connections.booth")} ${conn.booth_number}`;
+
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-display font-bold">
-          {isExhibitor ? "Leads" : "My Connections"}
+          {isExhibitor ? t("connections.leads") : t("connections.myConnections")}
         </h1>
         <Badge variant="outline" className="text-sm">
-          {accepted.length} connected
+          {t("connections.connectedCount", { count: accepted.length })}
         </Badge>
       </div>
 
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search by name or company..."
+          placeholder={t("connections.searchConnections")}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="pl-10"
@@ -145,21 +152,21 @@ export default function Connections() {
       <Tabs defaultValue="accepted">
         <TabsList className="mb-4">
           <TabsTrigger value="accepted">
-            Connected ({accepted.length})
+            {t("connections.connectedTab")} ({accepted.length})
           </TabsTrigger>
           <TabsTrigger value="pending">
-            Pending ({pending.length})
+            {t("connections.pendingTab")} ({pending.length})
           </TabsTrigger>
           <TabsTrigger value="declined">
-            Declined ({declined.length})
+            {t("connections.declinedTab")} ({declined.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending">
           {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            <div className="text-center py-12 text-muted-foreground">{t("common.loading")}</div>
           ) : filtered(pending).length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No pending requests</div>
+            <div className="text-center py-12 text-muted-foreground">{t("connections.noPending")}</div>
           ) : (
             <div className="space-y-3">
               {filtered(pending).map(conn => (
@@ -174,14 +181,14 @@ export default function Connections() {
                           {isExhibitor ? conn.buyer_name : conn.exhibitor_name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {isExhibitor ? conn.buyer_company : `${conn.exhibitor_company} · Booth ${conn.booth_number}`}
+                          {boothLabel(conn)}
                         </p>
                       </div>
                     </div>
                     {conn.initiated_by !== appRole && (
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => handleAccept(conn)}>
-                          <Check className="w-4 h-4 mr-1" /> Accept
+                          <Check className="w-4 h-4 mr-1" /> {t("connections.acceptRequest")}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => handleDecline(conn)}>
                           <X className="w-4 h-4" />
@@ -190,7 +197,7 @@ export default function Connections() {
                     )}
                     {conn.initiated_by === appRole && (
                       <Badge variant="outline" className="text-xs">
-                        <Clock className="w-3 h-3 mr-1" /> Waiting
+                        <Clock className="w-3 h-3 mr-1" /> {t("connections.waiting")}
                       </Badge>
                     )}
                   </div>
@@ -202,9 +209,9 @@ export default function Connections() {
 
         <TabsContent value="accepted">
           {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            <div className="text-center py-12 text-muted-foreground">{t("common.loading")}</div>
           ) : filtered(accepted).length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No connections yet</div>
+            <div className="text-center py-12 text-muted-foreground">{t("connections.noConnections")}</div>
           ) : (
             <div className="space-y-3">
               {filtered(accepted).map(conn => {
@@ -225,7 +232,7 @@ export default function Connections() {
                             {isExhibitor ? conn.buyer_name : conn.exhibitor_name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {isExhibitor ? conn.buyer_company : `${conn.exhibitor_company} · Booth ${conn.booth_number}`}
+                            {boothLabel(conn)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {format(new Date(conn.created_date), "MMM d, h:mm a")}
@@ -265,9 +272,9 @@ export default function Connections() {
 
         <TabsContent value="declined">
           {isLoading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            <div className="text-center py-12 text-muted-foreground">{t("common.loading")}</div>
           ) : filtered(declined).length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No declined requests</div>
+            <div className="text-center py-12 text-muted-foreground">{t("connections.noDeclined")}</div>
           ) : (
             <div className="space-y-3">
               {filtered(declined).map(conn => (
@@ -282,12 +289,12 @@ export default function Connections() {
                           {isExhibitor ? conn.buyer_name : conn.exhibitor_name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {isExhibitor ? conn.buyer_company : `${conn.exhibitor_company} · Booth ${conn.booth_number}`}
+                          {boothLabel(conn)}
                         </p>
                       </div>
                     </div>
                     <Badge variant="outline" className="text-xs text-red-600 border-red-200">
-                      Declined
+                      {t("connections.declined")}
                     </Badge>
                   </div>
                 </Card>
@@ -300,17 +307,17 @@ export default function Connections() {
       <Dialog open={!!noteDialog} onOpenChange={() => setNoteDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Note</DialogTitle>
+            <DialogTitle>{t("connections.addNote")}</DialogTitle>
           </DialogHeader>
           <Textarea
             value={noteText}
             onChange={e => setNoteText(e.target.value)}
-            placeholder="Add private notes about this connection..."
+            placeholder={t("connections.notePlaceholder")}
             rows={4}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNoteDialog(null)}>Cancel</Button>
-            <Button onClick={handleSaveNote}>Save Note</Button>
+            <Button variant="outline" onClick={() => setNoteDialog(null)}>{t("common.cancel")}</Button>
+            <Button onClick={handleSaveNote}>{t("connections.saveNote")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
