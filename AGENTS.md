@@ -90,3 +90,8 @@ verification. Google OAuth and the AI/OCR Edge Functions require extra secrets
 - E2E (Playwright): `npm run test:e2e -- --project=public`. Install browsers once with
   `npx playwright install --with-deps chromium`. The `public` project runs without login
   creds; the `exhibitor`/`buyer`/`admin` projects only run when their `E2E_*` creds are set.
+  Playwright starts its own dev server on port 5199 (`reuseExistingServer: false`,
+  `strictPort`), so stop any dev server you started before running it. A handful of `public`
+  specs currently fail independent of the environment (pre-existing test/app mismatches: an
+  ambiguous `getByLabel('Password')` locator that also matches the "Show password" toggle,
+  and unknown-route specs that expect a `/login` redirect while the app renders `PageNotFound`).
