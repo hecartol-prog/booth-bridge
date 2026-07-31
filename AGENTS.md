@@ -46,6 +46,27 @@ cat /tmp/096_fix_is_admin.sql | docker exec -i supabase_db_booth-bridge psql -U 
 mv /tmp/096_fix_is_admin.sql supabase/migrations/
 ```
 
+### Known gotcha: Data API roles need table GRANTs
+
+The migrations enable RLS and define `anon`/`authenticated` policies but do not `GRANT`
+table privileges — production relies on Supabase's legacy auto-exposure of the `public`
+schema. The current CLI does NOT auto-grant (`auto_expose_new_tables` is unset in
+`supabase/config.toml`), so a fresh local DB returns `permission denied for table user`
+(Postgres `42501`) on login. After a fresh re-initialization, grant the Data API roles
+(RLS still gates rows), matching production:
+
+```
+docker exec -i supabase_db_booth-bridge psql -U postgres -d postgres <<'SQL'
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+NOTIFY pgrst, 'reload schema';
+SQL
+```
+
 ### Local environment variables
 
 Local dev needs `.env.local` (gitignored) with the local Supabase URL + anon key from
