@@ -1,15 +1,31 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 
 import en from "../locales/en.json";
-import es from "../locales/es.json";
-import zh from "../locales/zh.json";
-import fr from "../locales/fr.json";
-import de from "../locales/de.json";
-import pt from "../locales/pt.json";
-import it from "../locales/it.json";
-import ru from "../locales/ru.json";
 
-const TRANSLATIONS = { en, es, zh, fr, de, pt, it, ru };
+/** English is always available (fallback). Other locales load on demand. */
+const localeCache = { en };
+
+const LOCALE_LOADERS = {
+  es: () => import("../locales/es.json"),
+  zh: () => import("../locales/zh.json"),
+  fr: () => import("../locales/fr.json"),
+  de: () => import("../locales/de.json"),
+  pt: () => import("../locales/pt.json"),
+  it: () => import("../locales/it.json"),
+  ru: () => import("../locales/ru.json"),
+};
+
+const SUPPORTED_CODES = new Set(["en", ...Object.keys(LOCALE_LOADERS)]);
+
+async function loadLocale(code) {
+  if (localeCache[code]) return localeCache[code];
+  const loader = LOCALE_LOADERS[code];
+  if (!loader) return localeCache.en;
+  const mod = await loader();
+  const data = mod.default ?? mod;
+  localeCache[code] = data;
+  return data;
+}
 
 export const SUPPORTED_LANGUAGES = [
   { code: "en", label: "English",    flag: "🇬🇧" },
@@ -27,13 +43,13 @@ const RTL_LANGUAGES = ["ar", "he", "fa", "ur"];
 function detectBrowserLanguage() {
   const nav = navigator.language || navigator.userLanguage || "en";
   const code = nav.split("-")[0].toLowerCase();
-  return TRANSLATIONS[code] ? code : "en";
+  return SUPPORTED_CODES.has(code) ? code : "en";
 }
 
 function getInitialLanguage() {
   try {
     const stored = localStorage.getItem("bb_language");
-    if (stored && TRANSLATIONS[stored]) return stored;
+    if (stored && SUPPORTED_CODES.has(stored)) return stored;
   } catch (_) {}
   return detectBrowserLanguage();
 }
@@ -59,20 +75,46 @@ const I18nContext = createContext(null);
 
 export function I18nProvider({ children }) {
   const [language, setLanguageState] = useState(getInitialLanguage);
+  // Bumps when a locale finishes loading so `t` re-binds to the new dictionary.
+  const [localeVersion, setLocaleVersion] = useState(0);
+  const loadGen = useRef(0);
+
+  // Preload detected/stored non-English locale on mount (and whenever language changes).
+  useEffect(() => {
+    if (language === "en" || localeCache[language]) return undefined;
+    const gen = ++loadGen.current;
+    loadLocale(language).then(() => {
+      if (gen === loadGen.current) setLocaleVersion((v) => v + 1);
+    });
+    return undefined;
+  }, [language]);
 
   const setLanguage = useCallback((code) => {
-    if (!TRANSLATIONS[code]) return;
-    setLanguageState(code);
-    try { localStorage.setItem("bb_language", code); } catch (_) {}
+    if (!SUPPORTED_CODES.has(code)) return;
+    const apply = () => {
+      setLanguageState(code);
+      try { localStorage.setItem("bb_language", code); } catch (_) {}
+    };
+    if (code === "en" || localeCache[code]) {
+      apply();
+      return;
+    }
+    const gen = ++loadGen.current;
+    loadLocale(code).then(() => {
+      if (gen !== loadGen.current) return;
+      setLocaleVersion((v) => v + 1);
+      apply();
+    });
   }, []);
 
   const t = useCallback((key, params) => {
-    const primary = lookup(TRANSLATIONS[language], key, null);
+    const dict = localeCache[language] || localeCache.en;
+    const primary = lookup(dict, key, null);
     if (primary != null) return interpolate(primary, params);
     // Fallback to English
-    const fallback = lookup(TRANSLATIONS.en, key, key);
+    const fallback = lookup(localeCache.en, key, key);
     return interpolate(fallback, params);
-  }, [language]);
+  }, [language, localeVersion]);
 
   // RTL support — future-ready
   const isRTL = RTL_LANGUAGES.includes(language);
@@ -92,7 +134,7 @@ export function I18nProvider({ children }) {
 const FALLBACK_I18N = {
   language: "en",
   setLanguage: () => {},
-  t: (key) => lookup(TRANSLATIONS.en, key, key),
+  t: (key) => lookup(localeCache.en, key, key),
   isRTL: false,
   SUPPORTED_LANGUAGES,
 };
