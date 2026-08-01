@@ -139,15 +139,6 @@ export async function verifyOtp(emailOrPayload, token) {
   return supabaseAuth.supabaseVerifyOtp(emailOrPayload, token);
 }
 
-export async function setToken(access_token) {
-  if (!access_token) return;
-  const { error } = await getSupabaseClient().auth.setSession({
-    access_token,
-    refresh_token: "",
-  });
-  if (error) throw error;
-}
-
 export async function resendOtp(email) {
   return supabaseAuth.supabaseResendOtp(email);
 }
@@ -237,7 +228,6 @@ export const auth = {
   loginWithEmailPassword,
   loginWithProvider,
   verifyOtp,
-  setToken,
   resendOtp,
   requestPasswordReset,
   updateUserMetadata,
