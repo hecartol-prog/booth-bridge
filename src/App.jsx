@@ -9,6 +9,7 @@ import { I18nProvider } from "@/lib/i18n";
 import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OnboardedGuard from "@/components/OnboardedGuard";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import { DebugConsoleGate } from "@/debug/DebugConsoleGate";
 import { SentryRouteTracker } from "@/monitoring/SentryRouteTracker";
 import { SentryUserBridge } from "@/monitoring/SentryUserBridge";
@@ -150,11 +151,23 @@ const AuthenticatedApp = () => {
       >
         <Route
           path="/onboarding"
-          element={lazyPage(<Onboarding />)}
+          element={
+            <RouteErrorBoundary name="Onboarding">
+              {lazyPage(<Onboarding />)}
+            </RouteErrorBoundary>
+          }
         />
 
         {/* Main app with layout */}
-        <Route element={<OnboardedGuard><AppLayout /></OnboardedGuard>}>
+        <Route
+          element={
+            <RouteErrorBoundary name="AppLayout">
+              <OnboardedGuard>
+                <AppLayout />
+              </OnboardedGuard>
+            </RouteErrorBoundary>
+          }
+        >
           <Route path="/" element={lazyPage(<Home />)} />
           <Route path="/qr" element={lazyPage(<QRCodePage />)} />
           <Route path="/scan" element={lazyPage(<ScanQR />)} />
@@ -197,7 +210,14 @@ const AuthenticatedApp = () => {
       <Route path="/admin-login" element={lazyPage(<AdminLogin />)} />
 
       {/* Admin routes */}
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={
+          <RouteErrorBoundary name="AdminLayout">
+            <AdminLayout />
+          </RouteErrorBoundary>
+        }
+      >
         <Route index element={lazyPage(<AdminDashboard />)} />
         <Route path="dashboard" element={lazyPage(<AdminDashboard />)} />
         <Route path="users" element={lazyPage(<AdminUsers />)} />
