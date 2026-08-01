@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/utils/dbClient";
@@ -36,9 +36,11 @@ export default function NFCProfileView() {
       .finally(() => setLoading(false));
   }, [targetUserId, isValidUuid]);
 
-  // Log NFC interaction
+  // Log NFC interaction once per visit (stable IDs — avoid auth refresh duplicates)
+  const loggedRef = useRef(false);
   useEffect(() => {
-    if (!profile || !user) return;
+    if (!profile?.id || !user?.id || loggedRef.current) return;
+    loggedRef.current = true;
     db.NFCInteraction.create({
       initiator_user_id: user.id,
       target_user_id: targetUserId,
@@ -52,7 +54,7 @@ export default function NFCProfileView() {
     db.NFCProfile.update(profile.id, {
       tap_count: (profile.tap_count || 0) + 1,
     }).catch(() => {});
-  }, [profile, user]);
+  }, [profile?.id, user?.id, targetUserId]);
 
   const handleSaveContact = async () => {
     if (!user || !profile || saving) return;
@@ -68,7 +70,7 @@ export default function NFCProfileView() {
           exhibitor_company: profile.company || "",
           booth_number: profile.booth_number || "",
           event_name: profile.event_name || "",
-          buyer_name: user.full_name,
+                  buyer_name: user?.full_name,
         },
         { onConflict: "exhibitor_user_id,buyer_user_id" }
       );

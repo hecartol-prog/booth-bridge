@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { auth } from "@/api/authClient";
+import { getSupabaseClient } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +13,33 @@ import { useI18n } from "@/lib/i18n";
 
 export default function ResetPassword() {
   const { t } = useI18n();
-  const [searchParams] = useSearchParams();
-  const resetToken = searchParams.get("token");
-
+  const [sessionReady, setSessionReady] = useState(null); // null=checking, true/false
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = getSupabaseClient();
+
+    const applySession = (session) => {
+      if (!cancelled) setSessionReady(Boolean(session));
+    };
+
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) {
+        applySession(session);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +55,7 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await auth.resetPassword({ resetToken, newPassword });
+      await auth.updatePassword(newPassword);
       window.location.href = "/login";
     } catch (err) {
       setError(err.message || t("auth.resetFailed"));
@@ -43,7 +64,21 @@ export default function ResetPassword() {
     }
   };
 
-  if (!resetToken) {
+  if (sessionReady === null) {
+    return (
+      <AuthLayout
+        icon={Lock}
+        title={t("auth.newPasswordTitle")}
+        subtitle={t("auth.resetPasswordSubtitle")}
+      >
+        <div className="flex justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (!sessionReady) {
     return (
       <AuthLayout
         icon={AlertTriangle}

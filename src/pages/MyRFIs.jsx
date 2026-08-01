@@ -46,7 +46,7 @@ export default function MyRFIs() {
         request_type: requestType,
         message,
         status: "pending",
-        buyer_name: user.full_name,
+        buyer_name: user?.full_name,
         buyer_company: conn.buyer_company,
         exhibitor_company: conn.exhibitor_company,
       });
@@ -54,8 +54,8 @@ export default function MyRFIs() {
         user_id: conn.exhibitor_user_id,
         type: "rfi_received",
         title: "New RFI Request",
-        message: `${user.full_name} requested: ${typeLabels[requestType]}`,
-        from_user_name: user.full_name,
+        message: `${user?.full_name} requested: ${typeLabels[requestType]}`,
+        from_user_name: user?.full_name,
         related_id: rfi.id,
       });
     },

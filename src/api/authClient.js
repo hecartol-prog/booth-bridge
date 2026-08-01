@@ -48,34 +48,15 @@ export async function register(payload) {
 }
 
 /**
- * Request password-reset email (string) or complete reset (object with token).
- * @param {string|{ resetToken?: string, newPassword: string }} emailOrPayload
- * @param {string} [newPassword]
+ * Request password-reset email. Completing a reset uses updatePassword after
+ * Supabase establishes a recovery session from the email link hash fragment.
+ * @param {string} email
  */
-export async function resetPassword(emailOrPayload, newPassword) {
-  if (typeof emailOrPayload === "string") {
-    try {
-      return await requestPasswordReset(emailOrPayload);
-    } catch (error) {
-      captureRuntimeError(error, { subsystem: "AUTH", category: "password_reset_request_failure" });
-      throw error;
-    }
-  }
-  const payload =
-    emailOrPayload && typeof emailOrPayload === "object"
-      ? emailOrPayload
-      : { resetToken: emailOrPayload, newPassword };
-  if (!payload.resetToken || !payload.newPassword) {
-    throw new Error("resetToken and newPassword are required to complete password reset");
-  }
-  const resetPayload = /** @type {{ resetToken: string, newPassword: string }} */ ({
-    resetToken: payload.resetToken,
-    newPassword: payload.newPassword,
-  });
+export async function resetPassword(email) {
   try {
-    return await supabaseAuth.supabaseCompletePasswordReset(resetPayload);
+    return await requestPasswordReset(email);
   } catch (error) {
-    captureRuntimeError(error, { subsystem: "AUTH", category: "password_reset_complete_failure" });
+    captureRuntimeError(error, { subsystem: "AUTH", category: "password_reset_request_failure" });
     throw error;
   }
 }

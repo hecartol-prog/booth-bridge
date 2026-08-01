@@ -204,10 +204,24 @@ const AuthenticatedApp = () => {
       </Route>
 
       {/* Public NFC profile — no auth required */}
-      <Route path="/nfc/:userId" element={lazyPage(<NFCProfileView />)} />
+      <Route
+        path="/nfc/:userId"
+        element={
+          <RouteErrorBoundary name="NFCProfileView">
+            {lazyPage(<NFCProfileView />)}
+          </RouteErrorBoundary>
+        }
+      />
 
       {/* Admin login — public but separate from user login */}
-      <Route path="/admin-login" element={lazyPage(<AdminLogin />)} />
+      <Route
+        path="/admin-login"
+        element={
+          <RouteErrorBoundary name="AdminLogin">
+            {lazyPage(<AdminLogin />)}
+          </RouteErrorBoundary>
+        }
+      />
 
       {/* Admin routes */}
       <Route

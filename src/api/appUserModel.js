@@ -42,6 +42,7 @@ export function buildAppUserModel(authUser, appRow) {
     email: authUser.email,
     app_metadata: appMeta,
     role: roleFromClaims || "user",
+    full_name: [meta.first_name, meta.last_name].filter(Boolean).join(" ").trim() || null,
     user_role: appRow?.user_role ?? null,
     onboarded: appRow?.onboarded ?? false,
     profile_id: appRow?.profile_id ?? null,

@@ -3,7 +3,9 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/api/authClient";
 import { isOnboardingComplete } from "@/api/appUserModel";
+import { isAdminRole } from "@/api/supabaseAuth";
 import { captureRuntimeError } from "@/monitoring/sentryErrors";
+import { Button } from "@/components/ui/button";
 
 function OnboardingSpinner() {
   return (
@@ -20,12 +22,12 @@ function OnboardingSpinner() {
 export default function OnboardedGuard({ children }) {
   const { user, checkUserAuth } = useAuth();
   const [gateState, setGateState] = useState("checking");
+  const [retryToken, setRetryToken] = useState(0);
 
-  const isAdmin = (user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin";
+  const isAdmin = isAdminRole(user);
   // Impersonation flag is client-writable — only honor it for verified platform admins.
   const isImpersonating =
-    localStorage.getItem("bb_impersonate_as_user") === "true" &&
-    (user?.app_metadata?.role || "").toLowerCase() === "admin";
+    localStorage.getItem("bb_impersonate_as_user") === "true" && isAdmin;
 
   useEffect(() => {
     if (!user) {
@@ -44,6 +46,7 @@ export default function OnboardedGuard({ children }) {
     }
 
     let cancelled = false;
+    setGateState("checking");
 
     (async () => {
       try {
@@ -58,19 +61,21 @@ export default function OnboardedGuard({ children }) {
 
         setGateState("redirect");
       } catch (error) {
+        console.error("Onboarding state check failed:", error);
         captureRuntimeError(error, {
           subsystem: "PROFILE",
           category: "onboarding_state_check_failure",
           component: "OnboardedGuard",
         });
-        if (!cancelled) setGateState("allow");
+        // Fail closed — do not allow into the app without a successful check
+        if (!cancelled) setGateState("error");
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [user, isAdmin, isImpersonating, checkUserAuth]);
+  }, [user, isAdmin, isImpersonating, checkUserAuth, retryToken]);
 
   if (!user || isAdmin || isImpersonating) {
     return children;
@@ -78,6 +83,19 @@ export default function OnboardedGuard({ children }) {
 
   if (gateState === "checking") {
     return <OnboardingSpinner />;
+  }
+
+  if (gateState === "error") {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 p-6">
+        <p className="text-sm text-muted-foreground text-center max-w-sm">
+          Could not verify onboarding status. Check your connection and try again.
+        </p>
+        <Button type="button" onClick={() => setRetryToken((n) => n + 1)}>
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   if (gateState === "redirect") {

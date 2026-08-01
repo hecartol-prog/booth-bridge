@@ -13,6 +13,11 @@ import * as supabaseStorage from "@/api/supabaseStorage";
 
 const DEFAULT_BUCKET = BUCKETS.ASSETS;
 
+/** Client-side signed URL LRU cache (TTL under typical 15-min expiry). */
+const urlCache = new Map();
+const MAX_CACHE = 50;
+const CACHE_TTL = 14 * 60 * 1000; // 14 min (signed URL lifetime)
+
 /**
  * @param {File|Blob} file
  * @param {{
@@ -70,7 +75,19 @@ export async function getSignedUrl(fileRef, options = {}) {
   const parsed = parseFileRef(fileRef, options);
   if (parsed?.kind === "http") return parsed.url;
 
-  return supabaseStorage.supabaseGetSignedUrl(fileRef, options);
+  const cacheKey = `${options.bucket || ""}:${options.expiresIn || ""}:${fileRef}`;
+  const cached = urlCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.url;
+
+  const url = await supabaseStorage.supabaseGetSignedUrl(fileRef, options);
+  if (url) {
+    urlCache.set(cacheKey, { url, ts: Date.now() });
+    if (urlCache.size > MAX_CACHE) {
+      const oldest = urlCache.keys().next().value;
+      urlCache.delete(oldest);
+    }
+  }
+  return url;
 }
 
 /**

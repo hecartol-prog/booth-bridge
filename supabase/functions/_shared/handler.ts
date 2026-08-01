@@ -28,8 +28,6 @@ export type AiHandlerOptions = {
   buildRequest?: (body: Record<string, unknown>) => CompletionRequest;
   /** Adds Base44-compatible `status` + `output` fields for document extraction. */
   documentLegacyShape?: boolean;
-  /** Returns chunked text when `stream: true` (client stub). */
-  streamStub?: boolean;
   functionName?: string;
 };
 
@@ -240,6 +238,22 @@ export async function handleAiRequest(
       debugAi: isDebugAiEnabled(),
     });
 
+    if (body.stream) {
+      return respondFailure(
+        req,
+        functionName,
+        started,
+        "validation",
+        "STREAM_NOT_SUPPORTED",
+        "Streaming is not supported. Omit stream or set stream: false.",
+        {
+          status: 400,
+          userId,
+          pipelineStage,
+        },
+      );
+    }
+
     if (
       !completionReq.prompt &&
       !completionReq.messages?.length &&
@@ -290,12 +304,6 @@ export async function handleAiRequest(
     if (options.documentLegacyShape) {
       envelope.status = "success";
       envelope.output = result;
-    }
-
-    if (options.streamStub && body.stream) {
-      const text = typeof result === "string" ? result : JSON.stringify(result);
-      envelope.chunks = [text];
-      envelope.result = text;
     }
 
     logAiExit({

@@ -67,7 +67,7 @@ export default function NFCExchange() {
         country: nfcProfile.country || "",
       });
     } else if (user) {
-      setForm(f => ({ ...f, display_name: user.full_name || "", email: user.email || "" }));
+      setForm(f => ({ ...f, display_name: user?.full_name || "", email: user.email || "" }));
     }
   }, [nfcProfile, user]);
 

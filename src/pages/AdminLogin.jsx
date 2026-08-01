@@ -1,10 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { auth } from "@/api/authClient";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Mail, Lock, Loader2, Eye, EyeOff, AlertTriangle } from "lucide-react";
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000;
+
+const getAttempts = () => parseInt(sessionStorage.getItem("admin_attempts") || "0", 10);
+const setAttempts = (n) => sessionStorage.setItem("admin_attempts", String(n));
+const getLockout = () => parseInt(sessionStorage.getItem("admin_lockout") || "0", 10);
+const setLockout = (ts) => sessionStorage.setItem("admin_lockout", String(ts));
+const clearAttempts = () => {
+  sessionStorage.removeItem("admin_attempts");
+  sessionStorage.removeItem("admin_lockout");
+};
+
+function checkRateLimit() {
+  const attempts = getAttempts();
+  const lockedUntil = getLockout();
+  if (Date.now() < lockedUntil) {
+    return { allowed: false, remainingMs: lockedUntil - Date.now() };
+  }
+  if (attempts >= MAX_ATTEMPTS) {
+    sessionStorage.setItem("admin_lockout", String(Date.now() + LOCKOUT_MS));
+    sessionStorage.setItem("admin_attempts", "0");
+    return { allowed: false, remainingMs: LOCKOUT_MS };
+  }
+  return { allowed: true };
+}
 
 function logAdminAccess(data) {
   const nav = navigator;
@@ -27,14 +53,50 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLockedOut, setIsLockedOut] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   // MFA architecture hook — placeholder for future implementation
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
 
+  useEffect(() => {
+    const lu = getLockout();
+    if (lu && Date.now() < lu) {
+      setIsLockedOut(true);
+      setLockoutSeconds(Math.ceil((lu - Date.now()) / 1000));
+    } else {
+      clearAttempts();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLockedOut) return;
+    const timer = setInterval(() => {
+      const remaining = Math.ceil((getLockout() - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setIsLockedOut(false);
+        setLockoutSeconds(0);
+        clearAttempts();
+      } else {
+        setLockoutSeconds(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isLockedOut]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const rate = checkRateLimit();
+    if (!rate.allowed) {
+      const secs = Math.ceil(rate.remainingMs / 1000);
+      setIsLockedOut(true);
+      setLockoutSeconds(secs);
+      setError(`Too many failed attempts. Try again in ${secs}s.`);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -44,11 +106,24 @@ export default function AdminLogin() {
         throw new Error("Invalid credentials.");
       }
 
+      clearAttempts();
       logAdminAccess({ email, action: "login", status: "success" });
       window.location.href = "/admin";
     } catch (err) {
-      logAdminAccess({ email, action: "failed_login", status: "failed" });
-      setError(err?.message || "Invalid email or password.");
+      const attempts = getAttempts() + 1;
+      setAttempts(attempts);
+
+      if (attempts >= MAX_ATTEMPTS) {
+        const lockTs = Date.now() + LOCKOUT_MS;
+        setLockout(lockTs);
+        setIsLockedOut(true);
+        setLockoutSeconds(Math.ceil(LOCKOUT_MS / 1000));
+        logAdminAccess({ email, action: "failed_login", status: "failed", notes: "Locked out after 5 attempts" });
+        setError("Too many failed attempts. Access locked for 5 minutes.");
+      } else {
+        logAdminAccess({ email, action: "failed_login", status: "failed" });
+        setError(`Invalid email or password. ${MAX_ATTEMPTS - attempts} attempt(s) remaining.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -129,6 +204,7 @@ export default function AdminLogin() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10 h-12 bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
                     required
+                    disabled={isLockedOut}
                   />
                   <button
                     type="button"
@@ -144,10 +220,12 @@ export default function AdminLogin() {
               <Button
                 type="submit"
                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                disabled={loading}
+                disabled={loading || isLockedOut}
               >
                 {loading ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</>
+                ) : isLockedOut ? (
+                  `Locked — ${lockoutSeconds}s`
                 ) : (
                   <><ShieldCheck className="w-4 h-4 mr-2" /> Secure Sign In</>
                 )}

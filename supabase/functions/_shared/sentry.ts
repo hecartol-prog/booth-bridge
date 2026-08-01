@@ -30,9 +30,36 @@ function scrubValue(value: unknown): unknown {
   return value;
 }
 
+function parseDsn(dsn: string) {
+  const match = dsn.match(/^https:\/\/([^@]+)@([^/]+)\/(\d+)$/);
+  if (!match) return null;
+  return { publicKey: match[1], host: match[2], projectId: match[3] };
+}
+
+function getSentryEnvelopeUrl(dsn: string) {
+  const parsed = parseDsn(dsn);
+  if (!parsed) return null;
+  return `https://${parsed.host}/api/${parsed.projectId}/envelope/`;
+}
+
+function parseStackFrames(error: Error) {
+  return (error.stack || "").split("\n").slice(1).map((line) => {
+    const match = line.match(/at\s+(.+)\s+\((.+):(\d+):(\d+)\)/);
+    return match
+      ? {
+        filename: match[2],
+        function: match[1],
+        lineno: parseInt(match[3], 10),
+        colno: parseInt(match[4], 10),
+      }
+      : { filename: "unknown" };
+  });
+}
+
 export function captureEdgeException(error: unknown, context: EdgeErrorContext = {}) {
   const message = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
+  const frames = error instanceof Error ? parseStackFrames(error) : [{ filename: "edge" }];
 
   console.error(JSON.stringify({
     ts: new Date().toISOString(),
@@ -46,13 +73,24 @@ export function captureEdgeException(error: unknown, context: EdgeErrorContext =
 
   if (!DSN) return;
 
+  const envelopeUrl = getSentryEnvelopeUrl(DSN);
+  if (!envelopeUrl) return;
+
+  const parsed = parseDsn(DSN);
+  if (!parsed) return;
+
+  const eventId = crypto.randomUUID().replace(/-/g, "");
   const payload = {
-    event_id: crypto.randomUUID().replace(/-/g, ""),
+    event_id: eventId,
     timestamp: new Date().toISOString(),
     platform: "javascript",
     environment: ENVIRONMENT,
     exception: {
-      values: [{ type: "Error", value: message, stacktrace: stack ? { frames: [{ filename: "edge" }] } : undefined }],
+      values: [{
+        type: "Error",
+        value: message,
+        stacktrace: { frames },
+      }],
     },
     extra: scrubValue(context),
     tags: {
@@ -61,10 +99,22 @@ export function captureEdgeException(error: unknown, context: EdgeErrorContext =
     },
   };
 
-  fetch(DSN, {
+  // Sentry envelope format: header + item header + payload
+  const envelopeHeader = JSON.stringify({
+    event_id: eventId,
+    dsn: DSN,
+    sent_at: new Date().toISOString(),
+  });
+  const itemHeader = JSON.stringify({ type: "event", content_type: "application/json" });
+  const body = `${envelopeHeader}\n${itemHeader}\n${JSON.stringify(payload)}`;
+
+  fetch(envelopeUrl, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/x-sentry-envelope",
+      "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${parsed.publicKey}, sentry_client=boothbridge-edge/1.0`,
+    },
+    body,
   }).catch(() => {
     /* best-effort */
   });

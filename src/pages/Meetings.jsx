@@ -103,15 +103,15 @@ export default function Meetings() {
         duration: parseInt(duration),
         status: "proposed",
         title: title || "Meeting",
-        proposer_name: user.full_name,
+        proposer_name: user?.full_name,
         recipient_name: targetName,
       });
       await db.Notification.create({
         user_id: targetId,
         type: "meeting_proposed",
         title: "Meeting Proposed",
-        message: `${user.full_name} proposed a ${duration}-min meeting.`,
-        from_user_name: user.full_name,
+        message: `${user?.full_name} proposed a ${duration}-min meeting.`,
+        from_user_name: user?.full_name,
         related_id: meeting.id,
       });
     },
@@ -133,8 +133,8 @@ export default function Meetings() {
           user_id: meeting.proposed_by,
           type: status === "accepted" ? "meeting_accepted" : "meeting_declined",
           title: `Meeting ${status}`,
-          message: `${user.full_name} ${status} your meeting.`,
-          from_user_name: user.full_name,
+          message: `${user?.full_name} ${status} your meeting.`,
+          from_user_name: user?.full_name,
           related_id: id,
         });
       }

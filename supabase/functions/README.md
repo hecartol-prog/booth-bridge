@@ -1,7 +1,7 @@
 # Supabase Edge Functions — BoothBridge (Phase 7.4E)
 
-Server-side AI and admin auth for the Supabase backend path.  
-Client wiring: `src/api/supabaseAi.js`, `src/api/supabaseAuth.js` (admin uses client auth by default).
+Server-side AI for the Supabase backend path.  
+Client wiring: `src/api/supabaseAi.js`. Admin login uses client-side Supabase Auth (`supabaseAdminLogin`) — there is no `admin-auth` edge function.
 
 **Prompts are not duplicated here.** The client (`aiClient.js`) builds prompts from `src/ai/prompts/` and sends them in the request body. Edge Functions execute provider calls only.
 
@@ -11,7 +11,6 @@ Client wiring: `src/api/supabaseAi.js`, `src/api/supabaseAuth.js` (admin uses cl
 
 | Directory | Endpoint | JWT | Client consumer | Purpose |
 |-----------|----------|-----|-----------------|---------|
-| `admin-auth/` | `POST /functions/v1/admin-auth` | No | Base44 `adminAuth` parity / optional Supabase admin probe | Admin credential validation |
 | `ai-generate/` | `POST /functions/v1/ai-generate` | Yes | `supabaseGenerate()` | General LLM / structured / vision |
 | `ai-chat/` | `POST /functions/v1/ai-chat` | Yes | `supabaseChat()` | Conversational booth assistant |
 | `ai-document/` | `POST /functions/v1/ai-document` | Yes | `supabaseExtractDocument()` | Document extraction from `file_url` |
@@ -71,8 +70,9 @@ Prompts are composed client-side and passed in `prompt`. Schemas are passed from
 }
 ```
 
-`ai-document` also returns Base44-compatible `status` + `output` top-level fields.  
-`ai-generate` with `stream: true` returns a `chunks` array (stub).
+`ai-document` also returns Base44-compatible `status` + `output` top-level fields.
+
+**Streaming is not supported.** Requests with `stream: true` are rejected with `400` / `STREAM_NOT_SUPPORTED`. There is no SSE and no fake `chunks` stub.
 
 ---
 
@@ -123,7 +123,6 @@ supabase functions serve --env-file supabase/.env.local
 ## Deployment
 
 ```bash
-supabase functions deploy admin-auth
 supabase functions deploy ai-generate ai-chat ai-document ai-business-card ai-summary ai-classify ai-match ai-recommend ai-health
 ```
 
@@ -131,4 +130,4 @@ supabase functions deploy ai-generate ai-chat ai-document ai-business-card ai-su
 
 ## CORS
 
-Functions return `Access-Control-Allow-Origin: *` for browser `functions.invoke()` calls. Restrict origins in production via API gateway or custom `CORS_ALLOWED_ORIGINS` (future hardening).
+CORS is **origin-based**, not wildcard. Allowed origins come from `ALLOWED_ORIGINS`, `VITE_APP_URL`, or `APP_URL` (comma-separated). Requests with a disallowed `Origin` are rejected on preflight (`403`). When an origin matches, responses include `Access-Control-Allow-Origin` for that origin and `Access-Control-Allow-Credentials: true`.

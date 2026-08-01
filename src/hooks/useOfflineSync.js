@@ -167,6 +167,10 @@ async function syncVisitorActions() {
 
 export function useOfflineSync(/** @type {{ onSyncComplete?: (count: number) => void, onSyncError?: (error: unknown) => void }} */ { onSyncComplete, onSyncError } = {}) {
   const syncingRef = useRef(false);
+  const onSyncCompleteRef = useRef(onSyncComplete);
+  onSyncCompleteRef.current = onSyncComplete;
+  const onSyncErrorRef = useRef(onSyncError);
+  onSyncErrorRef.current = onSyncError;
 
   const syncQueue = useCallback(async () => {
     if (syncingRef.current || !navigator.onLine) return;
@@ -181,12 +185,12 @@ export function useOfflineSync(/** @type {{ onSyncComplete?: (count: number) => 
       const totalSynced = scanResult.synced + visitorResult.synced;
       const totalFailed = scanResult.failed + visitorResult.failed;
 
-      if (totalSynced > 0 && onSyncComplete) onSyncComplete(totalSynced);
-      if (totalFailed > 0 && onSyncError) onSyncError(totalFailed);
+      if (totalSynced > 0 && onSyncCompleteRef.current) onSyncCompleteRef.current(totalSynced);
+      if (totalFailed > 0 && onSyncErrorRef.current) onSyncErrorRef.current(totalFailed);
     } finally {
       syncingRef.current = false;
     }
-  }, [onSyncComplete, onSyncError]);
+  }, []);
 
   useEffect(() => {
     syncQueue();

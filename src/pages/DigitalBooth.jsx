@@ -88,6 +88,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   const resolveAssetUrl = useCallback(async (fileRef) => {
     if (!fileRef) return null;
     try {
+      // storageClient.getSignedUrl applies LRU cache (TTL 14m, max 50)
       return (await storage.getSignedUrl(fileRef, { expiresIn: 900 })) || fileRef;
     } catch {
       return fileRef;
@@ -280,7 +281,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
       request_type: rfiType,
       message: rfiMessage,
       status: "pending",
-      buyer_name: user.full_name,
+      buyer_name: user?.full_name,
       exhibitor_company: profile?.company_name,
     }),
     onSuccess: async () => {
@@ -289,10 +290,10 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
         type: "rfi_received",
         title: t("booth.notification.newRequestReceived"),
         message: t("booth.notification.requestReceivedMessage", {
-          name: user.full_name,
+          name: user?.full_name,
           type: rfiType.replace(/_/g, " "),
         }),
-        from_user_name: user.full_name,
+        from_user_name: user?.full_name,
       });
       queryClient.invalidateQueries({ queryKey: ["rfi-inbox"] });
       queryClient.invalidateQueries({ queryKey: ["my-rfis"] });
@@ -314,7 +315,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
         connectionId: existingConnection?.id || "",
         rfiType,
         message: rfiMessage,
-        buyerName: user.full_name,
+        buyerName: user?.full_name,
         exhibitorCompany: profile?.company_name,
       });
       setRfiDialog(false);
@@ -636,10 +637,13 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
             {activeProjects.length > 0 && (
               <div>
                 <label className="text-sm font-medium mb-1 block">{t("booth.addToProjectOptional")}</label>
-                <Select value={assignProjectId} onValueChange={setAssignProjectId}>
+                <Select
+                  value={assignProjectId || "__none__"}
+                  onValueChange={(v) => setAssignProjectId(v === "__none__" ? "" : v)}
+                >
                   <SelectTrigger><SelectValue placeholder={t("booth.selectProject")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>{t("booth.none")}</SelectItem>
+                    <SelectItem value="__none__">{t("booth.none")}</SelectItem>
                     {activeProjects.map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.project_name}</SelectItem>
                     ))}

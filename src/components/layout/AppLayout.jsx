@@ -12,6 +12,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { auth } from "@/api/authClient";
+import { isAdminRole } from "@/api/supabaseAuth";
 import { db } from "@/utils/dbClient";
 import { useQuery } from "@tanstack/react-query";
 import { APP_LOGO_URL } from "@/config/branding";
@@ -58,7 +59,7 @@ const IMPERSONATE_ROLE_KEY = "bb_impersonate_role";
 
 function AdminRoleSwitcher({ user }) {
   const { t } = useI18n();
-  const isPlatformAdmin = (user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin";
+  const isPlatformAdmin = isAdminRole(user);
   const isImpersonating = isPlatformAdmin && localStorage.getItem(IMPERSONATE_KEY) === "true";
 
   const switchToUserMode = async (userRole) => {
@@ -131,7 +132,7 @@ function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogo
         ))}
       </nav>
       <div className="p-3 border-t border-sidebar-border">
-        {(user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin" && (
+        {isAdminRole(user) && (
           <AdminRoleSwitcher user={user} />
         )}
         <Link
@@ -173,9 +174,9 @@ export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAdminRole = (user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin";
+  const platformAdmin = isAdminRole(user);
   const previewRole = localStorage.getItem(IMPERSONATE_ROLE_KEY);
-  const navRole = isAdminRole && localStorage.getItem(IMPERSONATE_KEY) === "true"
+  const navRole = platformAdmin && localStorage.getItem(IMPERSONATE_KEY) === "true"
     ? previewRole || "exhibitor"
     : user?.user_role;
   // Admin defaults to exhibitor nav unless explicitly switched to buyer

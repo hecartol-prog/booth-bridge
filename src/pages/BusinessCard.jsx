@@ -38,7 +38,7 @@ export default function BusinessCard() {
     } else if (user) {
       setCard(prev => ({
         ...prev,
-        name: user.full_name || "",
+        name: user?.full_name || "",
         email: user.email || "",
       }));
     }
@@ -46,6 +46,7 @@ export default function BusinessCard() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      if (!profile) throw new Error("Profile not loaded");
       if (isExhibitor) {
         await db.ExhibitorProfile.update(profile.id, { digital_card: card });
       } else {

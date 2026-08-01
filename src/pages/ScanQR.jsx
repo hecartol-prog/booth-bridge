@@ -225,7 +225,7 @@ export default function ScanQR() {
         targetId,
         targetRole,
         scannedByUserId: user.id,
-        scannedByName: user.full_name,
+        scannedByName: user?.full_name,
         timestamp: new Date().toISOString(),
       });
       await refreshPendingCount();
@@ -252,7 +252,7 @@ export default function ScanQR() {
           exhibitor_company: exProfile?.company_name || "",
           booth_number: exProfile?.booth_number || "",
           event_name: exProfile?.event_name || "",
-          buyer_name: user.full_name,
+          buyer_name: user?.full_name,
         },
         { onConflict: "exhibitor_user_id,buyer_user_id" }
       );
@@ -261,8 +261,8 @@ export default function ScanQR() {
         user_id: targetId,
         type: "connection_accepted",
         title: t("scanQr.notificationTitle"),
-        message: t("scanQr.notificationMessage", { name: user.full_name }),
-        from_user_name: user.full_name,
+        message: t("scanQr.notificationMessage", { name: user?.full_name }),
+        from_user_name: user?.full_name,
       });
     } catch (networkErr) {
       captureRuntimeError(networkErr, {
@@ -275,7 +275,7 @@ export default function ScanQR() {
         targetId,
         targetRole,
         scannedByUserId: user.id,
-        scannedByName: user.full_name,
+        scannedByName: user?.full_name,
         timestamp: new Date().toISOString(),
       });
       await refreshPendingCount();

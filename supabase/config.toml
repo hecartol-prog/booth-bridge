@@ -379,9 +379,6 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
-[functions.admin-auth]
-verify_jwt = true
-
 [functions.ai-generate]
 verify_jwt = true
 

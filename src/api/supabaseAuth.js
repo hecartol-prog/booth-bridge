@@ -200,21 +200,6 @@ export async function supabaseRequestPasswordReset(email) {
   if (error) throw error;
 }
 
-export async function supabaseCompletePasswordReset({ resetToken, newPassword }) {
-  const supabase = getSupabaseClient();
-
-  if (resetToken) {
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      token_hash: resetToken,
-      type: "recovery",
-    });
-    if (verifyError) throw verifyError;
-  }
-
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw error;
-}
-
 export async function supabaseUpdatePassword(newPassword) {
   const supabase = getSupabaseClient();
   const { error } = await supabase.auth.updateUser({ password: newPassword });

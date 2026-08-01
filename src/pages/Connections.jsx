@@ -87,8 +87,8 @@ export default function Connections() {
       user_id: notifUserId,
       type: "connection_accepted",
       title: t("connections.connectionAcceptedTitle"),
-      message: t("connections.connectionAcceptedMessage", { name: user.full_name }),
-      from_user_name: user.full_name,
+      message: t("connections.connectionAcceptedMessage", { name: user?.full_name }),
+      from_user_name: user?.full_name,
     });
   };
 

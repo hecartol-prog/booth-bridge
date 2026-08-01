@@ -47,6 +47,7 @@ export default function Profile() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      if (!profile) throw new Error("Profile not loaded");
       if (isExhibitor) {
         await db.ExhibitorProfile.update(profile.id, form);
       } else {
