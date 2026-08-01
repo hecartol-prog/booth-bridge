@@ -31,6 +31,9 @@ export default function PasswordStrengthFeedback({ password }) {
         <li className={checks.hasNumber ? "text-green-600" : ""}>
           At least one number
         </li>
+        <li className={checks.hasSymbol ? "text-green-600" : ""}>
+          At least one symbol
+        </li>
       </ul>
     </div>
   );

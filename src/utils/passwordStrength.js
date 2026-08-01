@@ -1,4 +1,5 @@
-export const MIN_PASSWORD_LENGTH = 8;
+/** Keep in sync with supabase/config.toml auth.minimum_password_length */
+export const MIN_PASSWORD_LENGTH = 10;
 
 /**
  * @returns {{ score: number, label: string, checks: Record<string, boolean> }}
@@ -23,8 +24,10 @@ export function getPasswordStrength(password) {
   return { score, label: labels[score] || "Weak", checks };
 }
 
+/** Matches supabase password_requirements = lower_upper_letters_digits_symbols */
 export function isPasswordAcceptable(password) {
-  return getPasswordStrength(password).checks.minLength;
+  const { checks } = getPasswordStrength(password);
+  return checks.minLength && checks.hasLower && checks.hasUpper && checks.hasNumber && checks.hasSymbol;
 }
 
 export function getPasswordStrengthColor(score) {
