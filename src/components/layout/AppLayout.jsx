@@ -58,9 +58,11 @@ const IMPERSONATE_ROLE_KEY = "bb_impersonate_role";
 
 function AdminRoleSwitcher({ user }) {
   const { t } = useI18n();
-  const isImpersonating = localStorage.getItem(IMPERSONATE_KEY) === "true";
+  const isPlatformAdmin = (user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin";
+  const isImpersonating = isPlatformAdmin && localStorage.getItem(IMPERSONATE_KEY) === "true";
 
   const switchToUserMode = async (userRole) => {
+    if (!isPlatformAdmin) return;
     localStorage.setItem(IMPERSONATE_KEY, "true");
     localStorage.setItem(IMPERSONATE_ROLE_KEY, userRole);
     window.location.href = "/";
@@ -129,7 +131,7 @@ function SidebarContent({ navItems, location, t, unreadCount, onNavigate, onLogo
         ))}
       </nav>
       <div className="p-3 border-t border-sidebar-border">
-        {(user?.role || "").toLowerCase() === "admin" && (
+        {(user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin" && (
           <AdminRoleSwitcher user={user} />
         )}
         <Link
@@ -171,7 +173,7 @@ export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAdminRole = (user?.role || "").toLowerCase() === "admin";
+  const isAdminRole = (user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin";
   const previewRole = localStorage.getItem(IMPERSONATE_ROLE_KEY);
   const navRole = isAdminRole && localStorage.getItem(IMPERSONATE_KEY) === "true"
     ? previewRole || "exhibitor"

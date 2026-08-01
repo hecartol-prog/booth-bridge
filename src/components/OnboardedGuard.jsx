@@ -21,8 +21,11 @@ export default function OnboardedGuard({ children }) {
   const { user, checkUserAuth } = useAuth();
   const [gateState, setGateState] = useState("checking");
 
-  const isAdmin = (user?.role || "").toLowerCase() === "admin";
-  const isImpersonating = localStorage.getItem("bb_impersonate_as_user") === "true";
+  const isAdmin = (user?.app_metadata?.role || user?.role || "").toLowerCase() === "admin";
+  // Impersonation flag is client-writable — only honor it for verified platform admins.
+  const isImpersonating =
+    localStorage.getItem("bb_impersonate_as_user") === "true" &&
+    (user?.app_metadata?.role || "").toLowerCase() === "admin";
 
   useEffect(() => {
     if (!user) {
