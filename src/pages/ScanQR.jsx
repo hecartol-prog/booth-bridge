@@ -257,6 +257,7 @@ export default function ScanQR() {
           title: "Booth Visit",
           message: `${user.full_name} visited your digital booth.`,
           from_user_name: user.full_name,
+          from_user_id: user.id,
         });
       }
     } catch (networkErr) {

@@ -56,6 +56,7 @@ export default function MyRFIs() {
         title: "New RFI Request",
         message: `${user.full_name} requested: ${typeLabels[requestType]}`,
         from_user_name: user.full_name,
+        from_user_id: user.id,
         related_id: rfi.id,
       });
     },

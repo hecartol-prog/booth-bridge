@@ -87,6 +87,7 @@ export default function Connections() {
       title: "Connection Accepted!",
       message: `${user.full_name} accepted your connection request.`,
       from_user_name: user.full_name,
+      from_user_id: user.id,
     });
   };
 

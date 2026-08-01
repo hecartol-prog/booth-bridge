@@ -112,6 +112,7 @@ export default function Meetings() {
         title: "Meeting Proposed",
         message: `${user.full_name} proposed a ${duration}-min meeting.`,
         from_user_name: user.full_name,
+        from_user_id: user.id,
         related_id: meeting.id,
       });
     },
@@ -135,6 +136,7 @@ export default function Meetings() {
           title: `Meeting ${status}`,
           message: `${user.full_name} ${status} your meeting.`,
           from_user_name: user.full_name,
+          from_user_id: user.id,
           related_id: id,
         });
       }

@@ -50,6 +50,7 @@ async function syncScans() {
           title: "Booth Visit (Synced)",
           message: `${scannedByName} visited your digital booth (synced from offline).`,
           from_user_name: scannedByName,
+          from_user_id: scannedByUserId,
         });
       }
 
@@ -144,6 +145,7 @@ async function syncVisitorActions() {
             title: "New Request Received (Synced)",
             message: `${action.buyerName} sent a ${action.rfiType.replace(/_/g, " ")} request (synced from offline).`,
             from_user_name: action.buyerName,
+            from_user_id: action.userId,
           });
           break;
         }

@@ -282,6 +282,7 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
         title: "New Request Received",
         message: `${user.full_name} sent a ${rfiType.replace(/_/g, " ")} request.`,
         from_user_name: user.full_name,
+        from_user_id: user.id,
       });
       setRfiDialog(false);
       setRfiMessage("");

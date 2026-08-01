@@ -47,6 +47,7 @@ export default function RFIInbox() {
           title: "RFI Replied",
           message: `${user.full_name} replied to your ${typeLabels[rfi.request_type]} request.`,
           from_user_name: user.full_name,
+          from_user_id: user.id,
           related_id: id,
         });
       }

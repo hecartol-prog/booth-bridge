@@ -139,13 +139,14 @@ export const updateMeetingRequest = (id, payload) =>
 export const createRFI = (payload) =>
   db.RFI.create(payload);
 
-export const sendNotification = (userId, type, title, message, fromName, relatedId) =>
+export const sendNotification = (userId, type, title, message, fromName, relatedId, fromUserId) =>
   db.Notification.create({
     user_id: userId,
     type,
     title,
     message,
     from_user_name: fromName,
+    ...(fromUserId ? { from_user_id: fromUserId } : {}),
     ...(relatedId ? { related_id: relatedId } : {}),
   });
 
