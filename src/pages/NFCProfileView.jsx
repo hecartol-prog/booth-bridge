@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/utils/dbClient";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { useI18n } from "@/lib/i18n";
 
 // Standalone page: /nfc/:userId — opened when someone taps an NFC badge
 export default function NFCProfileView() {
+  const { userId: targetUserId } = useParams();
   const { user } = useAuth();
   const { t } = useI18n();
   const { toast } = useToast();
@@ -21,11 +23,7 @@ export default function NFCProfileView() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Extract userId from URL path /nfc/:userId
-  const pathParts = window.location.pathname.split("/");
-  const targetUserId = pathParts[pathParts.length - 1];
-
-  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId);
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId || "");
 
   useEffect(() => {
     if (!targetUserId || !isValidUuid) {
