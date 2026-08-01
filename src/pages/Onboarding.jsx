@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/api/authClient";
 import { useAuth } from "@/lib/AuthContext";
 import { isOnboardingComplete } from "@/api/appUserModel";
@@ -79,6 +80,7 @@ const INDUSTRIES = [
 export default function Onboarding() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { applyUser } = useAuth();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(null);
@@ -385,7 +387,8 @@ export default function Onboarding() {
         refreshedUser = await auth.completeOnboarding({ user_role: "buyer", profile_id: profile.id });
       }
       applyUser(refreshedUser);
-      window.location.href = "/";
+      await queryClient.invalidateQueries();
+      navigate("/", { replace: true });
       return;
     } catch (err) {
       captureRuntimeError(err, {
