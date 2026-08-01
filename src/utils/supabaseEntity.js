@@ -16,7 +16,9 @@ import {
 /** Active realtime channels keyed by table — one multiplexed channel per table */
 const realtimeChannels = new Map();
 const assetUrlCache = new Map();
-const ASSET_URL_TTL_MS = 10 * 60 * 1000;
+/** Match signed URL expiry (storage.getSignedUrl expiresIn: 900). */
+const ASSET_URL_TTL_MS = 15 * 60 * 1000;
+const ASSET_URL_CACHE_MAX = 200;
 const ASSET_FIELDS = new Set([
   "file_url",
   "logo_url",
@@ -27,18 +29,30 @@ const ASSET_FIELDS = new Set([
   "raw_image_url",
 ]);
 
+function setAssetUrlCache(fileRef, entry) {
+  // LRU: Map iteration is insertion order — drop oldest when over capacity.
+  if (assetUrlCache.size >= ASSET_URL_CACHE_MAX && !assetUrlCache.has(fileRef)) {
+    const oldest = assetUrlCache.keys().next().value;
+    if (oldest !== undefined) assetUrlCache.delete(oldest);
+  }
+  // Re-insert moves an existing key to the most-recently-used position.
+  if (assetUrlCache.has(fileRef)) assetUrlCache.delete(fileRef);
+  assetUrlCache.set(fileRef, entry);
+}
+
 async function resolveAssetUrl(fileRef) {
   if (!fileRef || typeof fileRef !== "string") return fileRef;
 
   const cached = assetUrlCache.get(fileRef);
   if (cached && cached.expiresAt > Date.now()) {
+    setAssetUrlCache(fileRef, cached);
     return cached.url;
   }
 
   try {
     const signedUrl = await storage.getSignedUrl(fileRef, { expiresIn: 900 });
     const resolved = signedUrl || fileRef;
-    assetUrlCache.set(fileRef, {
+    setAssetUrlCache(fileRef, {
       url: resolved,
       expiresAt: Date.now() + ASSET_URL_TTL_MS,
     });
