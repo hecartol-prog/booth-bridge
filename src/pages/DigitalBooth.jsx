@@ -294,6 +294,8 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
         }),
         from_user_name: user.full_name,
       });
+      queryClient.invalidateQueries({ queryKey: ["rfi-inbox"] });
+      queryClient.invalidateQueries({ queryKey: ["my-rfis"] });
       setRfiDialog(false);
       setRfiMessage("");
       toast({
