@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/utils/dbClient";
+import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +10,12 @@ import {
   ChevronRight, X, Ticket, Users
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 
 const TICKET_PRIORITIES = ["low", "medium", "high", "critical"];
 const TICKET_STATUSES = ["open", "in_progress", "resolved", "closed"];
 const SUPPORT_SEARCH_LIMIT = 50;
+const SUPPORT_TICKETS_QUERY_KEY = ["support-tickets"];
 
 const PRIORITY_COLORS = {
   low: "bg-slate-100 text-slate-600",
@@ -28,22 +31,11 @@ const STATUS_COLORS = {
   closed: "bg-slate-100 text-slate-600",
 };
 
-// Local tickets stored in sessionStorage for demo (replace with entity in production)
-function useTickets() {
-  const [tickets, setTickets] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem("bb_support_tickets") || "[]"); } catch { return []; }
-  });
-  const save = (t) => { sessionStorage.setItem("bb_support_tickets", JSON.stringify(t)); setTickets(t); };
-  const addTicket = (ticket) => {
-    const newT = { ...ticket, id: Date.now().toString(), created_at: new Date().toISOString(), status: "open" };
-    save([newT, ...tickets]);
-    return newT;
-  };
-  const updateTicket = (id, updates) => {
-    const updated = tickets.map(t => t.id === id ? { ...t, ...updates } : t);
-    save(updated);
-  };
-  return { tickets, addTicket, updateTicket };
+function buildTicketNotes({ assignee, linked }) {
+  return [
+    assignee ? `Assignee: ${assignee}` : null,
+    linked ? `Linked: ${linked}` : null,
+  ].filter(Boolean).join("\n") || null;
 }
 
 function SearchResultCard({ result, onSelect }) {
@@ -194,12 +186,34 @@ function TicketForm({ prefill, onSave, onClose }) {
 
 export default function EventSupportCenter() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [ticketPrefill, setTicketPrefill] = useState(null);
   const [ticketFilter, setTicketFilter] = useState("all");
-  const { tickets, addTicket, updateTicket } = useTickets();
+
+  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
+    queryKey: SUPPORT_TICKETS_QUERY_KEY,
+    queryFn: () => db.SupportTicket.list("-created_date", 200),
+  });
+
+  const createTicketMutation = useMutation({
+    mutationFn: (payload) => db.SupportTicket.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SUPPORT_TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["gs-tickets"] });
+    },
+  });
+
+  const updateTicketMutation = useMutation({
+    mutationFn: ({ id, data }) => db.SupportTicket.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SUPPORT_TICKETS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["gs-tickets"] });
+    },
+  });
 
   const { data: users = [] } = useQuery({ queryKey: ["esc-users"], queryFn: () => db.User.list("-created_date", SUPPORT_SEARCH_LIMIT) });
   const { data: exhibitors = [] } = useQuery({ queryKey: ["esc-exhibitors"], queryFn: () => db.ExhibitorProfile.list("-created_date", SUPPORT_SEARCH_LIMIT) });
@@ -265,11 +279,58 @@ export default function EventSupportCenter() {
 
   const filteredTickets = ticketFilter === "all" ? tickets : tickets.filter(t => t.status === ticketFilter);
 
-  const handleCreateTicket = (data) => {
-    addTicket(data);
-    setShowTicketForm(false);
-    setTicketPrefill(null);
-    toast({ title: "Ticket Created", description: `#${data.title} — ${data.priority} priority` });
+  const handleCreateTicket = async (data) => {
+    try {
+      const created = await createTicketMutation.mutateAsync({
+        ticket_number: `TKT-${Date.now()}`,
+        subject: data.title,
+        description: data.description || "",
+        priority: data.priority || "medium",
+        status: "open",
+        category: ticketPrefill?.type || "other",
+        notes: buildTicketNotes({ assignee: data.assignee, linked: data.linked }),
+        created_by: user?.id || null,
+        created_by_name: user?.full_name || user?.email || "Support",
+      });
+      setShowTicketForm(false);
+      setTicketPrefill(null);
+      toast({
+        title: "Ticket Created",
+        description: `${created.ticket_number || created.subject} — ${data.priority} priority`,
+      });
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "UI",
+        category: "esc_create_ticket_failure",
+        component: "EventSupportCenter",
+      });
+      toast({
+        title: "Could not create ticket",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateTicket = async (id, updates) => {
+    try {
+      const data = { ...updates };
+      if (updates.status === "closed" || updates.status === "resolved") {
+        data.closed_at = new Date().toISOString();
+      }
+      await updateTicketMutation.mutateAsync({ id, data });
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "UI",
+        category: "esc_update_ticket_failure",
+        component: "EventSupportCenter",
+      });
+      toast({
+        title: "Could not update ticket",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const statsData = [
@@ -393,7 +454,9 @@ export default function EventSupportCenter() {
             </CardHeader>
             <CardContent>
               <div className="max-h-96 overflow-y-auto space-y-2">
-                {filteredTickets.length === 0 ? (
+                {ticketsLoading ? (
+                  <div className="text-center py-8 text-sm text-muted-foreground">Loading tickets...</div>
+                ) : filteredTickets.length === 0 ? (
                   <div className="text-center py-8">
                     <Ticket className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">No tickets yet</p>
@@ -405,19 +468,29 @@ export default function EventSupportCenter() {
                   <div key={ticket.id} className="p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{ticket.title}</p>
-                        {ticket.linked && <p className="text-xs text-muted-foreground">re: {ticket.linked}</p>}
-                        {ticket.assignee && <p className="text-xs text-muted-foreground">→ {ticket.assignee}</p>}
+                        <p className="text-sm font-medium truncate">{ticket.subject}</p>
+                        {ticket.ticket_number && (
+                          <p className="text-xs text-muted-foreground">{ticket.ticket_number}</p>
+                        )}
+                        {ticket.notes && (
+                          <p className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{ticket.notes}</p>
+                        )}
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[ticket.priority]}`}>{ticket.priority}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[ticket.status]}`}>{ticket.status}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[ticket.priority] || PRIORITY_COLORS.medium}`}>{ticket.priority}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[ticket.status] || STATUS_COLORS.open}`}>{ticket.status}</span>
                       </div>
                     </div>
                     <div className="flex gap-1 mt-2">
                       {["in_progress", "resolved", "closed"].filter(s => s !== ticket.status).map(s => (
-                        <Button key={s} size="sm" variant="ghost" className="h-6 text-[10px] px-2"
-                          onClick={() => updateTicket(ticket.id, { status: s })}>
+                        <Button
+                          key={s}
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 text-[10px] px-2"
+                          disabled={updateTicketMutation.isPending}
+                          onClick={() => handleUpdateTicket(ticket.id, { status: s })}
+                        >
                           → {s.replace("_", " ")}
                         </Button>
                       ))}
