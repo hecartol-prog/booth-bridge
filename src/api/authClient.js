@@ -5,7 +5,6 @@
  * this module only — never call provider SDK auth clients directly.
  */
 
-import { getSupabaseClient } from "@/api/supabaseClient";
 import * as supabaseAuth from "@/api/supabaseAuth";
 import { sentryBreadcrumbs } from "@/monitoring/sentryBreadcrumbs";
 import { captureRuntimeError } from "@/monitoring/sentryErrors";
