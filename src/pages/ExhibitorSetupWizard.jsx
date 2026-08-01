@@ -8,12 +8,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Building2, Package, FileText, LayoutGrid, QrCode, Rocket,
   CheckCircle2, Upload, Loader2, ArrowRight, ArrowLeft, Star, X,
   AlertCircle, Wifi, XCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { captureRuntimeError } from "@/monitoring/sentryErrors";
 
 const STEPS = [
   { id: 1, label: "Company", icon: Building2 },
@@ -70,6 +72,7 @@ function ScoreBadge({ score }) {
 export default function ExhibitorSetupWizard() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -91,6 +94,9 @@ export default function ExhibitorSetupWizard() {
   const [productImagePreviewUrl, setProductImagePreviewUrl] = useState("");
   const [uploadingProductImage, setUploadingProductImage] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
+
+  // Step 3 – Catalogs
+  const [uploadingCatalog, setUploadingCatalog] = useState(false);
 
   // Step 4 – Booth
   const [boothNumber, setBoothNumber] = useState("");
@@ -151,77 +157,157 @@ export default function ExhibitorSetupWizard() {
   ].reduce((a, b) => a + b, 0));
 
   const handleLogoUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await uploadCompanyLogo(file, user.id);
-    setLogoUrl(file_url);
-    setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
-    setUploadingLogo(false);
+    try {
+      const { file_url } = await uploadCompanyLogo(file, user.id);
+      setLogoUrl(file_url);
+      setLogoPreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "UPLOAD",
+        category: "esw_logo_upload_failure",
+        component: "ExhibitorSetupWizard",
+      });
+      toast({
+        title: "Logo upload failed",
+        description: err?.message || "Could not upload logo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = "";
+    }
   };
 
   const saveProfile = async () => {
     setSaving(true);
-    const data = {
-      user_id: user.id,
-      company_name: companyName,
-      description,
-      country,
-      website,
-      phone,
-      logo_url: logoUrl,
-      booth_number: boothNumber,
-      event_name: eventName,
-    };
-    if (profile) {
-      await db.ExhibitorProfile.update(profile.id, data);
-    } else {
-      await db.ExhibitorProfile.create(data);
+    try {
+      const data = {
+        user_id: user.id,
+        company_name: companyName,
+        description,
+        country,
+        website,
+        phone,
+        logo_url: logoUrl,
+        booth_number: boothNumber,
+        event_name: eventName,
+      };
+      if (profile) {
+        await db.ExhibitorProfile.update(profile.id, data);
+      } else {
+        await db.ExhibitorProfile.create(data);
+      }
+      qc.invalidateQueries({ queryKey: ["esw-profile"] });
+      return true;
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "PROFILE",
+        category: "esw_save_profile_failure",
+        component: "ExhibitorSetupWizard",
+      });
+      toast({
+        title: "Could not save profile",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setSaving(false);
     }
-    qc.invalidateQueries({ queryKey: ["esw-profile"] });
-    setSaving(false);
   };
 
   const handleProductImageUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     setUploadingProductImage(true);
-    const { file_url } = await uploadProductImage(file, user.id);
-    setProductImageUrl(file_url);
-    setProductImagePreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
-    setUploadingProductImage(false);
+    try {
+      const { file_url } = await uploadProductImage(file, user.id);
+      setProductImageUrl(file_url);
+      setProductImagePreviewUrl((await storage.getSignedUrl(file_url)) || file_url);
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "UPLOAD",
+        category: "esw_product_image_upload_failure",
+        component: "ExhibitorSetupWizard",
+      });
+      toast({
+        title: "Product image upload failed",
+        description: err?.message || "Could not upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingProductImage(false);
+      e.target.value = "";
+    }
   };
 
   const addProduct = async () => {
     if (!productName || !productImageUrl) return;
     setAddingProduct(true);
-    await db.Product.create({
-      exhibitor_user_id: user.id,
-      title: productName,
-      description: productDesc,
-      image_url: productImageUrl,
-    });
-    setProductName(""); setProductDesc(""); setProductMoq(""); setProductImageUrl(""); setProductImagePreviewUrl("");
-    refetchProducts();
-    setAddingProduct(false);
+    try {
+      await db.Product.create({
+        exhibitor_user_id: user.id,
+        title: productName,
+        description: productDesc,
+        image_url: productImageUrl,
+      });
+      setProductName(""); setProductDesc(""); setProductMoq(""); setProductImageUrl(""); setProductImagePreviewUrl("");
+      refetchProducts();
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "UPLOAD",
+        category: "esw_add_product_failure",
+        component: "ExhibitorSetupWizard",
+      });
+      toast({
+        title: "Could not add product",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingProduct(false);
+    }
   };
 
   const handleCatalogUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
-    const { file_url } = await uploadCatalog(file, { userId: user.id, companyId: profile?.id });
-    const isVideo = file.type.startsWith("video/");
-    await db.CatalogItem.create({
-      exhibitor_user_id: user.id,
-      title: file.name,
-      file_url,
-      type: isVideo ? "video" : "product_catalog",
-    });
-    refetchCatalogs();
+    setUploadingCatalog(true);
+    try {
+      const { file_url } = await uploadCatalog(file, { userId: user.id, companyId: profile?.id });
+      const isVideo = file.type.startsWith("video/");
+      await db.CatalogItem.create({
+        exhibitor_user_id: user.id,
+        title: file.name,
+        file_url,
+        type: isVideo ? "video" : "product_catalog",
+      });
+      refetchCatalogs();
+    } catch (err) {
+      captureRuntimeError(err, {
+        subsystem: "UPLOAD",
+        category: "esw_catalog_upload_failure",
+        component: "ExhibitorSetupWizard",
+      });
+      toast({
+        title: "Catalog upload failed",
+        description: err?.message || "Could not upload catalog. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingCatalog(false);
+      e.target.value = "";
+    }
   };
 
   const handleNext = async () => {
-    if (step === 1 || step === 4) await saveProfile();
+    if (step === 1 || step === 4) {
+      const saved = await saveProfile();
+      if (!saved) return;
+    }
     setStep(s => Math.min(s + 1, 6));
   };
 
@@ -352,13 +438,15 @@ export default function ExhibitorSetupWizard() {
                   </div>
                 ))}
               </div>
-              <label className="flex flex-col items-center gap-3 p-8 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                <Upload className="w-8 h-8 text-muted-foreground" />
+              <label className={`flex flex-col items-center gap-3 p-8 border-2 border-dashed rounded-xl transition-colors ${uploadingCatalog ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"}`}>
+                {uploadingCatalog
+                  ? <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                  : <Upload className="w-8 h-8 text-muted-foreground" />}
                 <div className="text-center">
-                  <p className="font-medium text-sm">Upload PDF, Brochure, or Video</p>
+                  <p className="font-medium text-sm">{uploadingCatalog ? "Uploading..." : "Upload PDF, Brochure, or Video"}</p>
                   <p className="text-xs text-muted-foreground mt-1">PDF, images, or video files</p>
                 </div>
-                <input type="file" accept=".pdf,image/*,video/*" className="hidden" onChange={handleCatalogUpload} />
+                <input type="file" accept=".pdf,image/*,video/*" className="hidden" onChange={handleCatalogUpload} disabled={uploadingCatalog} />
               </label>
             </div>
           )}
