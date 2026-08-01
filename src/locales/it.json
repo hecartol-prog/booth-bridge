@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI in coda offline",
       "rfiQueuedOfflineDescription": "La richiesta verrà inviata quando torni online.",
       "productSaved": "Prodotto salvato!",
-      "productSavedOfflineDescription": "{product} in coda — verrà sincronizzato online."
+      "productSavedOfflineDescription": "{product} in coda — verrà sincronizzato online.",
+      "downloadQueuedOffline": "Download messo in coda offline",
+      "downloadQueuedOfflineDescription": "Sei offline — il download verrà registrato quando tornerai online."
     },
     "notification": {
       "newRequestReceived": "Nuova richiesta ricevuta",

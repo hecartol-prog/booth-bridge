@@ -330,13 +330,6 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
   // ── Catalog download ─────────────────────────────────────────────────────
 
   const handleDownload = async (catalog) => {
-    const href =
-      catalogUrls[catalog.id] ||
-      (await resolveAssetUrl(catalog.file_url)) ||
-      catalog.file_url;
-    if (href) {
-      window.open(href, "_blank");
-    }
     if (!isOnline) {
       await enqueueVisitorAction({
         actionType: VISITOR_ACTIONS.DOWNLOAD_CATALOG,
@@ -345,7 +338,18 @@ export default function DigitalBooth({ exhibitorUserId, onBack }) {
         currentCount: catalog.download_count || 0,
       });
       await refreshPending();
+      toast({
+        title: t("booth.toast.downloadQueuedOffline"),
+        description: t("booth.toast.downloadQueuedOfflineDescription"),
+      });
       return;
+    }
+    const href =
+      catalogUrls[catalog.id] ||
+      (await resolveAssetUrl(catalog.file_url)) ||
+      catalog.file_url;
+    if (href) {
+      window.open(href, "_blank");
     }
     await db.CatalogItem.update(catalog.id, { download_count: (catalog.download_count || 0) + 1 });
   };

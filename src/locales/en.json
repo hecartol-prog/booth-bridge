@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI Queued Offline",
       "rfiQueuedOfflineDescription": "Your request will be sent when you're back online.",
       "productSaved": "Product saved!",
-      "productSavedOfflineDescription": "{product} queued — will sync when online."
+      "productSavedOfflineDescription": "{product} queued — will sync when online.",
+      "downloadQueuedOffline": "Download queued offline",
+      "downloadQueuedOfflineDescription": "You're offline — the download will be tracked when you're back online."
     },
     "notification": {
       "newRequestReceived": "New Request Received",

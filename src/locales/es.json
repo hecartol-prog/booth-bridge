@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI en cola sin conexión",
       "rfiQueuedOfflineDescription": "Tu solicitud se enviará cuando vuelvas a estar conectado.",
       "productSaved": "¡Producto guardado!",
-      "productSavedOfflineDescription": "{product} en cola; se sincronizará cuando estés conectado."
+      "productSavedOfflineDescription": "{product} en cola; se sincronizará cuando estés conectado.",
+      "downloadQueuedOffline": "Descarga en cola sin conexión",
+      "downloadQueuedOfflineDescription": "Estás sin conexión — la descarga se registrará cuando vuelvas a estar en línea."
     },
     "notification": {
       "newRequestReceived": "Nueva solicitud recibida",

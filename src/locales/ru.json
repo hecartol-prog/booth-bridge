@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI поставлен в очередь офлайн",
       "rfiQueuedOfflineDescription": "Ваш запрос будет отправлен после восстановления подключения.",
       "productSaved": "Продукт сохранён!",
-      "productSavedOfflineDescription": "{product} поставлен в очередь — синхронизация при подключении."
+      "productSavedOfflineDescription": "{product} поставлен в очередь — синхронизация при подключении.",
+      "downloadQueuedOffline": "Загрузка поставлена в очередь офлайн",
+      "downloadQueuedOfflineDescription": "Вы офлайн — загрузка будет учтена после восстановления связи."
     },
     "notification": {
       "newRequestReceived": "Получен новый запрос",

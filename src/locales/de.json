@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI offline eingereiht",
       "rfiQueuedOfflineDescription": "Ihre Anfrage wird gesendet, sobald Sie wieder online sind.",
       "productSaved": "Produkt gespeichert!",
-      "productSavedOfflineDescription": "{product} wurde eingereiht — Synchronisierung online."
+      "productSavedOfflineDescription": "{product} wurde eingereiht — Synchronisierung online.",
+      "downloadQueuedOffline": "Download offline vorgemerkt",
+      "downloadQueuedOfflineDescription": "Sie sind offline — der Download wird erfasst, sobald Sie wieder online sind."
     },
     "notification": {
       "newRequestReceived": "Neue Anfrage erhalten",

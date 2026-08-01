@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI 已离线排队",
       "rfiQueuedOfflineDescription": "你的请求将在恢复在线后发送。",
       "productSaved": "产品已保存！",
-      "productSavedOfflineDescription": "{product} 已排队，恢复在线后同步。"
+      "productSavedOfflineDescription": "{product} 已排队，恢复在线后同步。",
+      "downloadQueuedOffline": "下载已离线排队",
+      "downloadQueuedOfflineDescription": "您当前离线 — 恢复联网后将记录此次下载。"
     },
     "notification": {
       "newRequestReceived": "收到新请求",

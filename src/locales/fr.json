@@ -454,7 +454,9 @@
       "rfiQueuedOffline": "RFI en file hors ligne",
       "rfiQueuedOfflineDescription": "Votre demande sera envoyée lorsque vous serez reconnecté.",
       "productSaved": "Produit enregistré !",
-      "productSavedOfflineDescription": "{product} est en file — synchronisation au retour en ligne."
+      "productSavedOfflineDescription": "{product} est en file — synchronisation au retour en ligne.",
+      "downloadQueuedOffline": "Téléchargement mis en file hors ligne",
+      "downloadQueuedOfflineDescription": "Vous êtes hors ligne — le téléchargement sera suivi dès le retour en ligne."
     },
     "notification": {
       "newRequestReceived": "Nouvelle demande reçue",
