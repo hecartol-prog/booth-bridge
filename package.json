@@ -102,7 +102,7 @@
     "typescript": "^5.8.2",
     "vite": "^6.1.0"
   },
-  "description": "**Welcome to your Base44 project**",
+  "description": "BoothBridge — Digital booth and lead management platform for trade shows",
   "main": "eslint.config.js",
   "directories": {
     "doc": "docs"
