@@ -246,6 +246,48 @@ function schemaFromRequest(req: CompletionRequest): Record<string, unknown> | nu
   return (req.response_json_schema || req.json_schema || null) as Record<string, unknown> | null;
 }
 
+/**
+ * Validates that a URL is safe to forward to an AI provider.
+ * Blocks private IPs, cloud metadata endpoints, and non-HTTP protocols.
+ */
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (!["https:", "http:"].includes(parsed.protocol)) return false;
+    const hostname = parsed.hostname.toLowerCase();
+    // Block private/loopback/link-local IPs
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("172.16.") ||
+      hostname.startsWith("172.17.") ||
+      hostname.startsWith("172.18.") ||
+      hostname.startsWith("172.19.") ||
+      hostname.startsWith("172.20.") ||
+      hostname.startsWith("172.21.") ||
+      hostname.startsWith("172.22.") ||
+      hostname.startsWith("172.23.") ||
+      hostname.startsWith("172.24.") ||
+      hostname.startsWith("172.25.") ||
+      hostname.startsWith("172.26.") ||
+      hostname.startsWith("172.27.") ||
+      hostname.startsWith("172.28.") ||
+      hostname.startsWith("172.29.") ||
+      hostname.startsWith("172.30.") ||
+      hostname.startsWith("172.31.") ||
+      hostname.startsWith("169.254.") ||
+      hostname.startsWith("fe80:") ||
+      hostname === "::1" ||
+      hostname === "metadata.google.internal"
+    ) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function buildUserContent(req: CompletionRequest): unknown {
   const urls = [
     ...(req.file_urls ?? []),
@@ -256,6 +298,17 @@ function buildUserContent(req: CompletionRequest): unknown {
   if (req.prompt) parts.push({ type: "text", text: req.prompt });
 
   for (const url of urls) {
+    if (!isSafeUrl(url)) {
+      const error = new Error(`URL not allowed: ${url}`) as Error & {
+        code?: string;
+        retryable?: boolean;
+        status?: number;
+      };
+      error.code = "URL_NOT_ALLOWED";
+      error.retryable = false;
+      error.status = 400;
+      throw error;
+    }
     parts.push({ type: "image_url", image_url: { url } });
   }
 

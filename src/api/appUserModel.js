@@ -13,12 +13,17 @@
  */
 
 const ONBOARDING_META_KEYS = new Set(["user_role", "onboarded", "profile_id", "role"]);
+/** Privilege flags that must never be copied from user-writable metadata. */
+const DEBUG_META_KEYS = new Set(["is_debug_admin"]);
 
 /** @param {Record<string, unknown> | null | undefined} meta */
 export function extractProfileMetadata(meta) {
   if (!meta || typeof meta !== "object") return {};
   const profile = { ...meta };
   for (const key of ONBOARDING_META_KEYS) {
+    delete profile[key];
+  }
+  for (const key of DEBUG_META_KEYS) {
     delete profile[key];
   }
   return profile;

@@ -19,8 +19,8 @@ export function isDebugConsoleEmergencyLocked() {
  */
 export function isDebugAdminMetadata(user) {
   if (!user) return false;
-  if (user.is_debug_admin === true) return true;
-  if (user.user_metadata?.is_debug_admin === true) return true;
+  // Only app_metadata (server-set) is trusted.
+  // user_metadata is user-writable and must NOT grant elevated access.
   if (user.app_metadata?.is_debug_admin === true) return true;
   return false;
 }

@@ -22,6 +22,8 @@ import {
   serializeProviderException,
 } from "./aiObservability.ts";
 
+const MAX_REQUEST_BODY_BYTES = 500_000; // 500KB
+
 export type AiHandlerOptions = {
   requireAuth?: boolean;
   mapResult?: (completion: CompletionResult, body: Record<string, unknown>) => unknown;
@@ -197,6 +199,15 @@ export async function handleAiRequest(
         );
       }
       userId = auth.user.id;
+    }
+
+    // Check Content-Length before parsing
+    const contentLength = req.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_REQUEST_BODY_BYTES) {
+      return jsonResponse(req, errorEnvelope(
+        `Request body too large (max ${MAX_REQUEST_BODY_BYTES} bytes)`,
+        { code: "PAYLOAD_TOO_LARGE" },
+      ), 413);
     }
 
     let body: Record<string, unknown>;
