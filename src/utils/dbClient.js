@@ -9,8 +9,13 @@
  *   const leads = await db.Connection.filter({ exhibitor_user_id: user.id });
  */
 
+import { getSupabaseClient } from "@/api/supabaseClient";
 import { makeSupabaseEntity } from "@/utils/supabaseEntity";
-import { generateUUID as createUUID, parseSort as parseSortQuery } from "@/utils/supabaseQuery";
+import {
+  assertNoError,
+  generateUUID as createUUID,
+  parseSort as parseSortQuery,
+} from "@/utils/supabaseQuery";
 
 // ── UUID helper ────────────────────────────────────────────────────────────
 export function generateUUID() {
@@ -96,6 +101,40 @@ function makeEntity(entityName) {
 export const db = Object.fromEntries(
   ALL_ENTITY_NAMES.map((name) => [name, makeEntity(name)])
 );
+
+/**
+ * Cross-user notifications must use the SECURITY DEFINER RPC because RLS only
+ * allows authenticated inserts where user_id = auth.uid().
+ * Self-notifications still use the direct table insert path.
+ */
+const notificationEntityCreate = db.Notification.create.bind(db.Notification);
+db.Notification.create = async (payload) => {
+  const record = { ...payload };
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  assertNoError(authError, "create Notification (auth)");
+
+  if (record.user_id && user?.id && record.user_id !== user.id) {
+    const { data: notificationId, error } = await supabase.rpc(
+      "create_notification_for_user",
+      {
+        p_user_id: record.user_id,
+        p_type: record.type ?? null,
+        p_title: record.title ?? null,
+        p_message: record.message ?? null,
+        p_from_user_name: record.from_user_name ?? null,
+        p_related_id: record.related_id ?? null,
+      },
+    );
+    assertNoError(error, "create Notification (rpc)");
+    return { ...record, id: notificationId ?? record.id };
+  }
+
+  return notificationEntityCreate(record);
+};
 
 // ── Sourcing project helpers ───────────────────────────────────────────────
 export const createSourcingProject = (payload) =>
