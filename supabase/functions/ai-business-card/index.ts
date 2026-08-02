@@ -77,6 +77,15 @@ Deno.serve((req) =>
         ? [String(body.file_url)]
         : [];
 
+      const MAX_FILE_URLS = 10;
+      if (Array.isArray(body.file_urls) && body.file_urls.length > MAX_FILE_URLS) {
+        throw new RequestValidationError(
+          `Too many file URLs (max ${MAX_FILE_URLS})`,
+          "PAYLOAD_TOO_LARGE",
+          413,
+        );
+      }
+
       for (const url of rawUrls) {
         if (typeof url !== "string" || !isAllowedUrl(url)) {
           throw new RequestValidationError(
